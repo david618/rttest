@@ -34,9 +34,9 @@ sudo yum -y install maven
 ### Build rttest
 
 <pre>
-$ git clone https://github.com/david618/rttest
-$ cd rttest
-$ mvn install 
+git clone https://github.com/david618/rttest
+cd rttest
+mvn install 
 </pre>
 
 After Build; the target folder will contain:
