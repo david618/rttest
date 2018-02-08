@@ -28,7 +28,9 @@ import java.net.InetAddress;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -41,6 +43,7 @@ import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
+import org.json.JSONObject;
 
 /**
  *
@@ -166,7 +169,17 @@ public class ElasticsearchTrans {
             }
             String line = linesIt.next();
 
-            bulkProcessor.add(new IndexRequest(this.idx, this.typ).source(line));
+            JSONObject json = new JSONObject(lines);
+
+            Map<String, Object> map = new HashMap<>();
+            Iterator keys = json.keys();
+            
+            while (keys.hasNext()) {
+                String key = (String) keys.next();
+                map.put(key, json.get(key));
+            }
+
+            bulkProcessor.add(new IndexRequest(this.idx, this.typ).source(map));
 
             // polls every 10ms
             Long ct = System.currentTimeMillis();
