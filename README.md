@@ -49,11 +49,11 @@ These tools montior counts and report changes.
 - [KafkaTopicMon](./docs/KafkaTopicMon.md)
 
 
-### Notes
+### Data
 
-Details on how the simFile data (simFile*) in this project are covered in [Create Flight Simulation Data Blog Post](http://davidssysadminnotes.blogspot.com/2016/07/create-flight-simulation-data.html).
+Small sample `planes.csv` data is included.  This file has 100,000 lines.
 
-Several Python scripts were created to support gathering test results in DCOS.  Details on how these scripts were used are in the [Performance Testing Kafka on DCOS Blog Post](http://davidssysadminnotes.blogspot.com/2016/08/performance-testing-kafka-on-dcos.html)
+The data file was created using [planes](https://github.com/david618/planes).  
 
 ## License
 
