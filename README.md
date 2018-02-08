@@ -2,9 +2,11 @@
 
 Real Time Test (rttest) provides tools for sending lines (producers), receiving data (sinks), and monitoring data stores (monitors). 
 
+
 ## Installation
 
-### Prerequsites
+### Software Prerequsites
+
 You must have java, maven, and git installed. 
 
 #### Linux 
