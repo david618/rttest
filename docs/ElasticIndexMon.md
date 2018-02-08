@@ -35,8 +35,12 @@ curl -u elastic:changeme data.sats-ds01.l4lb.thisdcos.directory:9200/_aliases?pr
 
 Example Command:
 <pre>
-java -cp target/rttest.jar com.esri.rttest.monitors.ElasticIndexMon data.sats-ds01.l4lb.thisdcos.directory:9200 planes-bat/planes-bat elastic changeme 20
+java -cp target/rttest.jar com.esri.rttest.monitors.ElasticIndexMon data.sats-ds01.l4lb.thisdcos.directory:9200 planes-bat/planes-bat elastic changeme 60
 </pre>
+
+**Note:** You may need to use larger sampleRateSec; to prevent false endings for slow loading data. This often happens if the index refresh is disabled for bulk loading.
+
+You will get false readings if the count goes down during loading.  For example the index is deleted before it is loaded. 
 
 
 ### GeoEvent
