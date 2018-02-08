@@ -89,7 +89,7 @@
         </ResultCollector>
         <hashTree/>
         <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV Data Set Config" enabled="true">
-          <stringProp name="filename">simFile_1000_10s.dat</stringProp>
+          <stringProp name="filename">../planes.dat</stringProp>
           <stringProp name="fileEncoding"></stringProp>
           <stringProp name="variableNames">line</stringProp>
           <boolProp name="ignoreFirstLine">false</boolProp>
