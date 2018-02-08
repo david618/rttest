@@ -18,10 +18,10 @@
  */
 
 /*
-Send data to PostgresqlMon; In development.
+Send data to Postgresql; In development.
 
  */
-package com.esri.rttest.monitors;
+package com.esri.rttest.producers;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -41,7 +41,7 @@ import org.json.JSONObject;
  *
  * @author david
  */
-public class PostgresqlMon {
+public class Postgresql {
 
     final static int INT = 0;
     final static int LNG = 1;
@@ -237,7 +237,7 @@ public class PostgresqlMon {
     }
 
     public static void main(String[] args) {
-        PostgresqlMon t = new PostgresqlMon();
+        Postgresql t = new Postgresql();
 
 //        String tableName = "planes3";
 //        String filename = "flights.json";
@@ -267,8 +267,8 @@ public class PostgresqlMon {
         int numargs = args.length;
 
         if (numargs != 4 && numargs != 9) {
-            System.err.println("Usage Print Create Table: PostgresqlMon <tableName> <fileName> <geomFieldName> <oidFieldName>");
-            System.err.println("Usage Load Data: PostgresqlMon <tableName> <fileName> <geomFieldName> <oidFieldName> <serverConn> <username> <password> <lonFieldName> <latFieldName>");
+            System.err.println("Usage Print Create Table: Postgresql <tableName> <fileName> <geomFieldName> <oidFieldName>");
+            System.err.println("Usage Load Data: Postgresql <tableName> <fileName> <geomFieldName> <oidFieldName> <serverConn> <username> <password> <lonFieldName> <latFieldName>");
         } else if (numargs == 4) {
             tableName = args[0];
             filename = args[1];
