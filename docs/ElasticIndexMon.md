@@ -36,8 +36,8 @@ Removing: 1518057558585,10017645
 7462604 , 17215.24, 2.1803
 </pre>
 
-Sample Lines: Sample Number,System Time in Milliseconds,Count,(Rate /s)
-Final Line: Total Count Change, Rate, Rate Std Deviation 
+- Sample Lines: Sample Number,System Time in Milliseconds,Count,(Rate /s)
+- Final Line: Total Count Change, Rate, Rate Std Deviation 
 
 ### DC/OS
 
