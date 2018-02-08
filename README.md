@@ -11,10 +11,10 @@ You must have java, maven, and git installed.
 
 #### Linux 
 <pre>
-# yum -y install epel-release
-# yum -y install git
-# yum -y install java-1.8.0-openjdk
-# yum -y install maven
+sudo yum -y install epel-release
+sudo yum -y install git
+sudo yum -y install java-1.8.0-openjdk
+sudo yum -y install maven
 </pre>
 
 #### Windows 
