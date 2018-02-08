@@ -55,9 +55,6 @@ Small sample `planes.csv` data is included.  This file has 100,000 lines.
 
 The data file was created using [planes](https://github.com/david618/planes). 
 
-Larger data files
-- 1 Million lines: https://s3.amazonaws.com/esriplanes/planes00001.1M
-- 10 Million lines: https://s3.amazonaws.com/esriplanes/planes00001
 
 
 ## License
