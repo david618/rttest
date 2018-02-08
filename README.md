@@ -11,10 +11,10 @@ You must have java, maven, and git installed.
 
 #### Linux 
 <pre>
-# yum -y install epel-release
-# yum -y install git
-# yum -y install java-1.8.0-openjdk
-# yum -y install maven
+sudo yum -y install epel-release
+sudo yum -y install git
+sudo yum -y install java-1.8.0-openjdk
+sudo yum -y install maven
 </pre>
 
 #### Windows 
@@ -34,9 +34,9 @@ You must have java, maven, and git installed.
 ### Build rttest
 
 <pre>
-$ git clone https://github.com/david618/rttest
-$ cd rttest
-$ mvn install 
+git clone https://github.com/david618/rttest
+cd rttest
+mvn install 
 </pre>
 
 After Build; the target folder will contain:
