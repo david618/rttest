@@ -2,7 +2,7 @@
 Monitors a Elasticsearch Index count and measures and reports rate of change in count.
 
 <pre>
-$ java -cp target/rttest.jar com.esri.simulator.ElasticIndexMon
+$ java -cp target/rttest.jar com.esri.rttest.monitors.ElasticIndexMon
 Usage: ElasticIndexMon &lt;ElasticsearchServerPort&gt; &lt;Index/Type&gt; (&lt;username&gt; &lt;password> &lt;sampleRate&gt;)
 </pre>
 
