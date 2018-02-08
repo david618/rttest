@@ -46,21 +46,22 @@ After Build; the target folder will contain:
 
 ### Producers
 These tools send lines from a file.
-- [Elasticsearch](./docs/Elasticsearch.md)
-- [Http](./docs/Http.md)
-- [Kafka](./docs/Kafka.md)
-- [Tcp](./docs/Tcp.md)
+- [ElasticsearchHttp](./docs/ElasticsearchHttp.md) : Send lines to Elasticsearch using HTTP API.
+- [ElasticsearchTrans](./docs/ElasticsearchTrans.md) : Send lines to Elasticsearch using Transport API.
+- [Http](./docs/Http.md) : Send lines to server using HTTP POST.
+- [Kafka](./docs/Kafka.md) : Send lines to Kafka topic.
+- [Tcp](./docs/Tcp.md) : Send lines to Server to TCP port.
 
 ### Sinks
 These tools consume lines.
-- [TcpSink](./docs/TcpSink.md)
-- [WebSocketSink](.docs/WebSocketSink.md)
+- [TcpSink](./docs/TcpSink.md) : Receive lines on a TCP port; report count and rate.
+- [WebSocketSink](.docs/WebSocketSink.md) : Consume lines from WebSocket; report count and rate.
 
 ## Monitors
 These tools montior counts and report changes.
-- [ElasticIndexMon](./docs/ElasticIndexMon.md)
-- [FeatureLayerMon](./docs/FeatureLayerMon.md)
-- [KafkaTopicMon](./docs/KafkaTopicMon.md)
+- [ElasticIndexMon](./docs/ElasticIndexMon.md) : Monitor count and rate for Elasticsearch Index.
+- [FeatureLayerMon](./docs/FeatureLayerMon.md) : Monitor count and rate for Feature Layer.
+- [KafkaTopicMon](./docs/KafkaTopicMon.md) : Monitor count and rate for Kafka Topic.
 
 
 ### Data
