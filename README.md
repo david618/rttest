@@ -1,10 +1,10 @@
-# Simulator
+# rttest
 
-Reads simulation file into memory then sends line by line to the specified host and port via TCP or directly to Kafka/Elasticsearch.
+Real Time Test (rttest) provides tools for sending lines (producers), receiving data (sinks), and monitoring data stores (monitors). 
 
 ## Installation
 
-### Pre Reqs
+### Prerequsites
 You must have java, maven, and git installed. 
 
 For example in CentOS:
@@ -17,20 +17,20 @@ First line installs the "Extra Packages for Enterprise Linux" repository to yum.
 
 Second line install git and maven.  This install will install java also if it's not installed.
 
-### Build Simulator
+### Build rttest
 
 <pre>
-$ git clone https://github.com/david618/Simulator
-$ cd Simulator
+$ git clone https://github.com/david618/rttest
+$ cd rttest
 $ mvn install 
 </pre>
 
 After Build; the target folder will contain:
 - lib folder: all of the jar depdencies
-- Simulator.jar: small executable jar without dependencies.
-- Simulator-jar-with-dependencies.jar: large executable jar with dependencies.
+- rttest.jar: small executable jar without dependencies.
+- rttest-big.jar: big executable jar with dependencies.
 
-## Usage
+## Producers
 
 ### com.esri.simulator.Elasticsearch
 
@@ -40,45 +40,6 @@ Usage: Elasticsearch &lt;elastic-search-transports&gt; &lt;cluster-name&gt; &lt;
 </pre>
 
 Used to test sending data directly to Elasticsearch from a file.
-
-### com.esri.simulator.ElasticIndexMon
-Monitors a Elasticsearch Index count and measures and reports rate of change in count.
-
-<pre>
-$ java -cp target/Simulator.jar com.esri.simulator.ElasticIndexMon
-Usage: ElasticIndexMon &lt;ElasticsearchServerPort&gt; &lt;Index/Type&gt; (&lt;username&gt; &lt;password> &lt;sampleRate&gt;)
-</pre>
-
-Example:
-
-<pre>
-$ java -cp target/Simulator.jar com.esri.simulator.ElasticIndexMon 172.17.2.5:9200 satellites/satellites "" "" 60
-
-- Elasticsearch running on 172.17.2.5 on default port of 9200
-- The index name is satellites and so is the type (satellites/satellites)
-- The quotes are because I wanted to enter 60 s (as the sample rate)
-</pre>
-
-**NOTE:** For GeoEvent you can get the username/password for the spatiotemportal datastore using datastore tool "listadmins". 
-
-### com.esri.simulator.FeatureLayerMon
-
-<pre>
-$ java -cp Simulator-jar-with-dependencies.jar com.esri.simulator.FeatureLayerMon 
-Usage: FeatureLayerMon &lt;Feature-Layer&gt; (&lt;Seconds-Between-Samples&gt; Default 5 seconds)  
-</pre>
-
-Example:
-
-<pre>
-$ java -cp Simulator.jar com.esri.simulator.FeatureLayerMon http://dj52web.westus.cloudapp.azure.com/arcgis/rest/services/Hosted/FAA-Stream/FeatureServer/0
-</pre>
-
-- The code counts the number of features from the Feature-Layer
-- If no count change is detected it will wait
-- Each time change is detected a sample is added and output to the screen
-- After count stops increasing; least-square fit is used to calculate the rate of change 
-- Results are printed to the screen
 
 ### com.esri.simulator.Http
 
@@ -186,6 +147,47 @@ The command outputs
 - The rate send is often less than rate requested; because of back pressure from the endpoint
 
 Number of Errors is the number of responses that were not HTTP 200. This happens if the URL is invalid or the end point is having some problem.
+
+
+
+### com.esri.simulator.ElasticIndexMon
+Monitors a Elasticsearch Index count and measures and reports rate of change in count.
+
+<pre>
+$ java -cp target/Simulator.jar com.esri.simulator.ElasticIndexMon
+Usage: ElasticIndexMon &lt;ElasticsearchServerPort&gt; &lt;Index/Type&gt; (&lt;username&gt; &lt;password> &lt;sampleRate&gt;)
+</pre>
+
+Example:
+
+<pre>
+$ java -cp target/Simulator.jar com.esri.simulator.ElasticIndexMon 172.17.2.5:9200 satellites/satellites "" "" 60
+
+- Elasticsearch running on 172.17.2.5 on default port of 9200
+- The index name is satellites and so is the type (satellites/satellites)
+- The quotes are because I wanted to enter 60 s (as the sample rate)
+</pre>
+
+**NOTE:** For GeoEvent you can get the username/password for the spatiotemportal datastore using datastore tool "listadmins". 
+
+### com.esri.simulator.FeatureLayerMon
+
+<pre>
+$ java -cp Simulator-jar-with-dependencies.jar com.esri.simulator.FeatureLayerMon 
+Usage: FeatureLayerMon &lt;Feature-Layer&gt; (&lt;Seconds-Between-Samples&gt; Default 5 seconds)  
+</pre>
+
+Example:
+
+<pre>
+$ java -cp Simulator.jar com.esri.simulator.FeatureLayerMon http://dj52web.westus.cloudapp.azure.com/arcgis/rest/services/Hosted/FAA-Stream/FeatureServer/0
+</pre>
+
+- The code counts the number of features from the Feature-Layer
+- If no count change is detected it will wait
+- Each time change is detected a sample is added and output to the screen
+- After count stops increasing; least-square fit is used to calculate the rate of change 
+- Results are printed to the screen
 
 
 
