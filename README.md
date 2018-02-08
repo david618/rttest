@@ -30,8 +30,24 @@ After Build; the target folder will contain:
 - rttest.jar: small executable jar without dependencies.
 - rttest-big.jar: big executable jar with dependencies.
 
-### Sources
-[Elasticsearch](./docs/Elasticsearch.md)
+### Producers
+These tools send lines from a file.
+- [Elasticsearch](./docs/Elasticsearch.md)
+- [Http](./docs/Http.md)
+- [Kafka](./docs/Kafka.md)
+- [Tcp](./docs/Tcp.md)
+
+### Sinks
+These tools consume lines.
+- [TcpSink](./docs/TcpSink.md)
+- [WebSocketSink](.docs/WebSocketSink.md)
+
+## Monitors
+These tools montior counts and report changes.
+- [ElasticIndexMon](./docs/ElasticIndexMon.md)
+- [FeatureLayerMon](./docs/FeatureLayerMon.md)
+- [KafkaTopicMon](./docs/KafkaTopicMon.md)
+
 
 ### Notes
 
