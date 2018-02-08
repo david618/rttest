@@ -4,7 +4,8 @@
 - When the tool starts it gets the current count and starts sampling count every sampleRateSec seconds (defaults to 5 seconds).
 - When count changes the tool starts collecting sample points. 
 - After collecting three points the output will use linear regression to estimate the rate of change.
-- After count stops changing the final line will give the count received and the best fit linear approximation of the rate.
+- After count stops changing the final line will give the count received and the best fit linear approximation of the rate.  The last sample is excluded from the final rate calculation.
+- After reporting the final count and rate the tool will continue monitoring for count changes.  Use **Ctrl-C** to stop.
 
 <pre>
 java -cp target/rttest.jar com.esri.rttest.monitors.ElasticIndexMon
@@ -21,6 +22,22 @@ java -cp target/rttest.jar com.esri.rttest.monitors.ElasticIndexMon 172.17.2.5:9
 - If the system doesn't require a password you can use dash
 - Sample every 60 seconds
 </pre>
+
+Example Output:
+<pre>
+1,1518057198604,4252762
+2,1518057258692,5190695
+3,1518057318586,5366873,9289
+4,1518057378587,7404803,16059
+5,1518057438602,7581889,14790
+6,1518057498623,9640049,17215
+7,1518057558585,10017645,16912
+Removing: 1518057558585,10017645
+7462604 , 17215.24, 2.1803
+</pre>
+
+Sample Lines: Sample Number,System Time in Milliseconds,Count,(Rate /s)
+Final Line: Total Count Change, Rate, Rate Std Deviation 
 
 ### DC/OS
 
