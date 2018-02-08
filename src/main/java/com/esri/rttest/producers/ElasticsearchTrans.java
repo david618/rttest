@@ -36,7 +36,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
@@ -78,7 +78,7 @@ public class ElasticsearchTrans {
                 InetAddress addr = InetAddress.getByName(parts[0]);
                 Integer port = Integer.parseInt(parts[1]);
 
-                tc.addTransportAddress(new InetSocketTransportAddress(addr, port));
+                tc.addTransportAddress(new TransportAddress(addr, port));
 
             }
 
