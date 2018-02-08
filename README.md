@@ -57,7 +57,7 @@ These tools consume lines.
 - [TcpSink](./docs/TcpSink.md) : Receive lines on a TCP port; report count and rate.
 - [WebSocketSink](.docs/WebSocketSink.md) : Consume lines from WebSocket; report count and rate.
 
-## Monitors
+### Monitors
 These tools montior counts and report changes.
 - [ElasticIndexMon](./docs/ElasticIndexMon.md) : Monitor count and rate for Elasticsearch Index.
 - [FeatureLayerMon](./docs/FeatureLayerMon.md) : Monitor count and rate for Feature Layer.
