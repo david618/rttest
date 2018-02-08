@@ -9,8 +9,8 @@ if __name__ == '__main__':
 
     PATTERN = re.compile(r'''((?:[^,"']|"[^"]*"|'[^']*')+)''')
 
-    fin = open("planes00001")
-    fout = open("planes00001.json", "w")
+    fin = open("planes.csv")
+    fout = open("planes.json", "w")
 
     for line in fin:
         
