@@ -164,9 +164,14 @@ public class Tcp {
                 throw new UnsupportedOperationException("Could not discover the any ip port combinations.");
             }
 
-            // Use the first ip and port found
-            server = ipPorts.get(0).getIp();
-            port = ipPorts.get(0).getPort();
+            numStream = ipPorts.size();
+            this.os = new OutputStream[numStream];
+            int i = 0;
+            for (IPPort ipport : ipPorts) {
+                Socket skt = new Socket(ipport.getIp(),ipport.getPort());
+                this.os[i] = skt.getOutputStream();
+                i++;
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
