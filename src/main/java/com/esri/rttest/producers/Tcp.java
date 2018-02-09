@@ -40,9 +40,12 @@
  */
 package com.esri.rttest.producers;
 
+import com.esri.rttest.IPPort;
+import com.esri.rttest.MarathonInfo;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -78,41 +81,93 @@ public class Tcp {
         return port;
     }
 
-    public Tcp(String server, Integer port) {
-        this.server = server;
-        this.port = port;
-
-        Pattern pattern;
-        Matcher matcher;
-
-        pattern = Pattern.compile(IPADDRESS_PATTERN);
-        matcher = pattern.matcher(server);
+    public Tcp(String appNamePattern) {
 
         try {
 
-            if (matcher.matches()) {
-                // This is an IP
-                numStream = 1;
-                this.os = new OutputStream[numStream];
-                Socket skt = new Socket(this.server, port);
-                this.os[0] = skt.getOutputStream();
+            // See if the url contains app(name)
+            String appPat = "app\\[(.*)\\]";
+
+            // Test to see if the appName pattern matches app[some-app-name]
+            Pattern appPattern = Pattern.compile(appPat);
+            Matcher appMatcher = appPattern.matcher(appNamePattern);
+
+            // Test to see if the appName looks like it contains a ip address num.num.num.num
+            Pattern IPpattern = Pattern.compile(IPADDRESS_PATTERN);
+            Matcher IPmatcher = IPpattern.matcher(appNamePattern);
+
+            ArrayList<IPPort> ipPorts = new ArrayList<>();
+
+            if (appMatcher.find()) {
+                // appNamePatter has app pattern
+                String appName = appMatcher.group(1);
+
+                int portIndex = 0;
+                String appNameParts[] = appName.split(":");
+                if (appNameParts.length > 1) {
+                    appName = appNameParts[0];
+                    portIndex = Integer.parseInt(appNameParts[1]);
+                }
+                System.out.println("appName:" + appName);
+                System.out.println("portIndex:" + portIndex);
+                MarathonInfo mi = new MarathonInfo();
+
+                ipPorts = mi.getIPPorts(appName, portIndex);
+            } else if (IPmatcher.matches()) {
+                // appNamePattern looks like an IP
+                String ipPortParts[] = appNamePattern.split(":");
+                if (ipPortParts.length != 2) {
+                    throw new UnsupportedOperationException("You need to provide IP:port");
+                }
+                int port = Integer.parseInt(ipPortParts[1]);
+
+                IPPort ipport = new IPPort(ipPortParts[0], port);
+                ipPorts.add(ipport);
 
             } else {
-                Lookup lookup = new Lookup(server, Type.A);
+                // Assume it's a DNS-name:port
+
+                String namePortParts[] = appNamePattern.split(":");
+                if (namePortParts.length != 2) {
+                    throw new UnsupportedOperationException("You need to provide dns-name:port");
+                }
+                String dnsName = namePortParts[0];
+                int port = Integer.parseInt(namePortParts[1]);
+
+                Lookup lookup = new Lookup(dnsName, Type.A);
                 lookup.run();
-                System.out.println(lookup.getErrorString());
-                numStream = lookup.getAnswers().length;
-                this.os = new OutputStream[numStream];
-                int i = 0;
-                for (Record ans : lookup.getAnswers()) {
-                    String ip = ans.rdataToString();
-                    System.out.println(ip);
-                    Socket skt = new Socket(ip, port);
-                    this.os[i] = skt.getOutputStream();
-                    i++;
+                //System.out.println(lookup.getErrorString());
+                if (lookup.getAnswers() == null) {
+                    InetAddress addr = InetAddress.getByName(dnsName);
+
+                    IPPort ipport = new IPPort(addr.getHostAddress(), port);
+                    ipPorts.add(ipport);
+                } else {
+                    for (Record ans : lookup.getAnswers()) {
+                        String ip = ans.rdataToString();
+                        IPPort ipport = new IPPort(ip, port);
+                        ipPorts.add(ipport);
+                        System.out.println(ipport);
+
+                    }
                 }
 
             }
+            
+            for (IPPort ipport : ipPorts) {
+                if (ipport.getPort() == -1) {
+                    ipPorts.remove(ipport);
+                }
+            }
+            
+            if (ipPorts.size() == 0) {
+                throw new UnsupportedOperationException("Could not discover the any ip port combinations.");
+            }
+
+            // Use the first ip and port found
+            server = ipPorts.get(0).getIp();
+            port = ipPorts.get(0).getPort();
+            
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -318,9 +373,8 @@ public class Tcp {
         int numargs = args.length;
         if (numargs != 5 && numargs != 6) {
             // append append time option was added to support end-to-end latency; I used it for Trinity testing
-            System.err.println("Usage: Tcp <server> <port> <file> <rate> <numrecords> (burstDelay) (append-time)");
-            System.err.println("server: The IP or hostname of server to send events to.");
-            System.err.println("port: The TCP port to send events to.");
+            System.err.println("Usage: Tcp <server:port> <file> <rate> <numrecords> (burstDelay) (append-time)");
+            System.err.println("server:port: The IP or hostname of server to send events to. Could be ip:port, dns-name:port, or app[marathon-app-name(:portindex)]");
             System.err.println("filename: sends line by line from this file.");
             System.err.println("rate: Attempts to send at this rate.");
             System.err.println("numrecords: Sends this many lines; file is automatically recycled if needed.");
@@ -328,28 +382,28 @@ public class Tcp {
             System.err.println("append-time defaults to false; Adds system time as extra parameter to each request. ");
         } else {
             // Initial the Tcp Class with the server and port
-            if (numargs >= 5 && numargs <= 7) {
+            if (numargs >= 4 && numargs <= 6) {
 
-                Tcp t = new Tcp(args[0], Integer.parseInt(args[1]));
+                Tcp t = new Tcp(args[0]);
 
                 switch (numargs) {
-                    case 5:
-                        t.sendFile(args[2], Integer.parseInt(args[3]), Integer.parseInt(args[4]), 0, false);
+                    case 4:
+                        t.sendFile(args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), 0, false);
                         break;
-                    case 6:
-                        int burstDelay = Integer.parseInt(args[5]);
+                    case 5:
+                        int burstDelay = Integer.parseInt(args[4]);
                         if (burstDelay < 10 || burstDelay > 1000) {
                             System.err.println("Invalid burstDelay; valid values are 10 to 1000 ms");
                             break;
                         }
                         if (burstDelay > 200) {
-                            System.out.println("WARNING: For larger values of burstDelay it can a while to achieve the requested rate.");
+                            System.out.println("WARNING: For larger values of burstDelay it can take a while to achieve the requested rate.");
                         }
 
-                        t.sendFile(args[2], Integer.parseInt(args[3]), Integer.parseInt(args[4]), burstDelay, false);
+                        t.sendFile(args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), burstDelay, false);
                         break;
-                    case 7:
-                        t.sendFile(args[2], Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]), Boolean.parseBoolean(args[6]));
+                    case 6:
+                        t.sendFile(args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), Boolean.parseBoolean(args[5]));
                         break;
                 }
 
