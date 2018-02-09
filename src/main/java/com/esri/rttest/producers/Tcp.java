@@ -153,13 +153,13 @@ public class Tcp {
                 }
 
             }
-            
+
             for (IPPort ipport : ipPorts) {
                 if (ipport.getPort() == -1) {
                     ipPorts.remove(ipport);
                 }
             }
-            
+
             if (ipPorts.size() == 0) {
                 throw new UnsupportedOperationException("Could not discover the any ip port combinations.");
             }
@@ -167,7 +167,7 @@ public class Tcp {
             // Use the first ip and port found
             server = ipPorts.get(0).getIp();
             port = ipPorts.get(0).getPort();
-            
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -371,7 +371,7 @@ public class Tcp {
 
         // Example Command Line args: localhost 5565 faa-stream.csv 1000 10000
         int numargs = args.length;
-        if (numargs != 5 && numargs != 6) {
+        if (numargs != 4 && numargs != 5 && numargs != 6) {
             // append append time option was added to support end-to-end latency; I used it for Trinity testing
             System.err.println("Usage: Tcp <server:port> <file> <rate> <numrecords> (burstDelay) (append-time)");
             System.err.println("server:port: The IP or hostname of server to send events to. Could be ip:port, dns-name:port, or app[marathon-app-name(:portindex)]");
@@ -382,34 +382,30 @@ public class Tcp {
             System.err.println("append-time defaults to false; Adds system time as extra parameter to each request. ");
         } else {
             // Initial the Tcp Class with the server and port
-            if (numargs >= 4 && numargs <= 6) {
+            Tcp t = new Tcp(args[0]);
 
-                Tcp t = new Tcp(args[0]);
-
-                switch (numargs) {
-                    case 4:
-                        t.sendFile(args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), 0, false);
+            switch (numargs) {
+                case 4:
+                    t.sendFile(args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), 0, false);
+                    break;
+                case 5:
+                    int burstDelay = Integer.parseInt(args[4]);
+                    if (burstDelay < 10 || burstDelay > 1000) {
+                        System.err.println("Invalid burstDelay; valid values are 10 to 1000 ms");
                         break;
-                    case 5:
-                        int burstDelay = Integer.parseInt(args[4]);
-                        if (burstDelay < 10 || burstDelay > 1000) {
-                            System.err.println("Invalid burstDelay; valid values are 10 to 1000 ms");
-                            break;
-                        }
-                        if (burstDelay > 200) {
-                            System.out.println("WARNING: For larger values of burstDelay it can take a while to achieve the requested rate.");
-                        }
+                    }
+                    if (burstDelay > 200) {
+                        System.out.println("WARNING: For larger values of burstDelay it can take a while to achieve the requested rate.");
+                    }
 
-                        t.sendFile(args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), burstDelay, false);
-                        break;
-                    case 6:
-                        t.sendFile(args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), Boolean.parseBoolean(args[5]));
-                        break;
-                }
-
-                t.shutdown();
-
+                    t.sendFile(args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), burstDelay, false);
+                    break;
+                case 6:
+                    t.sendFile(args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), Boolean.parseBoolean(args[5]));
+                    break;
             }
+
+            t.shutdown();
 
         }
 
