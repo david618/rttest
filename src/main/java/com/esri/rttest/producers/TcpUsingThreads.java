@@ -90,7 +90,7 @@ public class TcpUsingThreads {
      * @param numThreads
      * @param appendTime If set to true system time is appended (assumes csv)
      */
-    public void sendFile(String appNamePattern, String filename, Integer rate, Integer numToSend, Integer numThreads, boolean appendTime) {
+    public void sendFile(String appNamePattern, String filename, Integer rate, Integer numToSend, Integer numThreads, Integer threadOffset, boolean appendTime) {
         try {
             
             // See if the url contains app(name)
@@ -204,7 +204,7 @@ public class TcpUsingThreads {
             
             for (int i = 0; i< numThreads; i++) {
                 // Use modulo to get one of the ipport's 0
-                IPPort ipPort = ipPorts.get((i + 1) % ipPorts.size());                
+                IPPort ipPort = ipPorts.get((i + threadOffset) % ipPorts.size());                
                 threads[i] = new TcpSenderThread(lbq, ipPort.getIp(), ipPort.getPort());
                 threads[i].start();
 
@@ -336,7 +336,7 @@ public class TcpUsingThreads {
 
         // Example Command Line args: localhost 5565 faa-stream.csv 1000 10000
         int numargs = args.length;
-        if (numargs < 4 || numargs > 6) {
+        if (numargs < 4 || numargs > 7) {
             // append append time option was added to support end-to-end latency; I used it for Trinity testing
             System.err.println("Usage: Tcp2 <server:port> <file> <rate> <numrecords> (numThreads=1) (append-time=false)");
             System.err.println("server:port: The IP or hostname of server to send events to. Could be ip:port, dns-name:port, or app[marathon-app-name(:portindex)]");
@@ -344,6 +344,7 @@ public class TcpUsingThreads {
             System.err.println("rate: Attempts to send at this rate.");
             System.err.println("numrecords: Sends this many lines; file is automatically recycled if needed.");
             System.err.println("numThread: Number of threads defaults to 1");
+            System.err.println("threadOffset: Start with this ip (defaults to 0)");
             System.err.println("append-time: Adds system time as extra parameter to each request. ");
         } else {
             // Initial the TcpUsingThreads Class with the server and port
@@ -353,6 +354,7 @@ public class TcpUsingThreads {
                 Integer rate = Integer.parseInt(args[2]);                
                 Integer numrecords = Integer.parseInt(args[3]);                
                 Integer numThreads = 1;
+                Integer threadOffset = 0;
                 Boolean appendTime = false;
 
                 switch (numargs) {
@@ -361,13 +363,18 @@ public class TcpUsingThreads {
                         break;
                     case 6:
                         numThreads = Integer.parseInt(args[4]);                        
-                        appendTime = Boolean.parseBoolean(args[5]);
+                        threadOffset = Integer.parseInt(args[5]);
+                        break;
+                    case 7:
+                        numThreads = Integer.parseInt(args[4]);                        
+                        threadOffset = Integer.parseInt(args[5]);
+                        appendTime = Boolean.parseBoolean(args[6]);
                         break;
                 }
 
 
                 TcpUsingThreads t = new TcpUsingThreads();
-                t.sendFile(serverPort, filename, rate, numrecords, numThreads, appendTime);
+                t.sendFile(serverPort, filename, rate, numrecords, numThreads, threadOffset, appendTime);
 
 
         }
