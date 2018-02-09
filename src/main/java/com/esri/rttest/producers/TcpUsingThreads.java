@@ -204,7 +204,8 @@ public class TcpUsingThreads {
             
             for (int i = 0; i< numThreads; i++) {
                 // Use modulo to get one of the ipport's 0
-                IPPort ipPort = ipPorts.get((i + threadOffset) % ipPorts.size());                
+                IPPort ipPort = ipPorts.get((i + threadOffset) % ipPorts.size());   
+                System.out.println("Thread " + i + ":" + ipPort);
                 threads[i] = new TcpSenderThread(lbq, ipPort.getIp(), ipPort.getPort());
                 threads[i].start();
 
