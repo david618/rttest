@@ -166,6 +166,16 @@ public class FeatureLayerMon {
                         t2 = 0L;
                         regression = new SimpleRegression();
 
+                    } else if (cnt1 < cnt2) {
+                        // The number has gone down reset
+                        cnt1 = -1;
+                        cnt2 = -1;
+                        stcnt = 0;
+                        numSamples = 0;
+                        t1 = 0L;
+                        t2 = 0L;
+                        regression = new SimpleRegression();                        
+                        
                     }
 
                     cnt2 = cnt1;
