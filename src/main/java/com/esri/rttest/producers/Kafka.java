@@ -60,7 +60,7 @@ public class Kafka {
             props.put("batch.size", 16384);
             props.put("linger.ms", 1);
             props.put("buffer.memory", 8192000);
-            props.put("request.timeout.ms", "11000");
+//            props.put("request.timeout.ms", "11000");
             props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
             props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
             /* Addin Simple Partioner didn't help */
@@ -76,8 +76,7 @@ public class Kafka {
      * @param filename File with lines of data to be sent.
      * @param rate Rate in lines per second to send.
      * @param numToSend Number of lines to send. If more than number of lines in file will resend from start.
-     * @param burstDelay Number of milliseconds to burst at; set to 0 to send one line at a time 
-     * @param tweak Used to tweak the actual send rate adjusting for hardware.  (optional)
+     * @param burstDelay Number of milliseconds to burst at; set to 0 to send one line at a time
      */
     public void sendFile(String filename, Integer rate, Integer numToSend, Integer burstDelay) {
         try {
@@ -162,7 +161,7 @@ public class Kafka {
                     final long stime = System.nanoTime();
                     
                     UUID uuid = UUID.randomUUID();
-                    producer.send(new ProducerRecord<>(this.topic, uuid.toString(),line));
+                    producer.send(new ProducerRecord<>(this.topic, uuid.toString(),line));                                        
 
                     
                     long etime;
@@ -227,6 +226,10 @@ public class Kafka {
                 }
             
             }            
+            
+            // This command was needed when running multiple instances of Kafka; otherwise, lines were lost
+            producer.flush();
+            
             Double sendRate = (double) cnt / (System.currentTimeMillis() - st) * 1000;
             
             System.out.println(cnt + "," + String.format("%.0f", sendRate));
