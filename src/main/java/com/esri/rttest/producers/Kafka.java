@@ -60,7 +60,7 @@ public class Kafka {
             props.put("batch.size", 16384);
             props.put("linger.ms", 1);
             props.put("buffer.memory", 8192000);
-//            props.put("request.timeout.ms", "11000");
+            props.put("request.timeout.ms", "11000");
             props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
             props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
             /* Addin Simple Partioner didn't help */
