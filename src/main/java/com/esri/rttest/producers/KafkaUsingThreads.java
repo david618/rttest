@@ -217,8 +217,9 @@ public class KafkaUsingThreads {
 
             System.out.println(cnts + "," + cntErr + "," + String.format("%.0f", sendRate));
 
+            producer.close();
             System.exit(0);
-
+            
         } catch (IOException | InterruptedException e) {
             // Could fail on very large files that would fill heap space 
 
