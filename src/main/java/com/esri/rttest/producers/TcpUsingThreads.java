@@ -88,6 +88,7 @@ public class TcpUsingThreads {
      * @param numToSend Number of lines to send. If more than number of lines in
      * file will resend from start.
      * @param numThreads
+     * @param threadOffset
      * @param appendTime If set to true system time is appended (assumes csv)
      */
     public void sendFile(String appNamePattern, String filename, Integer rate, Integer numToSend, Integer numThreads, Integer threadOffset, boolean appendTime) {
@@ -293,7 +294,7 @@ public class TcpUsingThreads {
                         break;
                     }
 
-                    // End if cnts is changing 
+                    // End if cnts are not changing 
                     if (cnts == prevCnts) {
                         System.out.println("Counts are not changing.");
                         break;
