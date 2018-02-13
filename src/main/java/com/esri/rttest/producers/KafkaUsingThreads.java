@@ -36,6 +36,10 @@ import org.apache.logging.log4j.Logger;
 /*
  * Sends lines of a text file to a Kafka Topic 
  * Lines are sent at a specified rate.
+ * The use of Threads did not improve the send rate.
+ *   Max Send rate is around 150k/s regardless of number of threads
+ *   Also attempted to create multiple producers with unique client id's
+ *   The best and easiest solution was to use a bash script (e.g. runKafkaTest.sh) to run multiple instances of Kafka
  * 
  * @author david
  */
