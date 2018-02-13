@@ -208,7 +208,7 @@ public class KafkaUsingThreads {
         
         // Command Line d1.trinity.dev:9092 simFile simFile_1000_10s.dat 1000 10000
         if (numArgs != 5 && numArgs != 6) {
-            System.err.print("Usage: Kafka <broker> <topic> <file> <rate> <numrecords> (<numThreads>)\n");
+            System.err.print("Usage: KafkaUsingThreads <broker> <topic> <file> <rate> <numrecords> (<numThreads>)\n");
         } else {
 
             

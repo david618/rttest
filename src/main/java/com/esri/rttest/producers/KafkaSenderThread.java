@@ -41,9 +41,12 @@ public class KafkaSenderThread extends Thread {
         this.lbq = lbq;
         this.topic = topic;
         // https://kafka.apache.org/documentation/#producerconfigs
+        
+        UUID uuid = UUID.randomUUID();
+        
         Properties props = new Properties();
         props.put("bootstrap.servers", brokers);
-        props.put("client.id", KafkaUsingThreads.class.getName());
+        props.put("client.id", KafkaUsingThreads.class.getName() + uuid.toString());
         props.put("acks", "1");
         props.put("retries", 0);
         props.put("batch.size", 16384);
