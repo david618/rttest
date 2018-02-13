@@ -18,10 +18,8 @@
  */
 package com.esri.rttest.producers;
 
-import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
@@ -34,32 +32,14 @@ public class KafkaSenderThread extends Thread {
     LinkedBlockingQueue<String> lbq;
     private volatile boolean running = true;
 
-    private final Producer<String, String> producer;
+    private Producer<String, String> producer;
     private String topic;
 
-    public KafkaSenderThread(LinkedBlockingQueue<String> lbq, String brokers, String topic) {
+    public KafkaSenderThread(LinkedBlockingQueue<String> lbq, Producer<String, String> producer, String topic) {
         this.lbq = lbq;
         this.topic = topic;
-        // https://kafka.apache.org/documentation/#producerconfigs
-        
-        UUID uuid = UUID.randomUUID();
-        
-        Properties props = new Properties();
-        props.put("bootstrap.servers", brokers);
-        props.put("client.id", KafkaUsingThreads.class.getName() + uuid.toString());
-        props.put("acks", "1");
-        props.put("retries", 0);
-        props.put("batch.size", 16384);
-        props.put("linger.ms", 1);
-        props.put("buffer.memory", 8192000);
-        props.put("request.timeout.ms", "11000");
-        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        /* Addin Simple Partioner didn't help */
-        //props.put("partitioner.class", SimplePartitioner.class.getCanonicalName());
+        this.producer = producer;
 
-        this.producer = new KafkaProducer<>(props);
-        this.topic = topic;
 
     }
 

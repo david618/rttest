@@ -25,7 +25,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.Producer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -41,6 +45,10 @@ public class KafkaUsingThreads {
 
     LinkedBlockingQueue<String> lbq = new LinkedBlockingQueue<>();
 
+    
+    private Producer<String, String> producer;
+   
+    
     /**
      *
      * @param brokers
@@ -53,6 +61,25 @@ public class KafkaUsingThreads {
      */
     public void sendFile(String brokers, String topic, String filename, Integer rate, Integer numToSend, Integer numThreads) {
         try {
+
+            // https://kafka.apache.org/documentation/#producerconfigs
+
+            Properties props = new Properties();
+            props.put("bootstrap.servers", brokers);
+            props.put("client.id", KafkaUsingThreads.class.getName());
+            props.put("acks", "1");
+            props.put("retries", 0);
+            props.put("batch.size", 16384);
+            props.put("linger.ms", 1);
+            props.put("buffer.memory", 8192000);
+            props.put("request.timeout.ms", "11000");
+            props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+            props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+            /* Addin Simple Partioner didn't help */
+            //props.put("partitioner.class", SimplePartitioner.class.getCanonicalName());
+
+            this.producer = new KafkaProducer<>(props);
+
             FileReader fr = new FileReader(filename);
             BufferedReader br = new BufferedReader(fr);
 
@@ -76,17 +103,16 @@ public class KafkaUsingThreads {
 
             KafkaSenderThread[] threads = new KafkaSenderThread[numThreads];
 
-            
-            for (int i = 0; i< numThreads; i++) {
+            for (int i = 0; i < numThreads; i++) {
 
-                threads[i] = new KafkaSenderThread(lbq, brokers, topic);
+                threads[i] = new KafkaSenderThread(lbq, producer, topic);
                 threads[i].start();
 
-            }            
-            
+            }
+
             Long timeLastDisplayedRate = System.currentTimeMillis();
-            Long timeStartedBatch = System.currentTimeMillis();             
-            
+            Long timeStartedBatch = System.currentTimeMillis();
+
             while (cnt < numToSend) {
 
                 if (System.currentTimeMillis() - timeLastDisplayedRate > 5000) {
@@ -106,9 +132,8 @@ public class KafkaUsingThreads {
 
                     System.out.println(cnts + "," + cntErr + "," + String.format("%.0f", curRate));
 
-                }      
+                }
 
-                
                 if (!linesIt.hasNext()) {
                     linesIt = lines.iterator();  // Reset Iterator
                 }
@@ -116,7 +141,7 @@ public class KafkaUsingThreads {
                 line = linesIt.next() + "\n";
 
                 lbq.put(line);
-                
+
                 cnt += 1;
 
                 if (cnt % rate == 0) {
@@ -127,7 +152,7 @@ public class KafkaUsingThreads {
                         Thread.sleep(timeToWait);
                     }
                     timeStartedBatch = System.currentTimeMillis();
-                }                
+                }
 
             }
 
@@ -173,8 +198,8 @@ public class KafkaUsingThreads {
                     prevCnts = cnts;
 
                 }
-            }            
-            
+            }
+
             // Terminate Threads
             for (KafkaSenderThread thread : threads) {
                 thread.terminate();
@@ -192,7 +217,7 @@ public class KafkaUsingThreads {
 
             System.out.println(cnts + "," + cntErr + "," + String.format("%.0f", sendRate));
 
-            System.exit(0); 
+            System.exit(0);
 
         } catch (IOException | InterruptedException e) {
             // Could fail on very large files that would fill heap space 
@@ -205,14 +230,13 @@ public class KafkaUsingThreads {
     public static void main(String args[]) throws Exception {
 
         int numArgs = args.length;
-        
+
         // Command Line d1.trinity.dev:9092 simFile simFile_1000_10s.dat 1000 10000
         if (numArgs != 5 && numArgs != 6) {
             System.err.print("Usage: KafkaUsingThreads <broker> <topic> <file> <rate> <numrecords> (<numThreads>)\n");
         } else {
 
-            
-            String brokers = args[0];            
+            String brokers = args[0];
 
             String brokerSplit[] = brokers.split(":");
 
@@ -221,20 +245,18 @@ public class KafkaUsingThreads {
                 brokers = new MarathonInfo().getBrokers(brokers);
             }   // Otherwise assume it's brokers 
 
-            String topic = args[1];            
+            String topic = args[1];
             String file = args[2];
             Integer rate = Integer.parseInt(args[3]);
             Integer numToSend = Integer.parseInt(args[4]);
             Integer numThreads = 1;
-            
+
             if (numArgs == 6) {
                 numThreads = Integer.parseInt(args[5]);
             }
-                    
-            
-            
+
             KafkaUsingThreads t = new KafkaUsingThreads();
-            t.sendFile(brokers,topic,file,rate,numToSend,numThreads);
+            t.sendFile(brokers, topic, file, rate, numToSend, numThreads);
 
         }
 
