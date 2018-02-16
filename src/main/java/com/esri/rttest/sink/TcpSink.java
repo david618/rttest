@@ -151,7 +151,7 @@ public class TcpSink {
 
             // Setup Timer to Get Counts
             Timer timer = new Timer(true);
-            timer.scheduleAtFixedRate(new GetCounts(tssList, autoTerminate), 0, this.sampleEveryNSecs);
+            timer.scheduleAtFixedRate(new GetCounts(tssList, autoTerminate), 0, this.sampleEveryNSecs * 1000);
 
             while (true) {
                 Socket cs = ss.accept();
