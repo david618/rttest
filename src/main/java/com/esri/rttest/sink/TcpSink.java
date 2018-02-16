@@ -104,6 +104,8 @@ public class TcpSink {
                         }
                       
                         if (autoTerminate) tss.terminate();
+                        
+                        tss.reset();
 
                     }
 
