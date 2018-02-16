@@ -34,7 +34,7 @@
  * In a Round-robin fashion send requests to each of the elasticsearch nodes.  
  * 
  */
-package com.esri.rttest.producers;
+package com.esri.rttest.send;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

@@ -18,9 +18,9 @@
  */
 
 
-package com.esri.rttest.producers;
+package com.esri.rttest.send;
 
-import com.esri.rttest.monitors.KafkaTopicMon;
+import com.esri.rttest.mon.KafkaTopicMon;
 import com.esri.rttest.MarathonInfo;
 import java.io.BufferedReader;
 import java.io.FileReader;

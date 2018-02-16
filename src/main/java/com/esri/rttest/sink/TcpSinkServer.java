@@ -21,7 +21,7 @@
  *
  * Creator: David Jennings
  */
-package com.esri.rttest.sinks;
+package com.esri.rttest.sink;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -62,6 +62,11 @@ public class TcpSinkServer extends Thread {
         return firstTime;
     }
     
+    public void reset() {
+        this.cnt = 0;
+        this.lastTime = 0L;
+        this.firstTime = 0L;        
+    }
     
     
     public void terminate() {

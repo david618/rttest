@@ -19,7 +19,7 @@
 /**
  * Test Class
  */
-package com.esri.rttest.producers;
+package com.esri.rttest.send;
 
 import com.esri.rttest.MarathonInfo;
 import java.io.BufferedReader;

@@ -16,9 +16,9 @@
  * Contributors:
  *     David Jennings
  */
-package com.esri.rttest.producers;
+package com.esri.rttest.send;
 
-import com.esri.rttest.producers.HttpPosterThread;
+import com.esri.rttest.send.HttpPosterThread;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;

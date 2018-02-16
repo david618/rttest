@@ -25,7 +25,7 @@
  * 
  * Creator: David Jennings
  */
-package com.esri.rttest.sinks;
+package com.esri.rttest.sink;
 
 import java.net.URI;
 import java.util.concurrent.TimeUnit;

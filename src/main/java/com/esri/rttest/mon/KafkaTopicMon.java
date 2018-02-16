@@ -28,7 +28,7 @@
  * Creator: David Jennings
  *
  */
-package com.esri.rttest.monitors;
+package com.esri.rttest.mon;
 
 import java.util.Collections;
 import java.util.Iterator;

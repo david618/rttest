@@ -38,7 +38,7 @@
  * 
  * Creator: David Jennings
  */
-package com.esri.rttest.producers;
+package com.esri.rttest.send;
 
 import com.esri.rttest.IPPort;
 import com.esri.rttest.MarathonInfo;

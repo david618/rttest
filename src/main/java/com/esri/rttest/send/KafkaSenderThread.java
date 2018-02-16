@@ -16,7 +16,7 @@
  * Contributors:
  *     David Jennings
  */
-package com.esri.rttest.producers;
+package com.esri.rttest.send;
 
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;

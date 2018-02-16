@@ -22,7 +22,7 @@
  *
  * Creator: David Jennings
  */
-package com.esri.rttest.sinks;
+package com.esri.rttest.sink;
 
 import java.util.Timer;
 import java.util.TimerTask;

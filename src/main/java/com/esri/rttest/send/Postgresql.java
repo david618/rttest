@@ -21,7 +21,7 @@
 Send data to Postgresql; In development.
 
  */
-package com.esri.rttest.producers;
+package com.esri.rttest.send;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
