@@ -110,14 +110,17 @@ public class TcpSinkServer extends Thread {
                         }
                     }
 
-                } 
+                } else {
+                    Thread.sleep(1000);
+                }
                 if (!running) {
                     break;
                 }
+                
 
             }
 
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             //e.printStackTrace();
         }
 
