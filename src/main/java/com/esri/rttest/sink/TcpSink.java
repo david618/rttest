@@ -103,9 +103,14 @@ public class TcpSink {
                             et = tss.lastTime;
                         }
                       
-                        if (autoTerminate) tss.terminate();
+                        if (autoTerminate) {
+                            tss.terminate();
+                            
+                        } else {
+                            tss.reset();
+                        }
                         
-                        tss.reset();
+                        
 
                     }
 
@@ -147,7 +152,7 @@ public class TcpSink {
             ServerSocket ss = new ServerSocket(port);
 
             System.out.println("After starting this; create or restart the GeoEvent service.");
-            System.out.println("Once connected you see a 'Listening' message");
+            System.out.println("Once connected you see a 'Thread Started' message for each connection.");
 
             ArrayList<TcpSinkServer> tssList = new ArrayList<>();
 

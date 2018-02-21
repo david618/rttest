@@ -16,5 +16,5 @@ NUMTHRDS=$6
 
 
 for i in $(seq 1 $NUMTHRDS); do
-  java -cp target/rttest.jar com.esri.rttest.producers.Kafka $SERVER $TOPIC $FILE $RATE $NUMSEND > ${0}_${i}.dat 2>&1 &
+  java -cp target/rttest.jar com.esri.rttest.send.Kafka $SERVER $TOPIC $FILE $RATE $NUMSEND > runKafkaTest_${i}.dat 2>&1 &
 done

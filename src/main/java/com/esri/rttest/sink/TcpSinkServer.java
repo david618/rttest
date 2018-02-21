@@ -37,6 +37,7 @@ import java.util.logging.Logger;
 public class TcpSinkServer extends Thread {
 
     private Socket socket = null;
+    boolean running;
     boolean displayMessages;
     long cnt;
     long lastTime;
@@ -48,6 +49,7 @@ public class TcpSinkServer extends Thread {
         this.lastTime = 0L;
         this.firstTime = 0L;
         this.displayMessages = displayMessages;
+        this.running = true;
     }
 
     public long getCnt() {
@@ -76,8 +78,9 @@ public class TcpSinkServer extends Thread {
             this.lastTime = 0L;
             this.firstTime = 0L;
             socket.close();            
+            running = false;
             this.interrupt();
-            Thread.currentThread().interrupt();
+            
         } catch (IOException ex) {
             Logger.getLogger(TcpSinkServer.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -108,6 +111,9 @@ public class TcpSinkServer extends Thread {
                     }
 
                 } 
+                if (!running) {
+                    break;
+                }
 
             }
 
