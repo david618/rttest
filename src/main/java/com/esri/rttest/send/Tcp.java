@@ -56,11 +56,6 @@ import java.util.Iterator;
  */
 public class Tcp {
 
-    private static final String IPADDRESS_PATTERN
-            = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
 
     private OutputStream[] os;
     private Integer numStream;
@@ -68,9 +63,7 @@ public class Tcp {
     public Tcp(String appNamePattern) {
 
         try {
-            
-            
-
+                        
             ArrayList<IPPort> ipPorts = IPPorts.getInstance().getIPPorts(appNamePattern);
 
             if (ipPorts.isEmpty()) {

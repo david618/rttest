@@ -15,5 +15,5 @@ NUMTHRDS=$5
 
 
 for i in $(seq 1 $NUMTHRDS); do
-  java -cp target/rttest.jar com.esri.rttest.send.Tcp $SERVER $FILE $RATE $NUMSEND > ~/runTcpTest_${i}.dat 2>&1 &
+  java -cp target/rttest.jar com.esri.rttest.send.Tcp2 $SERVER $FILE $RATE $NUMSEND > ~/runTcpTest_${i}.dat 2>&1 &
 done

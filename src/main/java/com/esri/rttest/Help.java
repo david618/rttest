@@ -36,6 +36,7 @@ public class Help {
         System.out.println("com.esri.send.Kafka           : Send lines from file to Kafka.");
         System.out.println("com.esri.send.Postgresql      : Send lines from a file to Postgresql Database.");        
         System.out.println("com.esri.send.Tcp             : Send lines from file to server on tcp port.");
+        System.out.println("com.esri.send.Tcp2            : Send lines from file to server on tcp port (uses threads).");
         
         System.out.println("");
         System.out.println("Classes that monitor.");        
