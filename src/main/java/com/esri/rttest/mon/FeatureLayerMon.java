@@ -33,6 +33,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 import javax.net.ssl.SSLContext;
@@ -60,10 +61,12 @@ public class FeatureLayerMon {
 
     class CheckCount extends TimerTask {
 
-        int cnt1;
-        int cnt2;
-        int stcnt;
+        long cnt1;
+        long cnt2;
+        long startCount;
+        long endCount; 
         int numSamples;
+        HashMap<Long, Long> samples;
         long t1;
         long t2;
         SimpleRegression regression;
@@ -72,16 +75,39 @@ public class FeatureLayerMon {
             regression = new SimpleRegression();
             cnt1 = 0;
             cnt2 = -1;
-            stcnt = 0;
+            startCount = 0;
+            endCount = 0;
             numSamples = 0;
             t1 = 0L;
             t2 = 0L;
+            samples = null;
 
         }
 
+        boolean isRunning() {
+            if (cnt1 > 0) 
+                return true;
+            else 
+                return false;
+        }
+        
+        HashMap<Long, Long> getSamples() {
+            return samples;
+        }
+        
+        
+        long getStartCount() {
+            return startCount;
+        }
+        
+        long getEndCount() {
+            return endCount;
+        }
+        
+        
         @Override
         public void run() {
-            try {
+            try {                
 
                 String url = featureLayerURL + "/query?where=1%3D1&returnCountOnly=true&f=json";
                 SSLContext sslContext = SSLContext.getInstance("SSL");
@@ -89,20 +115,20 @@ public class FeatureLayerMon {
                 sslContext.init(null, new TrustManager[]{new X509TrustManager() {
                     @Override
                     public X509Certificate[] getAcceptedIssuers() {
-                        System.out.println("getAcceptedIssuers =============");
+                        if (sendStdout) System.out.println("getAcceptedIssuers =============");
                         return null;
                     }
 
                     @Override
                     public void checkClientTrusted(X509Certificate[] certs,
                             String authType) {
-                        System.out.println("checkClientTrusted =============");
+                        if (sendStdout) System.out.println("checkClientTrusted =============");
                     }
 
                     @Override
                     public void checkServerTrusted(X509Certificate[] certs,
                             String authType) {
-                        System.out.println("checkServerTrusted =============");
+                        if (sendStdout) System.out.println("checkServerTrusted =============");
                     }
                 }}, new SecureRandom());
 
@@ -138,63 +164,65 @@ public class FeatureLayerMon {
 
                 if (cnt2 == -1) {
                     cnt2 = cnt1;
-                    stcnt = cnt1;
+                    startCount = cnt1;
+                    endCount = cnt1;                    
+                    regression = new SimpleRegression();
+                    samples = new HashMap<>();
+                    numSamples = 0;
 
                 } else if (cnt1 > cnt2) {
                     // Add to Linear Regression
                     regression.addData(t1, cnt1);
 
+                    samples.put(t1, cnt1);
                     // Increase number of samples
                     numSamples += 1;
                     if (numSamples > 2) {
                         double rcvRate = regression.getSlope() * 1000;
-                        System.out.format("%d,%d,%d,%.0f\n", numSamples, t1, cnt1, rcvRate);
+                        if (sendStdout) System.out.format("%d,%d,%d,%.0f\n", numSamples, t1, cnt1, rcvRate);
                     } else {
                         //System.out.println(numSamples + "," + t1 + "," + cnt1);
-                        System.out.format("%d,%d,%d\n", numSamples, t1, cnt1);
+                        if (sendStdout) System.out.format("%d,%d,%d\n", numSamples, t1, cnt1);
                     }
 
                 } else if (cnt1 == cnt2 && numSamples > 0) {
+                    endCount = cnt1;
+                    
                     numSamples -= 1;
                     // Remove the last sample
                     regression.removeData(t2, cnt2);
-                    System.out.println("Removing: " + t2 + "," + cnt2);
+                    samples.remove(t2, cnt2);
+                    if (sendStdout) System.out.println("Removing: " + t2 + "," + cnt2);
                     // Output Results
-                    int cnt = cnt2 - stcnt;
+                    long cnt = cnt2 - startCount;
                     double rcvRate = regression.getSlope() * 1000;  // converting from ms to seconds
 
                     if (numSamples > 5) {
                         double rateStdErr = regression.getSlopeStdErr();
-                        System.out.format("%d , %.2f, %.4f\n", cnt, rcvRate, rateStdErr);
+                        if (sendStdout) System.out.format("%d , %.2f, %.4f\n", cnt, rcvRate, rateStdErr);
                     } else if (numSamples >= 2) {
-                        System.out.format("%d , %.2f\n", cnt, rcvRate);
+                        if (sendStdout) System.out.format("%d , %.2f\n", cnt, rcvRate);
                     } else {
-                        System.out.println("Not enough samples to calculate rate. ");
+                        if (sendStdout) System.out.println("Not enough samples to calculate rate. ");
                     }
 
                     // Reset 
                     cnt1 = -1;
                     cnt2 = -1;
-                    stcnt = 0;
-                    numSamples = 0;
                     t1 = 0L;
                     t2 = 0L;
-                    regression = new SimpleRegression();
 
                 } else if (cnt1 < cnt2) {
                     // The number has gone down reset
                     cnt1 = -1;
                     cnt2 = -1;
-                    stcnt = 0;
-                    numSamples = 0;
                     t1 = 0L;
                     t2 = 0L;
-                    regression = new SimpleRegression();
-
                 }
 
                 cnt2 = cnt1;
                 t2 = t1;
+                
 
             } catch (IOException | UnsupportedOperationException | KeyManagementException | NoSuchAlgorithmException | JSONException e) {
                 log.error("ERROR", e);
@@ -207,11 +235,12 @@ public class FeatureLayerMon {
     Timer timer;
     String featureLayerURL;
     int sampleRateSec;
+    boolean sendStdout; 
 
-    public FeatureLayerMon(String featureLayerURL, int sampleRateSec) {
+    public FeatureLayerMon(String featureLayerURL, int sampleRateSec, boolean sendStdout) {
         this.featureLayerURL = featureLayerURL;
         this.sampleRateSec = sampleRateSec;
-        
+        this.sendStdout = sendStdout;
 
     }
     
@@ -243,7 +272,7 @@ public class FeatureLayerMon {
             }
         }
          
-        FeatureLayerMon t = new FeatureLayerMon(url, sampleRateSec);
+        FeatureLayerMon t = new FeatureLayerMon(url, sampleRateSec, true);
         t.run();
         
 

@@ -113,7 +113,7 @@ public class KafkaTopicMon {
                 
                 if (numSamples > 2) {
                     double rcvRate = regression.getSlope() * 1000;
-                    System.out.println(numSamples + "," + t1 + "," + cnt1 + "," + String.format("%.0f", rcvRate));
+                    if (sendStdout) System.out.println(numSamples + "," + t1 + "," + cnt1 + "," + String.format("%.0f", rcvRate));
                 } else {
                     System.out.println(numSamples + "," + t1 + "," + cnt1);
                 }
@@ -123,18 +123,18 @@ public class KafkaTopicMon {
                 numSamples -= 1;
                 // Remove the last sample
                 regression.removeData(t2, cnt2);
-                System.out.println("Removing: " + t2 + "," + cnt2);
+                if (sendStdout) System.out.println("Removing: " + t2 + "," + cnt2);
                 // Output Results
                 long cnt = cnt2 - stcnt;
                 double rcvRate = regression.getSlope() * 1000;  // converting from ms to seconds
 
                 if (numSamples > 5) {
                     double rateStdErr = regression.getSlopeStdErr();
-                    System.out.format("%d , %.0f, %.4f\n", cnt, rcvRate, rateStdErr);
+                    if (sendStdout) System.out.format("%d , %.0f, %.4f\n", cnt, rcvRate, rateStdErr);
                 } else if (numSamples >= 2) {
-                    System.out.format("%d , %.0f\n", cnt, rcvRate);
+                    if (sendStdout) System.out.format("%d , %.0f\n", cnt, rcvRate);
                 } else {
-                    System.out.println("Not enough samples to calculate rate. ");
+                    if (sendStdout) System.out.println("Not enough samples to calculate rate. ");
                 }
 
                 // Reset 
@@ -161,13 +161,16 @@ public class KafkaTopicMon {
     String topic;
     long sampleRate;
     KafkaConsumer<String, String> consumer;
+    boolean sendStdout;
 
-    public KafkaTopicMon(String brokers, String topic, long sampleRate) {
+    public KafkaTopicMon(String brokers, String topic, long sampleRate, boolean sendStdout) {
 
         try {
             this.brokers = brokers;
             this.topic = topic;
             this.sampleRate = sampleRate;
+            this.sendStdout = sendStdout;
+            
             Properties props = new Properties();
             
             // https://kafka.apache.org/documentation/#consumerconfigs
@@ -245,7 +248,7 @@ public class KafkaTopicMon {
             }
         } 
         
-        KafkaTopicMon ktm = new KafkaTopicMon(broker, topic, sampleRateSec);
+        KafkaTopicMon ktm = new KafkaTopicMon(broker, topic, sampleRateSec, true);
         ktm.run();
         
 

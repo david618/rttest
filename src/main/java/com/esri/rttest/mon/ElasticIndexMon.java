@@ -100,20 +100,20 @@ public class ElasticIndexMon {
                 sslContext.init(null, new TrustManager[]{new X509TrustManager() {
                     @Override
                     public X509Certificate[] getAcceptedIssuers() {
-                        System.out.println("getAcceptedIssuers =============");
+                        if (sendStdout) System.out.println("getAcceptedIssuers =============");
                         return null;
                     }
 
                     @Override
                     public void checkClientTrusted(X509Certificate[] certs,
                             String authType) {
-                        System.out.println("checkClientTrusted =============");
+                        if (sendStdout) System.out.println("checkClientTrusted =============");
                     }
 
                     @Override
                     public void checkServerTrusted(X509Certificate[] certs,
                             String authType) {
-                        System.out.println("checkServerTrusted =============");
+                        if (sendStdout) System.out.println("checkServerTrusted =============");
                     }
                 }}, new SecureRandom());
 
@@ -169,18 +169,18 @@ public class ElasticIndexMon {
                     numSamples -= 1;
                     // Remove the last sample
                     regression.removeData(t2, cnt2);
-                    System.out.println("Removing: " + t2 + "," + cnt2);
+                    if (sendStdout) System.out.println("Removing: " + t2 + "," + cnt2);
                     // Output Results
                     int cnt = cnt2 - stcnt;
                     double rcvRate = regression.getSlope() * 1000;  // converting from ms to seconds
 
                     if (numSamples > 5) {
                         double rateStdErr = regression.getSlopeStdErr();
-                        System.out.format("%d , %.2f, %.4f\n", cnt, rcvRate, rateStdErr);
+                        if (sendStdout) System.out.format("%d , %.2f, %.4f\n", cnt, rcvRate, rateStdErr);
                     } else if (numSamples >= 2) {
-                        System.out.format("%d , %.2f\n", cnt, rcvRate);
+                        if (sendStdout) System.out.format("%d , %.2f\n", cnt, rcvRate);
                     } else {
-                        System.out.println("Not enough samples to calculate rate. ");
+                        if (sendStdout) System.out.println("Not enough samples to calculate rate. ");
                     }
 
                     // Reset 
@@ -222,8 +222,9 @@ public class ElasticIndexMon {
     String user;
     String userpw;
     int sampleRateSec;
+    boolean sendStdout;     
 
-    public ElasticIndexMon(String esServer, String indexType, String user, String userpw, int sampleRateSec) {
+    public ElasticIndexMon(String esServer, String indexType, String user, String userpw, int sampleRateSec, boolean sendStdout) {
 
 //        esServer = "ags:9220";
 //        index = "FAA-Stream/FAA-Stream";
@@ -234,6 +235,7 @@ public class ElasticIndexMon {
         this.user = user;
         this.userpw = userpw;
         this.sampleRateSec = sampleRateSec;
+        this.sendStdout = sendStdout;
     }
 
     public void run() {
@@ -259,7 +261,7 @@ public class ElasticIndexMon {
         log.info("Entering application.");
         int numargs = args.length;
         if (numargs != 2 && numargs != 4 && numargs != 5) {
-            System.err.print("Usage: ElasticIndexMon <ElasticsearchServerPort> <Index/Type> (<username> <password> <sampleRateSec>) \n");
+            System.err.print("Usage: ElasticIndexMon [ElasticsearchServerPort] [Index/Type] (username) (password) (sampleRateSec) \n");
         } else {
             elasticSearchServerPort = args[0];
             indexType = args[1];
@@ -275,7 +277,7 @@ public class ElasticIndexMon {
 
         }
 
-        ElasticIndexMon t = new ElasticIndexMon(elasticSearchServerPort, indexType, username, password, sampleRateSec);
+        ElasticIndexMon t = new ElasticIndexMon(elasticSearchServerPort, indexType, username, password, sampleRateSec, true);
         t.run();
 
 
