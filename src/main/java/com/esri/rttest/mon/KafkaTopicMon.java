@@ -128,7 +128,7 @@ public class KafkaTopicMon {
                 long cnt = cnt2 - stcnt;
                 double rcvRate = regression.getSlope() * 1000;  // converting from ms to seconds
 
-                if (numSamples > 4) {
+                if (numSamples > 5) {
                     double rateStdErr = regression.getSlopeStdErr();
                     System.out.format("%d , %.0f, %.4f\n", cnt, rcvRate, rateStdErr);
                 } else if (numSamples >= 2) {
@@ -228,18 +228,26 @@ public class KafkaTopicMon {
 
     public static void main(String[] args) {
 
+        String broker = "";
+        String topic = "";
+        int sampleRateSec = 5; // default to 5 seconds.
+        
         log.info("Entering application.");
         int numargs = args.length;
         if (numargs != 2 && numargs != 3) {
-            System.err.println("Usage: KakfaTopicMon <brokers> <topic> (<sampleRateSec>)");
-            System.err.println("Example Command: java -cp target/Simulator.jar com.esri.simulator.KafkaTopicMon broker.kafka.l4lb.thisdcos.directory:9092 simFile 2>/dev/null");
-        } else if (numargs == 2) {
-            KafkaTopicMon ktm = new KafkaTopicMon(args[0], args[1], 5);
-            ktm.run();
+            System.err.println("Usage: KakfaTopicMon [brokers] [topic] (sampleRateSec)");
+            System.err.println("Example Command: java -cp target/rttest.jar com.esri.rttest.mon.KafkaTopicMon broker.kafka.l4lb.thisdcos.directory:9092 simFile 2>/dev/null");
         } else {
-            KafkaTopicMon ktm = new KafkaTopicMon(args[0], args[1], Integer.parseInt(args[2]));
-            ktm.run();
-        }
+            broker = args[0];
+            topic = args[1];            
+            if (numargs == 3) {
+                sampleRateSec = Integer.parseInt(args[2]);
+            }
+        } 
+        
+        KafkaTopicMon ktm = new KafkaTopicMon(broker, topic, sampleRateSec);
+        ktm.run();
+        
 
     }
 

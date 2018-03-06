@@ -16,20 +16,21 @@
  * Contributors:
  *     David Jennings
  */
-
 /**
  * Monitors an Elasticsearch Index/Type.
  * Periodically does a count and when count is changing collects samples.
  * After three samples are made outputs rates based on linear regression.
  * After counts stop changing outputs the final rate and last estimated rate.
- * 
+ *
  * Creator: David Jennings
  */
-
 package com.esri.rttest.mon;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Timer;
@@ -48,6 +49,9 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -55,6 +59,8 @@ import org.json.JSONObject;
  * @author david
  */
 public class ElasticIndexMon {
+
+    private static final Logger log = LogManager.getLogger(ElasticIndexMon.class);
 
     class CheckCount extends TimerTask {
 
@@ -80,8 +86,10 @@ public class ElasticIndexMon {
         public void run() {
             try {
 
+                log.info("Checking Count");
+
                 // index/type
-                String url = "http://" + esServer + "/" + index + "/_count";
+                String url = "http://" + esServer + "/" + indexType + "/_count";
                 SSLContext sslContext = SSLContext.getInstance("SSL");
 
                 CredentialsProvider provider = new BasicCredentialsProvider();
@@ -133,6 +141,8 @@ public class ElasticIndexMon {
                 }
 
                 JSONObject json = new JSONObject(result.toString());
+                request.abort();
+                response.close();
 
                 cnt1 = json.getInt("count");
 
@@ -145,16 +155,15 @@ public class ElasticIndexMon {
                 } else if (cnt1 > cnt2) {
                     // Add to Linear Regression
                     regression.addData(t1, cnt1);
-                    
+
                     // Increase number of samples
                     numSamples += 1;
                     if (numSamples > 2) {
                         double rcvRate = regression.getSlope() * 1000;
-                        System.out.format("%d,%d,%d,%.0f\n",numSamples,t1,cnt1,rcvRate);                        
+                        System.out.format("%d,%d,%d,%.0f\n", numSamples, t1, cnt1, rcvRate);
                     } else {
-                        System.out.format("%d,%d,%d\n",numSamples,t1,cnt1);                        
+                        System.out.format("%d,%d,%d\n", numSamples, t1, cnt1);
                     }
-
 
                 } else if (cnt1 == cnt2 && numSamples > 0) {
                     numSamples -= 1;
@@ -165,7 +174,7 @@ public class ElasticIndexMon {
                     int cnt = cnt2 - stcnt;
                     double rcvRate = regression.getSlope() * 1000;  // converting from ms to seconds
 
-                    if (numSamples > 4) {
+                    if (numSamples > 5) {
                         double rateStdErr = regression.getSlopeStdErr();
                         System.out.format("%d , %.2f, %.4f\n", cnt, rcvRate, rateStdErr);
                     } else if (numSamples >= 2) {
@@ -183,13 +192,23 @@ public class ElasticIndexMon {
                     t2 = 0L;
                     regression = new SimpleRegression();
 
+                } else if (cnt1 < cnt2) {
+                    // The number has gone down reset
+                    cnt1 = -1;
+                    cnt2 = -1;
+                    stcnt = 0;
+                    numSamples = 0;
+                    t1 = 0L;
+                    t2 = 0L;
+                    regression = new SimpleRegression();
+
                 }
 
                 cnt2 = cnt1;
                 t2 = t1;
 
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (IOException | UnsupportedOperationException | KeyManagementException | NoSuchAlgorithmException | JSONException e) {
+                log.error("ERROR", e);
 
             }
 
@@ -199,36 +218,66 @@ public class ElasticIndexMon {
 
     Timer timer;
     String esServer;
-    String index;
+    String indexType;
     String user;
     String userpw;
+    int sampleRateSec;
 
-    public ElasticIndexMon(String esServer, String index, String user, String userpw, long sampleRate) {
+    public ElasticIndexMon(String esServer, String indexType, String user, String userpw, int sampleRateSec) {
 
 //        esServer = "ags:9220";
 //        index = "FAA-Stream/FAA-Stream";
 //        user = "els_ynrqqnh";
 //        userpw = "8jychjwcgn";
         this.esServer = esServer;
-        this.index = index;
+        this.indexType = indexType;
         this.user = user;
         this.userpw = userpw;
-        timer = new Timer();
-        timer.schedule(new CheckCount(), 0, sampleRate*1000);
+        this.sampleRateSec = sampleRateSec;
+    }
+
+    public void run() {
+        try {
+
+            timer = new Timer();
+            timer.schedule(new ElasticIndexMon.CheckCount(), 0, sampleRateSec * 1000);
+
+        } catch (Exception e) {
+            log.error("ERROR", e);
+        }
+
     }
 
     public static void main(String[] args) {
-        int numargs = args.length;
 
+        String elasticSearchServerPort = "";
+        String indexType = "";
+        String username = "";   // default to empty string
+        String password = "";  // default to empty string
+        int sampleRateSec = 5; // default to 5 seconds.        
+
+        log.info("Entering application.");
+        int numargs = args.length;
         if (numargs != 2 && numargs != 4 && numargs != 5) {
             System.err.print("Usage: ElasticIndexMon <ElasticsearchServerPort> <Index/Type> (<username> <password> <sampleRateSec>) \n");
-        } else if (numargs == 2) {
-            ElasticIndexMon t = new ElasticIndexMon(args[0], args[1], "", "", 5);
-        } else if (numargs == 4) {
-            ElasticIndexMon t = new ElasticIndexMon(args[0], args[1], args[2], args[3], 5);
         } else {
-            ElasticIndexMon t = new ElasticIndexMon(args[0], args[1], args[2], args[3], Integer.parseInt(args[4]));
+            elasticSearchServerPort = args[0];
+            indexType = args[1];
+
+            if (numargs >= 4) {
+                username = args[3];
+                password = args[4];
+            }
+
+            if (numargs == 5) {
+                sampleRateSec = Integer.parseInt(args[1]);
+            }
+
         }
+
+        ElasticIndexMon t = new ElasticIndexMon(elasticSearchServerPort, indexType, username, password, sampleRateSec);
+        t.run();
+
 
     }
 }
