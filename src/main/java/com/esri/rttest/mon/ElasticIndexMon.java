@@ -70,13 +70,13 @@ public class ElasticIndexMon {
         long startCount;
         long endCount;
         int numSamples;
-        HashMap<Long, Long> samples;        
+        HashMap<Long, Long> samples;
         long t1;
         long t2;
         SimpleRegression regression;
 
         public CheckCount() {
-            regression = new SimpleRegression();            
+            regression = new SimpleRegression();
             cnt1 = 0;
             cnt2 = -1;
             startCount = 0;
@@ -86,28 +86,26 @@ public class ElasticIndexMon {
             samples = null;
         }
 
-        
         boolean inCounting() {
-            if (cnt1 > 0) 
+            if (cnt1 > 0) {
                 return true;
-            else 
+            } else {
                 return false;
+            }
         }
-        
+
         HashMap<Long, Long> getSamples() {
             return samples;
         }
-        
-        
+
         long getStartCount() {
             return startCount;
         }
-        
+
         long getEndCount() {
             return endCount;
         }
-                
-        
+
         @Override
         public void run() {
             try {
@@ -126,20 +124,26 @@ public class ElasticIndexMon {
                 sslContext.init(null, new TrustManager[]{new X509TrustManager() {
                     @Override
                     public X509Certificate[] getAcceptedIssuers() {
-                        if (sendStdout) System.out.println("getAcceptedIssuers =============");
+                        if (sendStdout) {
+                            System.out.println("getAcceptedIssuers =============");
+                        }
                         return null;
                     }
 
                     @Override
                     public void checkClientTrusted(X509Certificate[] certs,
                             String authType) {
-                        if (sendStdout) System.out.println("checkClientTrusted =============");
+                        if (sendStdout) {
+                            System.out.println("checkClientTrusted =============");
+                        }
                     }
 
                     @Override
                     public void checkServerTrusted(X509Certificate[] certs,
                             String authType) {
-                        if (sendStdout) System.out.println("checkServerTrusted =============");
+                        if (sendStdout) {
+                            System.out.println("checkServerTrusted =============");
+                        }
                     }
                 }}, new SecureRandom());
 
@@ -177,15 +181,15 @@ public class ElasticIndexMon {
                 if (cnt2 == -1 || cnt1 < cnt2) {
                     cnt2 = cnt1;
                     startCount = cnt1;
-                    endCount = cnt1;                    
+                    endCount = cnt1;
                     regression = new SimpleRegression();
                     samples = new HashMap<>();
-                    numSamples = 0;                    
+                    numSamples = 0;
 
                 } else if (cnt1 > cnt2) {
                     // Add to Linear Regression
                     regression.addData(t1, cnt1);
-                    samples.put(t1, cnt1);                    
+                    samples.put(t1, cnt1);
                     // Increase number of samples
                     numSamples += 1;
                     if (numSamples > 2) {
@@ -199,19 +203,27 @@ public class ElasticIndexMon {
                     numSamples -= 1;
                     // Remove the last sample
                     regression.removeData(t2, cnt2);
-                    samples.remove(t2, cnt2);                    
-                    if (sendStdout) System.out.println("Removing: " + t2 + "," + cnt2);
+                    samples.remove(t2, cnt2);
+                    if (sendStdout) {
+                        System.out.println("Removing: " + t2 + "," + cnt2);
+                    }
                     // Output Results
                     long cnt = cnt2 - startCount;
                     double rcvRate = regression.getSlope() * 1000;  // converting from ms to seconds
 
                     if (numSamples > 5) {
                         double rateStdErr = regression.getSlopeStdErr();
-                        if (sendStdout) System.out.format("%d , %.2f, %.4f\n", cnt, rcvRate, rateStdErr);
+                        if (sendStdout) {
+                            System.out.format("%d , %.2f, %.4f\n", cnt, rcvRate, rateStdErr);
+                        }
                     } else if (numSamples >= 2) {
-                        if (sendStdout) System.out.format("%d , %.2f\n", cnt, rcvRate);
+                        if (sendStdout) {
+                            System.out.format("%d , %.2f\n", cnt, rcvRate);
+                        }
                     } else {
-                        if (sendStdout) System.out.println("Not enough samples to calculate rate. ");
+                        if (sendStdout) {
+                            System.out.println("Not enough samples to calculate rate. ");
+                        }
                     }
 
                     // Reset 
@@ -220,8 +232,7 @@ public class ElasticIndexMon {
                     t1 = 0L;
                     t2 = 0L;
 
-
-                } 
+                }
 
                 cnt2 = cnt1;
                 t2 = t1;
@@ -241,7 +252,7 @@ public class ElasticIndexMon {
     String user;
     String userpw;
     int sampleRateSec;
-    boolean sendStdout;     
+    boolean sendStdout;
 
     public ElasticIndexMon(String elasticSearchUrl, int sampleRateSec, String user, String userpw, boolean sendStdout) {
 
@@ -250,7 +261,7 @@ public class ElasticIndexMon {
 //        user = "els_ynrqqnh";
 //        userpw = "8jychjwcgn";
         this.elasticSearchUrl = elasticSearchUrl;
-        this.sampleRateSec = sampleRateSec;        
+        this.sampleRateSec = sampleRateSec;
         this.user = user;
         this.userpw = userpw;
         this.sendStdout = sendStdout;
@@ -280,10 +291,10 @@ public class ElasticIndexMon {
         int numargs = args.length;
         if (numargs != 1 && numargs != 2 && numargs != 4) {
             System.err.print("Usage: ElasticIndexMon [ElasticsearchUrl] (sampleRateSec) ((username) (password))  \n");
-            System.err.println("Example: java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon http://coordinator.sats-ds01.l4lb.thisdcos.directory:9200/planes/planes 20 elasic changeme");          
+            System.err.println("Example: java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon http://coordinator.sats-ds01.l4lb.thisdcos.directory:9200/planes/planes 20 elasic changeme");
         } else {
             elasticSearchUrl = args[0];
-            
+
             if (numargs >= 2) {
                 sampleRateSec = Integer.parseInt(args[1]);
             }
@@ -293,12 +304,10 @@ public class ElasticIndexMon {
                 password = args[3];
             }
 
+            ElasticIndexMon t = new ElasticIndexMon(elasticSearchUrl, sampleRateSec, username, password, sendStdout);
+            t.run();
 
         }
-
-        ElasticIndexMon t = new ElasticIndexMon(elasticSearchUrl, sampleRateSec, username, password, sendStdout);
-        t.run();
-
 
     }
 }

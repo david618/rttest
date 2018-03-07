@@ -272,11 +272,9 @@ public class FeatureLayerMon {
             if (numargs == 2) {
                 sampleRateSec = Integer.parseInt(args[1]);
             }
-        }
-         
-        FeatureLayerMon t = new FeatureLayerMon(url, sampleRateSec, sendStdout);
-        t.run();
-        
+            FeatureLayerMon t = new FeatureLayerMon(url, sampleRateSec, sendStdout);
+            t.run();
+        }   
 
     }
 }

@@ -138,7 +138,6 @@ public class KafkaTopicMon {
                     // Add to Linear Regression
                     regression.addData(t1, cnt1);
                     samples.put(t1, cnt1);
-                    
 
                     if (numSamples > 2) {
                         double rcvRate = regression.getSlope() * 1000;
@@ -150,14 +149,14 @@ public class KafkaTopicMon {
                     }
 
                 } else if (cnt1 == cnt2 && numSamples > 0) {
-                    
+
                     endCount = cnt1;
-                    
+
                     numSamples -= 1;
                     // Remove the last sample
                     regression.removeData(t2, cnt2);
                     samples.remove(t2, cnt2);
-                    
+
                     if (sendStdout) {
                         System.out.println("Removing: " + t2 + "," + cnt2);
                     }
@@ -282,7 +281,6 @@ public class KafkaTopicMon {
         String topic = "";
         int sampleRateSec = 5; // default to 5 seconds.
         Boolean sendStdout = true;
-        
 
         log.info("Entering application.");
         int numargs = args.length;
@@ -295,10 +293,10 @@ public class KafkaTopicMon {
             if (numargs == 3) {
                 sampleRateSec = Integer.parseInt(args[2]);
             }
-        }
 
-        KafkaTopicMon ktm = new KafkaTopicMon(broker, topic, sampleRateSec, sendStdout);
-        ktm.run();
+            KafkaTopicMon ktm = new KafkaTopicMon(broker, topic, sampleRateSec, sendStdout);
+            ktm.run();
+        }
 
     }
 
