@@ -31,6 +31,7 @@
 package com.esri.rttest.mon;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -59,8 +60,10 @@ public class KafkaTopicMon {
 
         long cnt1 = 0;
         long cnt2 = -1;
-        long stcnt = 0;
+        long startCount = 0;
+        long endCount = 0;
         int numSamples = 0;
+        HashMap<Long, Long> samples;
         long t1 = 0L;
         long t2 = 0L;
         SimpleRegression regression;
@@ -69,87 +72,131 @@ public class KafkaTopicMon {
             regression = new SimpleRegression();
             cnt1 = 0;
             cnt2 = -1;
-            stcnt = 0;
+            startCount = 0;
             numSamples = 0;
             t1 = 0L;
             t2 = 0L;
 
         }
 
+        boolean inCounting() {
+            if (cnt1 > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        HashMap<Long, Long> getSamples() {
+            return samples;
+        }
+
+        long getStartCount() {
+            return startCount;
+        }
+
+        long getEndCount() {
+            return endCount;
+        }
+
         @Override
         public void run() {
 
-            log.info("Checking Count");
-            
+            try {
+                log.info("Checking Count");
 
-            List<TopicPartition> partitions = consumer.partitionsFor(topic).stream()
-                    .map(p -> new TopicPartition(topic, p.partition()))
-                    .collect(Collectors.toList());
-            consumer.assign(partitions);
-            consumer.seekToEnd(Collections.emptySet());
-            Map<TopicPartition, Long> endPartitions = partitions.stream()
-                    .collect(Collectors.toMap(Function.identity(), consumer::position));
-//            consumer.seekToBeginning(Collections.emptySet());
-//            cnt1 = partitions.stream().mapToLong(p -> endPartitions.get(p) - consumer.position(p)).sum();
-            Iterator itTP = endPartitions.entrySet().iterator();
-            cnt1 = 0;
-            while (itTP.hasNext()) {
-                Map.Entry tp = (Map.Entry)itTP.next();
-                cnt1 += (long) tp.getValue();
-            }
-            
-            t1 = System.currentTimeMillis();
+                List<TopicPartition> partitions = consumer.partitionsFor(topic).stream()
+                        .map(p -> new TopicPartition(topic, p.partition()))
+                        .collect(Collectors.toList());
+                consumer.assign(partitions);
+                consumer.seekToEnd(Collections.emptySet());
+                Map<TopicPartition, Long> endPartitions = partitions.stream()
+                        .collect(Collectors.toMap(Function.identity(), consumer::position));
+//              consumer.seekToBeginning(Collections.emptySet());
+//              cnt1 = partitions.stream().mapToLong(p -> endPartitions.get(p) - consumer.position(p)).sum();
+                Iterator itTP = endPartitions.entrySet().iterator();
+                cnt1 = 0;
+                while (itTP.hasNext()) {
+                    Map.Entry tp = (Map.Entry) itTP.next();
+                    cnt1 += (long) tp.getValue();
+                }
 
-            if (cnt2 == -1) {
+                t1 = System.currentTimeMillis();
+
+                if (cnt2 == -1 || cnt1 < cnt2) {
+                    cnt2 = cnt1;
+                    startCount = cnt1;
+                    endCount = cnt1;
+                    regression = new SimpleRegression();
+                    samples = new HashMap<>();
+                    numSamples = 0;
+
+                } else if (cnt1 > cnt2) {
+                    // Increase number of samples
+                    numSamples += 1;
+
+                    // Add to Linear Regression
+                    regression.addData(t1, cnt1);
+                    samples.put(t1, cnt1);
+                    
+
+                    if (numSamples > 2) {
+                        double rcvRate = regression.getSlope() * 1000;
+                        if (sendStdout) {
+                            System.out.println(numSamples + "," + t1 + "," + cnt1 + "," + String.format("%.0f", rcvRate));
+                        }
+                    } else {
+                        System.out.println(numSamples + "," + t1 + "," + cnt1);
+                    }
+
+                } else if (cnt1 == cnt2 && numSamples > 0) {
+                    
+                    endCount = cnt1;
+                    
+                    numSamples -= 1;
+                    // Remove the last sample
+                    regression.removeData(t2, cnt2);
+                    samples.remove(t2, cnt2);
+                    
+                    if (sendStdout) {
+                        System.out.println("Removing: " + t2 + "," + cnt2);
+                    }
+                    // Output Results
+                    long cnt = cnt2 - startCount;
+                    double rcvRate = regression.getSlope() * 1000;  // converting from ms to seconds
+
+                    if (numSamples > 5) {
+                        double rateStdErr = regression.getSlopeStdErr();
+                        if (sendStdout) {
+                            System.out.format("%d , %.0f, %.4f\n", cnt, rcvRate, rateStdErr);
+                        }
+                    } else if (numSamples >= 2) {
+                        if (sendStdout) {
+                            System.out.format("%d , %.0f\n", cnt, rcvRate);
+                        }
+                    } else {
+                        if (sendStdout) {
+                            System.out.println("Not enough samples to calculate rate. ");
+                        }
+                    }
+
+                    // Reset 
+                    cnt1 = -1;
+                    cnt2 = -1;
+                    startCount = 0;
+                    numSamples = 0;
+                    t1 = 0L;
+                    t2 = 0L;
+                    regression = new SimpleRegression();
+
+                }
+
                 cnt2 = cnt1;
-                stcnt = cnt1;
-
-            } else if (cnt1 > cnt2) {
-                // Increase number of samples
-                numSamples += 1;
-
-                // Add to Linear Regression
-                regression.addData(t1, cnt1);
-                
-                if (numSamples > 2) {
-                    double rcvRate = regression.getSlope() * 1000;
-                    if (sendStdout) System.out.println(numSamples + "," + t1 + "," + cnt1 + "," + String.format("%.0f", rcvRate));
-                } else {
-                    System.out.println(numSamples + "," + t1 + "," + cnt1);
-                }
-
-
-            } else if (cnt1 == cnt2 && numSamples > 0) {
-                numSamples -= 1;
-                // Remove the last sample
-                regression.removeData(t2, cnt2);
-                if (sendStdout) System.out.println("Removing: " + t2 + "," + cnt2);
-                // Output Results
-                long cnt = cnt2 - stcnt;
-                double rcvRate = regression.getSlope() * 1000;  // converting from ms to seconds
-
-                if (numSamples > 5) {
-                    double rateStdErr = regression.getSlopeStdErr();
-                    if (sendStdout) System.out.format("%d , %.0f, %.4f\n", cnt, rcvRate, rateStdErr);
-                } else if (numSamples >= 2) {
-                    if (sendStdout) System.out.format("%d , %.0f\n", cnt, rcvRate);
-                } else {
-                    if (sendStdout) System.out.println("Not enough samples to calculate rate. ");
-                }
-
-                // Reset 
-                cnt1 = -1;
-                cnt2 = -1;
-                stcnt = 0;
-                numSamples = 0;
-                t1 = 0L;
-                t2 = 0L;
-                regression = new SimpleRegression();
+                t2 = t1;
+            } catch (Exception e) {
+                log.error("ERROR", e);
 
             }
-
-            cnt2 = cnt1;
-            t2 = t1;
 
         }
 
@@ -170,9 +217,9 @@ public class KafkaTopicMon {
             this.topic = topic;
             this.sampleRate = sampleRate;
             this.sendStdout = sendStdout;
-            
+
             Properties props = new Properties();
-            
+
             // https://kafka.apache.org/documentation/#consumerconfigs
             props.put("bootstrap.servers", this.brokers);
             // Should include another parameter for group.id this would allow differenct consumers of same topic
@@ -186,32 +233,32 @@ public class KafkaTopicMon {
             props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 
             consumer = new KafkaConsumer<>(props);
-            
+
             boolean topicFound = false;
-            
+
             Iterator<String> tps = consumer.listTopics().keySet().iterator();
             while (tps.hasNext()) {
-                
+
                 String tp = tps.next();
                 log.info(tp);
-                if (this.topic.equals(tp)) {                    
+                if (this.topic.equals(tp)) {
                     topicFound = true;
                     break;
                 }
-                
+
             }
-            
+
             if (!topicFound) {
                 System.out.println("Topic not found");
                 System.exit(-2);
             }
-            
+
         } catch (TimeoutException e) {
             log.error("Could not connect to Kafka");
             System.exit(-1);
-        
+
         } catch (Exception e) {
-            log.error("ERROR",e);
+            log.error("ERROR", e);
 
         }
 
@@ -234,7 +281,9 @@ public class KafkaTopicMon {
         String broker = "";
         String topic = "";
         int sampleRateSec = 5; // default to 5 seconds.
+        Boolean sendStdout = true;
         
+
         log.info("Entering application.");
         int numargs = args.length;
         if (numargs != 2 && numargs != 3) {
@@ -242,15 +291,14 @@ public class KafkaTopicMon {
             System.err.println("Example Command: java -cp target/rttest.jar com.esri.rttest.mon.KafkaTopicMon broker.kafka.l4lb.thisdcos.directory:9092 simFile 2>/dev/null");
         } else {
             broker = args[0];
-            topic = args[1];            
+            topic = args[1];
             if (numargs == 3) {
                 sampleRateSec = Integer.parseInt(args[2]);
             }
-        } 
-        
-        KafkaTopicMon ktm = new KafkaTopicMon(broker, topic, sampleRateSec, true);
+        }
+
+        KafkaTopicMon ktm = new KafkaTopicMon(broker, topic, sampleRateSec, sendStdout);
         ktm.run();
-        
 
     }
 

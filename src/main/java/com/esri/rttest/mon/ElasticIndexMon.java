@@ -86,7 +86,7 @@ public class ElasticIndexMon {
         }
 
         
-        boolean isRunning() {
+        boolean inCounting() {
             if (cnt1 > 0) 
                 return true;
             else 
@@ -173,7 +173,7 @@ public class ElasticIndexMon {
 
                 t1 = System.currentTimeMillis();
 
-                if (cnt2 == -1) {
+                if (cnt2 == -1 || cnt1 < cnt2) {
                     cnt2 = cnt1;
                     startCount = cnt1;
                     endCount = cnt1;                    
@@ -220,14 +220,7 @@ public class ElasticIndexMon {
                     t2 = 0L;
 
 
-                } else if (cnt1 < cnt2) {
-                    // The number has gone down reset
-                    cnt1 = -1;
-                    cnt2 = -1;
-                    t1 = 0L;
-                    t2 = 0L;
-
-                }
+                } 
 
                 cnt2 = cnt1;
                 t2 = t1;
@@ -281,7 +274,8 @@ public class ElasticIndexMon {
         String indexType = "";
         String username = "";   // default to empty string
         String password = "";  // default to empty string
-        int sampleRateSec = 5; // default to 5 seconds.        
+        int sampleRateSec = 5; // default to 5 seconds.  
+        Boolean sendStdout = true;
 
         log.info("Entering application.");
         int numargs = args.length;
@@ -302,7 +296,7 @@ public class ElasticIndexMon {
 
         }
 
-        ElasticIndexMon t = new ElasticIndexMon(elasticSearchServerPort, indexType, username, password, sampleRateSec, true);
+        ElasticIndexMon t = new ElasticIndexMon(elasticSearchServerPort, indexType, username, password, sampleRateSec, sendStdout);
         t.run();
 
 

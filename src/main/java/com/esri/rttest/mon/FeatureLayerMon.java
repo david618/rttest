@@ -84,7 +84,7 @@ public class FeatureLayerMon {
 
         }
 
-        boolean isRunning() {
+        boolean inCounting() {
             if (cnt1 > 0) 
                 return true;
             else 
@@ -256,7 +256,9 @@ public class FeatureLayerMon {
     public static void main(String[] args) {
 
         String url = "";
-        int sampleRateSec = 5; // default to 5 seconds.        
+        int sampleRateSec = 5; // default to 5 seconds.    
+        Boolean sendStdout = true;
+        
         
         log.info("Entering application.");
         int numargs = args.length;
@@ -269,7 +271,7 @@ public class FeatureLayerMon {
             }
         }
          
-        FeatureLayerMon t = new FeatureLayerMon(url, sampleRateSec, true);
+        FeatureLayerMon t = new FeatureLayerMon(url, sampleRateSec, sendStdout);
         t.run();
         
 
