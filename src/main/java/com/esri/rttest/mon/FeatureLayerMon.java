@@ -109,6 +109,8 @@ public class FeatureLayerMon {
         public void run() {
             try {                
 
+                log.info("Checking Count");
+                
                 String url = featureLayerURL + "/query?where=1%3D1&returnCountOnly=true&f=json";
                 SSLContext sslContext = SSLContext.getInstance("SSL");
 
@@ -162,7 +164,8 @@ public class FeatureLayerMon {
                 cnt1 = json.getInt("count");
                 t1 = System.currentTimeMillis();
 
-                if (cnt2 == -1) {
+                if (cnt2 == -1 || cnt1 < cnt2) {
+                    // If first count or count has gone down
                     cnt2 = cnt1;
                     startCount = cnt1;
                     endCount = cnt1;                    
@@ -212,13 +215,7 @@ public class FeatureLayerMon {
                     t1 = 0L;
                     t2 = 0L;
 
-                } else if (cnt1 < cnt2) {
-                    // The number has gone down reset
-                    cnt1 = -1;
-                    cnt2 = -1;
-                    t1 = 0L;
-                    t2 = 0L;
-                }
+                } 
 
                 cnt2 = cnt1;
                 t2 = t1;

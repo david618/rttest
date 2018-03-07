@@ -33,6 +33,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 import javax.net.ssl.SSLContext;
@@ -64,10 +65,12 @@ public class ElasticIndexMon {
 
     class CheckCount extends TimerTask {
 
-        int cnt1;
-        int cnt2;
-        int stcnt;
+        long cnt1;
+        long cnt2;
+        long startCount;
+        long endCount;
         int numSamples;
+        HashMap<Long, Long> samples;        
         long t1;
         long t2;
         SimpleRegression regression;
@@ -75,13 +78,35 @@ public class ElasticIndexMon {
         public CheckCount() {
             cnt1 = 0;
             cnt2 = -1;
-            stcnt = 0;
+            startCount = 0;
             numSamples = 0;
             t1 = 0L;
             t2 = 0L;
             regression = new SimpleRegression();
         }
 
+        
+        boolean isRunning() {
+            if (cnt1 > 0) 
+                return true;
+            else 
+                return false;
+        }
+        
+        HashMap<Long, Long> getSamples() {
+            return samples;
+        }
+        
+        
+        long getStartCount() {
+            return startCount;
+        }
+        
+        long getEndCount() {
+            return endCount;
+        }
+                
+        
         @Override
         public void run() {
             try {
@@ -150,12 +175,16 @@ public class ElasticIndexMon {
 
                 if (cnt2 == -1) {
                     cnt2 = cnt1;
-                    stcnt = cnt1;
+                    startCount = cnt1;
+                    endCount = cnt1;                    
+                    regression = new SimpleRegression();
+                    samples = new HashMap<>();
+                    numSamples = 0;                    
 
                 } else if (cnt1 > cnt2) {
                     // Add to Linear Regression
                     regression.addData(t1, cnt1);
-
+                    samples.put(t1, cnt1);                    
                     // Increase number of samples
                     numSamples += 1;
                     if (numSamples > 2) {
@@ -169,9 +198,10 @@ public class ElasticIndexMon {
                     numSamples -= 1;
                     // Remove the last sample
                     regression.removeData(t2, cnt2);
+                    samples.remove(t2, cnt2);                    
                     if (sendStdout) System.out.println("Removing: " + t2 + "," + cnt2);
                     // Output Results
-                    int cnt = cnt2 - stcnt;
+                    long cnt = cnt2 - startCount;
                     double rcvRate = regression.getSlope() * 1000;  // converting from ms to seconds
 
                     if (numSamples > 5) {
@@ -186,21 +216,16 @@ public class ElasticIndexMon {
                     // Reset 
                     cnt1 = -1;
                     cnt2 = -1;
-                    stcnt = 0;
-                    numSamples = 0;
                     t1 = 0L;
                     t2 = 0L;
-                    regression = new SimpleRegression();
+
 
                 } else if (cnt1 < cnt2) {
                     // The number has gone down reset
                     cnt1 = -1;
                     cnt2 = -1;
-                    stcnt = 0;
-                    numSamples = 0;
                     t1 = 0L;
                     t2 = 0L;
-                    regression = new SimpleRegression();
 
                 }
 
