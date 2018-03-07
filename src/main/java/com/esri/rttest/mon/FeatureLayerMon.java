@@ -264,6 +264,9 @@ public class FeatureLayerMon {
         int numargs = args.length;
         if (numargs != 1 && numargs != 2) {
             System.err.print("Usage: FeatureLayerMon [Feature-Layer] (sampleRateSec) \n");
+            System.err.println("Example: java -cp target/rttest.jar com.esri.rttest.mon.FeatureLayerMon http://p1/2b2ed39f-7656-463b-9df9-e7ce0d04ecbe/arcgis/rest/services/planes-bat/FeatureServer/0 30");          
+            
+            
         } else {
             url = args[0];
             if (numargs == 2) {

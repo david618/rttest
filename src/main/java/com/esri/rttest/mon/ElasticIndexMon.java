@@ -76,13 +76,14 @@ public class ElasticIndexMon {
         SimpleRegression regression;
 
         public CheckCount() {
+            regression = new SimpleRegression();            
             cnt1 = 0;
             cnt2 = -1;
             startCount = 0;
             numSamples = 0;
             t1 = 0L;
             t2 = 0L;
-            regression = new SimpleRegression();
+            samples = null;
         }
 
         
@@ -114,7 +115,7 @@ public class ElasticIndexMon {
                 log.info("Checking Count");
 
                 // index/type
-                String url = "http://" + esServer + "/" + indexType + "/_count";
+                String url = elasticSearchUrl + "/_count";
                 SSLContext sslContext = SSLContext.getInstance("SSL");
 
                 CredentialsProvider provider = new BasicCredentialsProvider();
@@ -235,24 +236,23 @@ public class ElasticIndexMon {
     }
 
     Timer timer;
-    String esServer;
+    String elasticSearchUrl;
     String indexType;
     String user;
     String userpw;
     int sampleRateSec;
     boolean sendStdout;     
 
-    public ElasticIndexMon(String esServer, String indexType, String user, String userpw, int sampleRateSec, boolean sendStdout) {
+    public ElasticIndexMon(String elasticSearchUrl, int sampleRateSec, String user, String userpw, boolean sendStdout) {
 
 //        esServer = "ags:9220";
 //        index = "FAA-Stream/FAA-Stream";
 //        user = "els_ynrqqnh";
 //        userpw = "8jychjwcgn";
-        this.esServer = esServer;
-        this.indexType = indexType;
+        this.elasticSearchUrl = elasticSearchUrl;
+        this.sampleRateSec = sampleRateSec;        
         this.user = user;
         this.userpw = userpw;
-        this.sampleRateSec = sampleRateSec;
         this.sendStdout = sendStdout;
     }
 
@@ -270,8 +270,7 @@ public class ElasticIndexMon {
 
     public static void main(String[] args) {
 
-        String elasticSearchServerPort = "";
-        String indexType = "";
+        String elasticSearchUrl = "";
         String username = "";   // default to empty string
         String password = "";  // default to empty string
         int sampleRateSec = 5; // default to 5 seconds.  
@@ -279,24 +278,25 @@ public class ElasticIndexMon {
 
         log.info("Entering application.");
         int numargs = args.length;
-        if (numargs != 2 && numargs != 4 && numargs != 5) {
-            System.err.print("Usage: ElasticIndexMon [ElasticsearchServerPort] [Index/Type] (username) (password) (sampleRateSec) \n");
+        if (numargs != 1 && numargs != 2 && numargs != 4) {
+            System.err.print("Usage: ElasticIndexMon [ElasticsearchUrl] (sampleRateSec) ((username) (password))  \n");
+            System.err.println("Example: java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon http://coordinator.sats-ds01.l4lb.thisdcos.directory:9200/planes/planes 20 elasic changeme");          
         } else {
-            elasticSearchServerPort = args[0];
-            indexType = args[1];
-
-            if (numargs >= 4) {
-                username = args[3];
-                password = args[4];
-            }
-
-            if (numargs == 5) {
+            elasticSearchUrl = args[0];
+            
+            if (numargs >= 2) {
                 sampleRateSec = Integer.parseInt(args[1]);
             }
 
+            if (numargs == 4) {
+                username = args[2];
+                password = args[3];
+            }
+
+
         }
 
-        ElasticIndexMon t = new ElasticIndexMon(elasticSearchServerPort, indexType, username, password, sampleRateSec, sendStdout);
+        ElasticIndexMon t = new ElasticIndexMon(elasticSearchUrl, sampleRateSec, username, password, sendStdout);
         t.run();
 
 

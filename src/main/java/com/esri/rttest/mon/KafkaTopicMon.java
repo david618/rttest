@@ -288,7 +288,7 @@ public class KafkaTopicMon {
         int numargs = args.length;
         if (numargs != 2 && numargs != 3) {
             System.err.println("Usage: KakfaTopicMon [brokers] [topic] (sampleRateSec)");
-            System.err.println("Example Command: java -cp target/rttest.jar com.esri.rttest.mon.KafkaTopicMon broker.kafka.l4lb.thisdcos.directory:9092 simFile 2>/dev/null");
+            System.err.println("Example Command: java -cp target/rttest.jar com.esri.rttest.mon.KafkaTopicMon broker.kafka.l4lb.thisdcos.directory:9092 planes 30");
         } else {
             broker = args[0];
             topic = args[1];
