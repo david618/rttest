@@ -51,15 +51,21 @@ import com.esri.rttest.IPPort;
 import com.esri.rttest.IPPorts;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
  * @author david
  */
 public class Tcp2 {
+    
+    private static final Logger LOG = LogManager.getLogger(Tcp2.class);
+    
 
     LinkedBlockingQueue<String> lbq = new LinkedBlockingQueue<>();
 
@@ -225,9 +231,9 @@ public class Tcp2 {
 
             System.exit(0);
 
-        } catch (Exception e) {
+        } catch (IOException | InterruptedException | UnsupportedOperationException e) {
 
-            e.printStackTrace();
+            LOG.error("ERROR", e);
 
         }
     }

@@ -49,6 +49,8 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -56,6 +58,8 @@ import java.util.Iterator;
  */
 public class Tcp {
 
+    private static final Logger LOG = LogManager.getLogger(Tcp.class);
+    
 
     private OutputStream[] os;
     private Integer numStream;
@@ -80,7 +84,8 @@ public class Tcp {
             }
 
         } catch (IOException | NumberFormatException | UnsupportedOperationException e) {
-            e.printStackTrace();
+            LOG.error("ERROR",e);
+            
         }
 
     }
@@ -215,7 +220,7 @@ public class Tcp {
 
         } catch (IOException e) {
             // Could fail on very large files that would fill heap space 
-            e.printStackTrace();
+            LOG.error("ERROR",e);
 
         }
     }

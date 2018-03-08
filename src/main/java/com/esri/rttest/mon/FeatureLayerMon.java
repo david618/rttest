@@ -57,7 +57,7 @@ import org.json.JSONObject;
  */
 public class FeatureLayerMon {
 
-    private static final Logger log = LogManager.getLogger(FeatureLayerMon.class);
+    private static final Logger LOG = LogManager.getLogger(FeatureLayerMon.class);
 
     class CheckCount extends TimerTask {
 
@@ -109,7 +109,7 @@ public class FeatureLayerMon {
         public void run() {
             try {                
 
-                log.info("Checking Count");
+                LOG.info("Checking Count");
                 
                 String url = featureLayerURL + "/query?where=1%3D1&returnCountOnly=true&f=json";
                 SSLContext sslContext = SSLContext.getInstance("SSL");
@@ -222,7 +222,7 @@ public class FeatureLayerMon {
                 
 
             } catch (IOException | UnsupportedOperationException | KeyManagementException | NoSuchAlgorithmException | JSONException e) {
-                log.error("ERROR", e);
+                LOG.error("ERROR", e);
             }
 
         }
@@ -248,7 +248,7 @@ public class FeatureLayerMon {
             timer.schedule(new FeatureLayerMon.CheckCount(), 0, sampleRateSec * 1000);
 
         } catch (Exception e) {
-            log.error("ERROR", e);
+            LOG.error("ERROR", e);
         }
 
     }     
@@ -260,7 +260,7 @@ public class FeatureLayerMon {
         Boolean sendStdout = true;
         
         
-        log.info("Entering application.");
+        LOG.info("Entering application.");
         int numargs = args.length;
         if (numargs != 1 && numargs != 2) {
             System.err.print("Usage: FeatureLayerMon [Feature-Layer] (sampleRateSec) \n");

@@ -61,7 +61,7 @@ import org.json.JSONObject;
  */
 public class ElasticIndexMon {
 
-    private static final Logger log = LogManager.getLogger(ElasticIndexMon.class);
+    private static final Logger LOG = LogManager.getLogger(ElasticIndexMon.class);
 
     class CheckCount extends TimerTask {
 
@@ -110,7 +110,7 @@ public class ElasticIndexMon {
         public void run() {
             try {
 
-                log.info("Checking Count");
+                LOG.info("Checking Count");
 
                 // index/type
                 String url = elasticSearchUrl + "/_count";
@@ -238,7 +238,7 @@ public class ElasticIndexMon {
                 t2 = t1;
 
             } catch (IOException | UnsupportedOperationException | KeyManagementException | NoSuchAlgorithmException | JSONException e) {
-                log.error("ERROR", e);
+                LOG.error("ERROR", e);
 
             }
 
@@ -274,7 +274,7 @@ public class ElasticIndexMon {
             timer.schedule(new ElasticIndexMon.CheckCount(), 0, sampleRateSec * 1000);
 
         } catch (Exception e) {
-            log.error("ERROR", e);
+            LOG.error("ERROR", e);
         }
 
     }
@@ -287,7 +287,7 @@ public class ElasticIndexMon {
         int sampleRateSec = 5; // default to 5 seconds.  
         Boolean sendStdout = true;
 
-        log.info("Entering application.");
+        LOG.info("Entering application.");
         int numargs = args.length;
         if (numargs != 1 && numargs != 2 && numargs != 4) {
             System.err.print("Usage: ElasticIndexMon [ElasticsearchUrl] (sampleRateSec) ((username) (password))  \n");

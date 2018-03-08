@@ -27,14 +27,18 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 /**
  *
  * @author david
  */
 public class TcpSinkServer extends Thread {
+    
+    private static final Logger LOG = LogManager.getLogger(TcpSinkServer.class);
+    
 
     private Socket socket = null;
     boolean running;
@@ -81,8 +85,8 @@ public class TcpSinkServer extends Thread {
             running = false;
             this.interrupt();
             
-        } catch (IOException ex) {
-            Logger.getLogger(TcpSinkServer.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException e) {
+            LOG.error("ERROR", e);
         }
     }    
 

@@ -19,34 +19,30 @@
 package com.esri.rttest.send;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import org.apache.http.HttpResponse;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
  * @author david
  */
 public class HttpPosterThread extends Thread {
+    
+    private static final Logger LOG = LogManager.getLogger(HttpPosterThread.class);
+    
 
     LinkedBlockingQueue<String> lbq;
     private volatile boolean running = true;
@@ -155,12 +151,8 @@ public class HttpPosterThread extends Thread {
 
             }
 
-        } catch (InterruptedException ex) {
-            Logger.getLogger(HttpPosterThread.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(HttpPosterThread.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(HttpPosterThread.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InterruptedException | IOException e) {
+            LOG.error("ERROR",e);
         }
     }
 }

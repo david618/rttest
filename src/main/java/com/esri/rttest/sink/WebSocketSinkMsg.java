@@ -16,7 +16,6 @@
  * Contributors:
  *     David Jennings
  */
-
 /**
  * Used by WebSocketSink
  *
@@ -27,6 +26,8 @@ package com.esri.rttest.sink;
 import java.util.Timer;
 import java.util.TimerTask;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.websocket.WebSocket;
 
 /**
@@ -35,6 +36,8 @@ import org.eclipse.jetty.websocket.WebSocket;
  */
 //@WebSocket(maxBinaryMessageSize = 1024 * 1024)
 public class WebSocketSinkMsg implements WebSocket.OnTextMessage {
+
+    private static final Logger LOG = LogManager.getLogger(WebSocketSinkMsg.class);
 
     boolean printmessages;
     int sampleEvery;

@@ -16,7 +16,6 @@
  * Contributors:
  *     David Jennings
  */
-
 /**
  * Test Class
  *
@@ -28,11 +27,11 @@
  * The Transport Client works fine with Elasticsearch 5 installed outside of DCOS.
  *
  * David Jennings
- * 
+ *
  * 13 Nov 2017
  * NOTE: Based on testing using sparktest; I suspect if I hyper-threaded this like I did for tcp I could get faster rates.
- * In a Round-robin fashion send requests to each of the elasticsearch nodes.  
- * 
+ * In a Round-robin fashion send requests to each of the elasticsearch nodes.
+ *
  */
 package com.esri.rttest.send;
 
@@ -48,12 +47,16 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
  * @author david
  */
 public class ElasticsearchHttp {
+
+    private static final Logger LOG = LogManager.getLogger(ElasticsearchHttp.class);
 
     private final String USER_AGENT = "Mozilla/5.0";
     private HttpClient httpClient;
@@ -71,13 +74,11 @@ public class ElasticsearchHttp {
             } else {
                 this.strURL = strURL + "/_bulk";
             }
-            
-            
 
             this.esbulk = esbulk;
 
             if (esbulk < 0) {
-                esbulk = 0;
+                this.esbulk = 0;
             }
 
             httpClient = HttpClientBuilder.create().build();
@@ -85,7 +86,7 @@ public class ElasticsearchHttp {
             httpPost = new HttpPost(this.strURL);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("ERROR",e);
         }
     }
 
@@ -164,7 +165,7 @@ public class ElasticsearchHttp {
                 long etime = System.currentTimeMillis() - stime;
 
                 long delay = msDelay - etime;
-                if (delay > 0) {                
+                if (delay > 0) {
                     Thread.sleep(delay);
                 }
             }
@@ -186,7 +187,7 @@ public class ElasticsearchHttp {
         } catch (Exception e) {
             // Could fail on very large files that would fill heap space 
 //            System.out.println(con.toString());
-            e.printStackTrace();
+            LOG.error("ERROR",e);
 
         }
 
@@ -209,12 +210,12 @@ public class ElasticsearchHttp {
                 elasticBulk = Integer.parseInt(args[4]);
             }
 
-            if (elasticBulk < 100 ) {
+            if (elasticBulk < 100) {
                 System.out.println("Smallest supported elastic-bulk-num is 100");
             } else {
                 ElasticsearchHttp t = new ElasticsearchHttp(url, elasticBulk);
                 t.sendFile(filename, rate, numRecords);
-                
+
             }
 
         }

@@ -24,11 +24,14 @@
  */
 package com.esri.rttest;
 
+import com.esri.rttest.sink.TcpSink;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Record;
 import org.xbill.DNS.TextParseException;
@@ -39,6 +42,9 @@ import org.xbill.DNS.Type;
  * @author david
  */
 public class IPPorts {
+    
+    private static final Logger LOG = LogManager.getLogger(IPPorts.class);
+    
 
     private static final String IPADDRESS_PATTERN
             = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."

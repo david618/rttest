@@ -33,12 +33,17 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
  * @author david
  */
 public class TcpSink {
+    
+    private static final Logger LOG = LogManager.getLogger(TcpSink.class);
+    
 
     private class GetCounts extends TimerTask {
 
@@ -168,7 +173,7 @@ public class TcpSink {
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("ERROR",e);
         }
     }
 

@@ -24,8 +24,8 @@ package com.esri.rttest;
  */
 public class IPPort {
 
-    private String ip;
-    private int port;
+    private final String ip;
+    private final int port;
 
     public IPPort(String ip, int port) {
         this.ip = ip;

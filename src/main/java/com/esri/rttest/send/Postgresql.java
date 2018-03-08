@@ -25,16 +25,16 @@ package com.esri.rttest.send;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Random;
 import java.util.Set;
-import org.json.JSONArray;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -42,6 +42,9 @@ import org.json.JSONObject;
  * @author david
  */
 public class Postgresql {
+    
+    private static final Logger LOG = LogManager.getLogger(Postgresql.class);
+    
 
     final static int INT = 0;
     final static int LNG = 1;
@@ -106,8 +109,8 @@ public class Postgresql {
 
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException | JSONException e) {
+            LOG.error("ERROR", e);
         }
 
     }
@@ -175,11 +178,12 @@ public class Postgresql {
             while (line != null) {
                 //System.out.println(line);
                 // Create sql line
-                String sql = "";
+                String sql;
 
                 sql = sqlPrefix;
 
                 for (String key : jsonMap.keySet()) {
+                    
                     switch (jsonMap.get(key)) {
                         case INT:
                             sql += json.getInt(key) + ",";
@@ -230,8 +234,8 @@ public class Postgresql {
 
             br.close();
             fr.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException | SQLException | JSONException e) {
+            LOG.error("ERROR", e);
         }
 
     }

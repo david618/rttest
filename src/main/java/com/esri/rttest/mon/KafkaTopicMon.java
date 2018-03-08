@@ -53,7 +53,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class KafkaTopicMon {
 
-    private static final Logger log = LogManager.getLogger(KafkaTopicMon.class);
+    private static final Logger LOG = LogManager.getLogger(KafkaTopicMon.class);
 
     // ******************* TimerTask Class ******************************
     class CheckCount extends TimerTask {
@@ -103,7 +103,7 @@ public class KafkaTopicMon {
         public void run() {
 
             try {
-                log.info("Checking Count");
+                LOG.info("Checking Count");
 
                 List<TopicPartition> partitions = consumer.partitionsFor(topic).stream()
                         .map(p -> new TopicPartition(topic, p.partition()))
@@ -193,7 +193,7 @@ public class KafkaTopicMon {
                 cnt2 = cnt1;
                 t2 = t1;
             } catch (Exception e) {
-                log.error("ERROR", e);
+                LOG.error("ERROR", e);
 
             }
 
@@ -239,7 +239,7 @@ public class KafkaTopicMon {
             while (tps.hasNext()) {
 
                 String tp = tps.next();
-                log.info(tp);
+                LOG.info(tp);
                 if (this.topic.equals(tp)) {
                     topicFound = true;
                     break;
@@ -253,11 +253,11 @@ public class KafkaTopicMon {
             }
 
         } catch (TimeoutException e) {
-            log.error("Could not connect to Kafka");
+            LOG.error("Could not connect to Kafka");
             System.exit(-1);
 
         } catch (Exception e) {
-            log.error("ERROR", e);
+            LOG.error("ERROR", e);
 
         }
 
@@ -270,7 +270,7 @@ public class KafkaTopicMon {
             timer.schedule(new CheckCount(), 0, sampleRate * 1000);
 
         } catch (Exception e) {
-            log.error("ERROR", e);
+            LOG.error("ERROR", e);
         }
 
     }
@@ -282,7 +282,7 @@ public class KafkaTopicMon {
         int sampleRateSec = 5; // default to 5 seconds.
         Boolean sendStdout = true;
 
-        log.info("Entering application.");
+        LOG.info("Entering application.");
         int numargs = args.length;
         if (numargs != 2 && numargs != 3) {
             System.err.println("Usage: KakfaTopicMon [brokers] [topic] (sampleRateSec)");

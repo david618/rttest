@@ -24,8 +24,13 @@ package com.esri.rttest;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+import com.esri.rttest.sink.TcpSinkServer;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -37,7 +42,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -46,7 +50,10 @@ import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -54,6 +61,9 @@ import org.json.JSONObject;
  * @author david
  */
 public class MarathonInfo {
+    
+    private static final Logger LOG = LogManager.getLogger(TcpSinkServer.class);
+    
 
     /**
      *
@@ -142,13 +152,13 @@ public class MarathonInfo {
                         brokers += addresses.getString(i);
                     }
 
-                } catch (Exception e) {
+                } catch (IOException | UnsupportedOperationException | JSONException e) {
                     brokers = "";
                 }
 
             }
 
-        } catch (Exception e) {
+        } catch (IOException | UnsupportedOperationException | KeyManagementException | KeyStoreException | NoSuchAlgorithmException | JSONException e) {
 
             brokers = "Could not find brokers.";
         }
@@ -182,7 +192,7 @@ public class MarathonInfo {
                     new InputStreamReader(response.getEntity().getContent()));
 
             StringBuffer result = new StringBuffer();
-            String line = "";
+            String line;
             while ((line = rd.readLine()) != null) {
                 result.append(line);
             }
@@ -206,7 +216,6 @@ public class MarathonInfo {
                     new InputStreamReader(response.getEntity().getContent()));
 
             result = new StringBuffer();
-            line = "";
             while ((line = rd.readLine()) != null) {
                 result.append(line);
             }
@@ -225,7 +234,7 @@ public class MarathonInfo {
                 i++;
             }
 
-        } catch (Exception e) {
+        } catch (IOException | UnsupportedOperationException | KeyManagementException | KeyStoreException | NoSuchAlgorithmException | JSONException e) {
             addresses = "Could not find elasticsearch transports.";
         }
 
@@ -259,7 +268,7 @@ public class MarathonInfo {
                     new InputStreamReader(response.getEntity().getContent()));
 
             StringBuffer result = new StringBuffer();
-            String line = "";
+            String line;
             while ((line = rd.readLine()) != null) {
                 result.append(line);
             }
@@ -283,7 +292,6 @@ public class MarathonInfo {
                     new InputStreamReader(response.getEntity().getContent()));
 
             result = new StringBuffer();
-            line = "";
             while ((line = rd.readLine()) != null) {
                 result.append(line);
             }
@@ -302,7 +310,7 @@ public class MarathonInfo {
                 i++;
             }
 
-        } catch (Exception e) {
+        } catch (IOException | UnsupportedOperationException | KeyManagementException | KeyStoreException | NoSuchAlgorithmException | JSONException e) {
             addresses = "Could not find elasticsearch web addresses.";
         }
 
@@ -336,7 +344,7 @@ public class MarathonInfo {
                     new InputStreamReader(response.getEntity().getContent()));
 
             StringBuffer result = new StringBuffer();
-            String line = "";
+            String line;
             while ((line = rd.readLine()) != null) {
                 result.append(line);
             }
@@ -351,7 +359,7 @@ public class MarathonInfo {
             int port = ports.getInt(0);
             String eip = task.getString("host");
 
-            url = "http://" + eip + ":" + port + "/v1/cluster";;
+            url = "http://" + eip + ":" + port + "/v1/cluster";
 
             request = new HttpGet(url);
 
@@ -360,7 +368,6 @@ public class MarathonInfo {
                     new InputStreamReader(response.getEntity().getContent()));
 
             result = new StringBuffer();
-            line = "";
             while ((line = rd.readLine()) != null) {
                 result.append(line);
             }
@@ -369,7 +376,7 @@ public class MarathonInfo {
             JSONObject config = json.getJSONObject("configuration");
             clusterName = config.getString("ElasticsearchClusterName");
 
-        } catch (Exception e) {
+        } catch (IOException | UnsupportedOperationException | KeyManagementException | KeyStoreException | NoSuchAlgorithmException | JSONException e) {
             clusterName = "Could not find elasticsearch cluster name.";
         }
 
@@ -401,7 +408,7 @@ public class MarathonInfo {
                     new InputStreamReader(response.getEntity().getContent()));
 
             StringBuffer result = new StringBuffer();
-            String line = "";
+            String line;
             while ((line = rd.readLine()) != null) {
                 result.append(line);
             }
@@ -498,7 +505,7 @@ public class MarathonInfo {
 
             // Get Endpoints 172.17.2.5:17962/v1/endpoints/data  (vip name)
             // Use address to get Cluster Name
-        } catch (Exception e) {
+        } catch (IOException | UnsupportedOperationException | KeyManagementException | KeyStoreException | NoSuchAlgorithmException | JSONException e) {
             returnJson.put("error", e.getMessage());
         }
 
@@ -550,7 +557,7 @@ public class MarathonInfo {
                 int port = -1;
                 try {
                     port = ports.getInt(portIndex);
-                } catch (Exception e) {
+                } catch (JSONException e) {
                     // ok to ignore
                 }
                 
@@ -569,8 +576,8 @@ public class MarathonInfo {
 
             // Get Endpoints 172.17.2.5:17962/v1/endpoints/data  (vip name)
             // Use address to get Cluster Name
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
+        } catch (IOException | UnsupportedOperationException | KeyManagementException | KeyStoreException | NoSuchAlgorithmException | JSONException e) {
+            LOG.error("ERROR",e);
         }
 
                 
