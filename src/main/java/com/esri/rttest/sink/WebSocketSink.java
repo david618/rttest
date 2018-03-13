@@ -62,6 +62,7 @@ public class WebSocketSink {
             
             SslContextFactory sslContextFactory = new SslContextFactory();
             sslContextFactory.setTrustAll(true);
+            sslContextFactory.setValidateCerts(false);
             sslContextFactory.start();
 
             final WebSocketClientFactory factory = new WebSocketClientFactory();
@@ -69,7 +70,7 @@ public class WebSocketSink {
             factory.start();
 
             WebSocketClient client = factory.newWebSocketClient();
-
+            
             URI uri = new URI(url);
 
             //WebSocketMessage msg = new WebSocketSinkMsg();
