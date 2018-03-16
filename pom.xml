@@ -67,13 +67,14 @@
             <artifactId>jetty-websocket</artifactId>
             <version>8.1.15.v20140411</version>
             <type>jar</type>
-        </dependency>
-         
+        </dependency>     
+        <!--    
         <dependency>
             <groupId>org.eclipse.jetty.websocket</groupId>
             <artifactId>websocket-client</artifactId>
             <version>9.4.8.v20171121</version>
-        </dependency>                                
+        </dependency>    
+        -->                            
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>

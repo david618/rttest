@@ -17,8 +17,11 @@
  *     David Jennings
  */
 
-/*
-Send data to Postgresql; In development.
+ /*
+Sends lines of Json to a PostgreSQL database created Point Geometries.  PostgreSQL must have PostGIS installed. 
+You must create the table manually before running command to load data.  If you specify just the first four parameters SQL for create will be provided.
+
+This code has not been setup fro sending at a specified rate yet.  For PostgreSQL ruunning on local VM; rates near 3,000/s are possible.
 
  */
 package com.esri.rttest.send;
@@ -42,9 +45,8 @@ import org.json.JSONObject;
  * @author david
  */
 public class Postgresql {
-    
+
     private static final Logger LOG = LogManager.getLogger(Postgresql.class);
-    
 
     final static int INT = 0;
     final static int LNG = 1;
@@ -70,9 +72,9 @@ public class Postgresql {
 
             String line = br.readLine();
 
-            JSONObject json = null;
+            JSONObject json;
 
-            String sql = "";
+            String sql;
 
             if (line != null) {
 
@@ -91,11 +93,11 @@ public class Postgresql {
                     if (val instanceof Integer) {
                         sql += k + " integer,";
                     } else if (val instanceof Long) {
-                        sql += k + " bigint,";;
+                        sql += k + " bigint,";
                     } else if (val instanceof Double) {
-                        sql += k + " double precision,";;
+                        sql += k + " double precision,";
                     } else if (val instanceof String) {
-                        sql += k + " varchar(" + MAXSTRLEN + "),";;
+                        sql += k + " varchar(" + MAXSTRLEN + "),";
                     }
 
                 }
@@ -119,120 +121,116 @@ public class Postgresql {
         try {
 
             // Create DB Connection
-            Connection c = null;
-            Statement stmt = null;
+            Connection c;
+            Statement stmt;
             c = DriverManager
                     .getConnection("jdbc:postgresql://" + serverDB,
                             username, password);
             c.setAutoCommit(false);
 
-            stmt = c.createStatement();
+            //stmt = c.createStatement();
+            FileReader fr;
+            fr = new FileReader(fileJsonLines);
 
-            FileReader fr = new FileReader(fileJsonLines);
-
-            BufferedReader br = new BufferedReader(fr);
-
-            String line = br.readLine();
-
-            String sqlPrefix = "";
-            JSONObject json = null;
-
-            HashMap<String, Integer> jsonMap = new HashMap<>();
-
-            if (line != null) {
-
-                sqlPrefix = "INSERT INTO " + tablename + " (" + oidFieldName + ",";
-
-                // Create the Schema
-                json = new JSONObject(line);
-
-                Set<String> ks = json.keySet();
-
-                for (String k : ks) {
-                    //System.out.println(k);
-
-                    Object val = json.get(k);
-
-                    if (val instanceof Integer) {
-                        jsonMap.put(k, INT);
-                    } else if (val instanceof Long) {
-                        jsonMap.put(k, LNG);
-                    } else if (val instanceof Double) {
-                        jsonMap.put(k, DBL);
-                    } else if (val instanceof String) {
-                        jsonMap.put(k, STR);
-                    }
-                    //System.out.println();
-                    sqlPrefix += k + ",";
-
-                }
-
-                //oid,a,b,clat,clon,rot,num,geom
-                //sqlPrefix = sqlPrefix.substring(0,sqlPrefix.length() - 1) + ") VALUES (";
-                sqlPrefix += geomFieldName + ") VALUES (DEFAULT,";
-
-            }
-
-            int num = 0;
-
-            while (line != null) {
-                //System.out.println(line);
-                // Create sql line
-                String sql;
-
-                sql = sqlPrefix;
-
-                for (String key : jsonMap.keySet()) {
-                    
-                    switch (jsonMap.get(key)) {
-                        case INT:
-                            sql += json.getInt(key) + ",";
-                            break;
-                        case LNG:
-                            sql += json.getLong(key) + ",";
-                            break;
-                        case DBL:
-                            sql += json.getDouble(key) + ",";
-                            break;
-                        case STR:
-                            sql += "'" + json.getString(key).replace("'", "''") + "',";
-                            break;
-                        default:
-                            break;
-                    }
-
-                }
-
-                //ST_GeomFromText('POINT(-71.060316 48.432044)', 4326)
-                //sql = sql.substring(0,sql.length() - 1) + ");";
-                sql += "ST_GeomFromText('POINT(" + json.getDouble(lonFieldName) + " " + json.getDouble(latFieldName) + ")', 4326)" + ");";
-                System.out.println(sql);
+            try (BufferedReader br = new BufferedReader(fr)) {
+                String line = br.readLine();
                 
-                stmt = c.createStatement();
-                stmt.executeUpdate(sql);
-
-                num += 1;
-
-                if (num % 1000 == 0) {
-                    c.commit();
-                }
-
-
-
-                line = br.readLine();
-
+                String sqlPrefix = "";
+                JSONObject json = null;
+                
+                HashMap<String, Integer> jsonMap = new HashMap<>();
+                
                 if (line != null) {
+                    
+                    sqlPrefix = "INSERT INTO " + tablename + " (" + oidFieldName + ",";
+                    
+                    // Create the Schema
                     json = new JSONObject(line);
+                    
+                    Set<String> ks = json.keySet();
+                    
+                    for (String k : ks) {
+                        //System.out.println(k);
+                        
+                        Object val = json.get(k);
+                        
+                        if (val instanceof Integer) {
+                            jsonMap.put(k, INT);
+                        } else if (val instanceof Long) {
+                            jsonMap.put(k, LNG);
+                        } else if (val instanceof Double) {
+                            jsonMap.put(k, DBL);
+                        } else if (val instanceof String) {
+                            jsonMap.put(k, STR);
+                        }
+                        //System.out.println();
+                        sqlPrefix += k + ",";
+                        
+                    }
+                    
+                    //oid,a,b,clat,clon,rot,num,geom
+                    //sqlPrefix = sqlPrefix.substring(0,sqlPrefix.length() - 1) + ") VALUES (";
+                    sqlPrefix += geomFieldName + ") VALUES (DEFAULT,";
+                    
                 }
 
+                int num = 0;
+                
+                while (line != null) {
+                    //System.out.println(line);
+                    // Create sql line
+                    String sql;
+                    
+                    sql = sqlPrefix;
+                    
+                    for (String key : jsonMap.keySet()) {
+                        
+                        switch (jsonMap.get(key)) {
+                            case INT:
+                                sql += json.getInt(key) + ",";
+                                break;
+                            case LNG:
+                                sql += json.getLong(key) + ",";
+                                break;
+                            case DBL:
+                                sql += json.getDouble(key) + ",";
+                                break;
+                            case STR:
+                                sql += "'" + json.getString(key).replace("'", "''") + "',";
+                                break;
+                            default:
+                                break;
+                        }
+                        
+                    }
+                    
+                    //ST_GeomFromText('POINT(-71.060316 48.432044)', 4326)
+                    //sql = sql.substring(0,sql.length() - 1) + ");";
+                    sql += "ST_GeomFromText('POINT(" + json.getDouble(lonFieldName) + " " + json.getDouble(latFieldName) + ")', 4326)" + ");";
+                    //System.out.println(sql);
+                    
+                    stmt = c.createStatement();
+                    stmt.executeUpdate(sql);
+                    
+                    num += 1;
+                    
+                    if (num % 1000 == 0) {
+                        c.commit();
+                    }
+                    
+                    line = br.readLine();
+                    
+                    if (line != null) {
+                        json = new JSONObject(line);
+                    }
+                    
 //                break;
+                }
+                
+                c.commit();
+                
+                c.close();
             }
-
-            c.commit();
-
-            c.close();
-
-            br.close();
             fr.close();
         } catch (IOException | SQLException | JSONException e) {
             LOG.error("ERROR", e);
@@ -255,7 +253,6 @@ public class Postgresql {
 //        String latFieldName = "lat";
 //        //t.printCreate(tableName, filename, geomFieldName, oidFieldName);
 //        t.run(tableName, filename, geomFieldName, oidFieldName, serverConn, username, password, lonFieldName, latFieldName);
-        
         String tableName;
         String filename;
         String geomFieldName;
@@ -265,32 +262,35 @@ public class Postgresql {
         String username;
         String password;
         String lonFieldName;
-        String latFieldName;        
-
+        String latFieldName;
 
         int numargs = args.length;
 
         if (numargs != 4 && numargs != 9) {
-            System.err.println("Usage Print Create Table: Postgresql <tableName> <fileName> <geomFieldName> <oidFieldName>");
-            System.err.println("Usage Load Data: Postgresql <tableName> <fileName> <geomFieldName> <oidFieldName> <serverConn> <username> <password> <lonFieldName> <latFieldName>");
-        } else if (numargs == 4) {
-            tableName = args[0];
-            filename = args[1];
-            geomFieldName = args[2];
-            oidFieldName = args[3];
-            t.printCreate(tableName, filename, geomFieldName, oidFieldName);
+            System.err.println("Usage Print Create Table: Postgresql [tableName] [fileName] [geomFieldName] [oidFieldName]");
+            System.err.println("Usage Load Data: Postgresql [tableName] [fileName] [geomFieldName] [oidFieldName] [serverConn] [username] [password] [lonFieldName] [latFieldName]");
+            System.err.println("Example: java -cp target/rttest.jar com.esri.rttest.send.Postgresql planes planes.json geom gid 192.168.57.2:5432/gis1 gis PASSWORD lon lat");
+            System.err.println("Loads lines from file planes.json to table planes. The table planes has oidFieldName of gid and geomFieldName of geom.  The serverConn is the IP:PORT/database.");
+            System.err.println("  You'll need to specify the username and password that can insert into the table.  The lonFieldName (lon) and latFieldname (lat) from the json that will be used to create points.");
+
         } else {
             tableName = args[0];
             filename = args[1];
             geomFieldName = args[2];
             oidFieldName = args[3];
-            serverConn = args[4];
-            username = args[5];
-            password = args[6];
-            lonFieldName = args[7];
-            latFieldName = args[8];
-            
-            t.run(tableName, filename, geomFieldName, oidFieldName, serverConn, username, password, lonFieldName, latFieldName);
+
+            if (numargs == 4) {
+
+                t.printCreate(tableName, filename, geomFieldName, oidFieldName);
+            } else {
+                serverConn = args[4];
+                username = args[5];
+                password = args[6];
+                lonFieldName = args[7];
+                latFieldName = args[8];
+
+                t.run(tableName, filename, geomFieldName, oidFieldName, serverConn, username, password, lonFieldName, latFieldName);
+            }
         }
 
     }

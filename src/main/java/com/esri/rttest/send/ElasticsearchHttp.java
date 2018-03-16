@@ -58,13 +58,18 @@ public class ElasticsearchHttp {
 
     private static final Logger LOG = LogManager.getLogger(ElasticsearchHttp.class);
 
-    private final String USER_AGENT = "Mozilla/5.0";
+    //private final String USER_AGENT = "Mozilla/5.0";
     private HttpClient httpClient;
     private HttpPost httpPost;
 
     private String strURL;  // http://data.sats-sat03.l4lb.thisdcos.directory:9200/index/type
     private Integer esbulk;
 
+    /**
+     *
+     * @param strURL
+     * @param esbulk
+     */
     public ElasticsearchHttp(String strURL, Integer esbulk) {
 
         try {
@@ -94,14 +99,12 @@ public class ElasticsearchHttp {
 
         StringEntity postingString = new StringEntity(data);
 
-        //System.out.println(data);
         httpPost.setEntity(postingString);
-        //httpPost.setHeader("Content-type","plain/text");
         httpPost.setHeader("Content-type", "application/json");
 
         ResponseHandler<String> responseHandler = new BasicResponseHandler();
         String resp = httpClient.execute(httpPost, responseHandler);
-
+        
         //JSONObject jsonResp = new JSONObject(resp);
         //System.out.println(jsonResp);
         httpPost.releaseConnection();
@@ -110,18 +113,18 @@ public class ElasticsearchHttp {
     public void sendFile(String filename, Integer rate, Integer numToSend) {
 
         try {
-            FileReader fr = new FileReader(filename);
-            BufferedReader br = new BufferedReader(fr);
-
-            // Read the file into an array
-            ArrayList<String> lines = new ArrayList<>();
-
+            FileReader fr;
+            fr = new FileReader(filename);
+            ArrayList<String> lines;
             String line;
-            while ((line = br.readLine()) != null) {
-                lines.add(line);
+            // Read the file into an array
+            try (BufferedReader br = new BufferedReader(fr)) {
+                // Read the file into an array
+                lines = new ArrayList<>();
+                while ((line = br.readLine()) != null) {
+                    lines.add(line);
+                }
             }
-
-            br.close();
             fr.close();
 
             Iterator<String> linesIt = lines.iterator();
@@ -131,10 +134,6 @@ public class ElasticsearchHttp {
 
             Integer cnt = 0;
 
-            /*
-                For rates < 100/s burst is better
-                For rates > 100/s continous is better            
-             */
             // Estimate time for to send all events requested
             double estTime = numToSend / rate;
 

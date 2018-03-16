@@ -425,7 +425,7 @@ public class MarathonInfo {
 
             returnJson.put("satApp", eip + ":" + port);
 
-            url = "http://" + eip + ":" + port + "/v1/endpoints/data";;
+            url = "http://" + eip + ":" + port + "/v1/endpoints/data";
 
             request = new HttpGet(url);
 

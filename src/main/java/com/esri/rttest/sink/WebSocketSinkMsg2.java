@@ -48,7 +48,7 @@
 //    @SuppressWarnings("unused")
 //    private Session session;
 //
-//    private static final Logger LOG = LogManager.getLogger(WebSocketSinkMsg.class);
+//    private static final Logger LOG = LogManager.getLogger(WebSocketSinkMsg2.class);
 //
 //    boolean printmessages;
 //    int sampleEvery;
