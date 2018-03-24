@@ -19,18 +19,22 @@
 /**
  * Test Class
  */
-package com.esri.rttest.producers;
+package com.esri.rttest.send;
 
 import com.esri.rttest.MarathonInfo;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -51,6 +55,8 @@ import org.json.JSONObject;
  */
 public class ElasticsearchTrans {
 
+    private static final Logger LOG = LogManager.getLogger(ElasticsearchTrans.class);
+    
     String esnodes;
     String clusterName;
     String idx;
@@ -87,8 +93,8 @@ public class ElasticsearchTrans {
 
             this.client = (Client) tc;
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (NumberFormatException | UnknownHostException e) {
+            LOG.error("ERROR",e);
         }
     }
 
@@ -108,8 +114,8 @@ public class ElasticsearchTrans {
 
             br.close();
             fr.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            LOG.error("ERROR",e);
         }
 
         BulkProcessor bulkProcessor = BulkProcessor.builder(
@@ -188,7 +194,7 @@ public class ElasticsearchTrans {
                 st = LocalDateTime.now();
             }
 
-            long etime = 0;
+            long etime;
             do {
                 // This approach uses a lot of CPU                    
                 etime = System.nanoTime();

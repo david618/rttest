@@ -16,74 +16,83 @@
  * Contributors:
  *     David Jennings
  */
-package com.esri.rttest.producers;
 
-import com.esri.rttest.monitors.KafkaTopicMon;
-import com.esri.rttest.MarathonInfo;
+ /*
+ * Sends lines of a text file to a TCP Server 
+ * Lines are sent at a specified rate.
+ * While sending the send rates are adjusted to try to overcome hardware differences.
+ * The maximum possible rate depends on hardware and network.
+ * You can use Java options (-Xms2048m -Xmx2048m) to set the Heap Size available.
+ * 
+ * 30 Aug 2017: Updated to renable support to append time; modified code to adjust rate
+ *     dynamically to more closely achieve the requested rate.
+ *     Testing from 10,000 to 180,000
+ *         BurstDelay = 0: Rate with 1% of requested rate
+ *         BurstDelay = 100: Rate with 3% of requested rate
+ *         Peak around 150,000/s on my computer i7 with 32GB RAM
+ * 
+ * 7 Sep 2017: Added Tcp: If a DNS name is provide a lookup is done and a socket is opened to each
+ *      ip associated with the name.  tcp-kafka.marathon.mesos might have 4 ip; each ip gets a socket.
+ *      With this change I could get rates with 4 instances up to around 500,000/s on Azure.
+ *
+ * 26 Jan 2018: Modified to used a linked block queue and threads.
+ *      Combined parameters server port into one server:port.
+ *      The server:port can be ip:port, dns-name:port, app[marathon-app-name], or app[marathon-app-name:portindex]
+ *      Uses Marathon-Info to lookup ip and ports for marathon-app-name if needed.
+ *      Uses DNS lookup and InetAddress to find ip's for a given name.
+ *      Each thread is assigned a ip:port in a round robin fashion. 
+ *      These changes increased max send rate from 140k/s to close to 600k/s
+ * 
+ * Creator: David Jennings
+ */
+package com.esri.rttest.send;
+
+import com.esri.rttest.IPPort;
+import com.esri.rttest.IPPorts;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Properties;
-import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.Producer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-/*
- * Sends lines of a text file to a Kafka Topic 
- * Lines are sent at a specified rate.
- * 
+/**
+ *
  * @author david
  */
-public class KafkaUsingThreads {
-
-    private static final Logger log = LogManager.getLogger(KafkaTopicMon.class);
+public class Tcp2 {
+    
+    private static final Logger LOG = LogManager.getLogger(Tcp2.class);
+    
 
     LinkedBlockingQueue<String> lbq = new LinkedBlockingQueue<>();
 
-    
-    private Producer<String, String> producer;
-   
-    
     /**
      *
-     * @param brokers
-     * @param topic
+     * @param appNamePattern
+     * ip:port/app[marathon-app-name(:index)]/dns-name:port
      * @param filename File with lines of data to be sent.
      * @param rate Rate in lines per second to send.
      * @param numToSend Number of lines to send. If more than number of lines in
      * file will resend from start.
      * @param numThreads
      */
-    public void sendFile(String brokers, String topic, String filename, Integer rate, Integer numToSend, Integer numThreads) {
+    public void sendFile(String appNamePattern, String filename, Integer rate, Integer numToSend, Integer numThreads) {
         try {
 
-            // https://kafka.apache.org/documentation/#producerconfigs
+            ArrayList<IPPort> ipPorts = IPPorts.getInstance().getIPPorts(appNamePattern);
 
-            Properties props = new Properties();
-            props.put("bootstrap.servers", brokers);
-            props.put("client.id", KafkaUsingThreads.class.getName());
-            props.put("acks", "1");
-            props.put("retries", 0);
-            props.put("batch.size", 16384);
-            props.put("linger.ms", 1);
-            props.put("buffer.memory", 8192000);
-            props.put("request.timeout.ms", "11000");
-            props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-            props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-            /* Addin Simple Partioner didn't help */
-            //props.put("partitioner.class", SimplePartitioner.class.getCanonicalName());
+            if (ipPorts.isEmpty()) {
+                throw new UnsupportedOperationException("Could not discover the any ip port combinations.");
+            }
 
-            this.producer = new KafkaProducer<>(props);
-
+            // Read File
             FileReader fr = new FileReader(filename);
             BufferedReader br = new BufferedReader(fr);
 
-            // Read the file into an array
+            // Load Array with Lines from File
             ArrayList<String> lines = new ArrayList<>();
 
             String line;
@@ -94,18 +103,22 @@ public class KafkaUsingThreads {
             br.close();
             fr.close();
 
+            // Create Iterator from Array
             Iterator<String> linesIt = lines.iterator();
 
-            // Get the System Time
+            // Get the System Time as st (Start Time)            
             Long st = System.currentTimeMillis();
 
+            // Count of Records Sent
             Integer cnt = 0;
 
-            KafkaSenderThread[] threads = new KafkaSenderThread[numThreads];
+            // Create the TcpSenderThreads
+            TcpSenderThread[] threads = new TcpSenderThread[numThreads];
 
             for (int i = 0; i < numThreads; i++) {
-
-                threads[i] = new KafkaSenderThread(lbq, producer, topic);
+                // Use modulo to get one of the ipport's 0
+                IPPort ipPort = ipPorts.get((i + 1) % ipPorts.size());
+                threads[i] = new TcpSenderThread(lbq, ipPort.getIp(), ipPort.getPort());
                 threads[i].start();
 
             }
@@ -123,7 +136,7 @@ public class KafkaUsingThreads {
                     int cntErr = 0;
 
                     // Get Counts from Threads
-                    for (KafkaSenderThread thread : threads) {
+                    for (TcpSenderThread thread : threads) {
                         cnts += thread.getCnt();
                         cntErr += thread.getCntErr();
                     }
@@ -153,7 +166,6 @@ public class KafkaUsingThreads {
                     }
                     timeStartedBatch = System.currentTimeMillis();
                 }
-
             }
 
             int cnts = 0;
@@ -166,7 +178,7 @@ public class KafkaUsingThreads {
                     timeLastDisplayedRate = System.currentTimeMillis();
 
                     // Get Counts from Threads
-                    for (KafkaSenderThread thread : threads) {
+                    for (TcpSenderThread thread : threads) {
                         cnts += thread.getCnt();
                         cntErr += thread.getCntErr();
                     }
@@ -176,7 +188,7 @@ public class KafkaUsingThreads {
                     System.out.println(cnts + "," + cntErr + "," + String.format("%.0f", curRate));
 
                     // End if the lbq is empty
-                    if (lbq.isEmpty()) {
+                    if (lbq.size() == 0) {
                         System.out.println("Queue Empty");
                         break;
                     }
@@ -187,7 +199,7 @@ public class KafkaUsingThreads {
                         break;
                     }
 
-                    // End if cnts are not changing 
+                    // End if cnts is changing 
                     if (cnts == prevCnts) {
                         System.out.println("Counts are not changing.");
                         break;
@@ -201,14 +213,14 @@ public class KafkaUsingThreads {
             }
 
             // Terminate Threads
-            for (KafkaSenderThread thread : threads) {
+            for (TcpSenderThread thread : threads) {
                 thread.terminate();
             }
 
             cnts = 0;
             cntErr = 0;
 
-            for (KafkaSenderThread thread : threads) {
+            for (TcpSenderThread thread : threads) {
                 cnts += thread.getCnt();
                 cntErr += thread.getCntErr();
             }
@@ -217,47 +229,44 @@ public class KafkaUsingThreads {
 
             System.out.println(cnts + "," + cntErr + "," + String.format("%.0f", sendRate));
 
-            producer.close();
             System.exit(0);
-            
-        } catch (IOException | InterruptedException e) {
-            // Could fail on very large files that would fill heap space 
 
-            log.error("ERROR", e);
+        } catch (IOException | InterruptedException | UnsupportedOperationException e) {
+
+            LOG.error("ERROR", e);
 
         }
     }
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String args[]) {
 
-        int numArgs = args.length;
-
-        // Command Line d1.trinity.dev:9092 simFile simFile_1000_10s.dat 1000 10000
-        if (numArgs != 5 && numArgs != 6) {
-            System.err.print("Usage: KafkaUsingThreads <broker> <topic> <file> <rate> <numrecords> (<numThreads>)\n");
+        // Example Command Line args: localhost 5565 faa-stream.csv 1000 10000
+        int numargs = args.length;
+        if (numargs < 4 || numargs > 5) {
+            // append append time option was added to support end-to-end latency; I used it for Trinity testing
+            System.err.println("Usage: Tcp2 <server:port> <file> <rate> <numrecords> (numThreads=1)");
+            System.err.println("server:port: The IP or hostname of server to send events to. Could be ip:port, dns-name:port, or app[marathon-app-name(:portindex)]");
+            System.err.println("filename: sends line by line from this file.");
+            System.err.println("rate: Attempts to send at this rate.");
+            System.err.println("numrecords: Sends this many lines; file is automatically recycled if needed.");
+            System.err.println("numThread: Number of threads defaults to 1");
         } else {
+            // Initial the Tcp Class with the server and port
 
-            String brokers = args[0];
-
-            String brokerSplit[] = brokers.split(":");
-
-            if (brokerSplit.length == 1) {
-                // Try hub name. Name cannot have a ':' and brokers must have it.
-                brokers = new MarathonInfo().getBrokers(brokers);
-            }   // Otherwise assume it's brokers 
-
-            String topic = args[1];
-            String file = args[2];
-            Integer rate = Integer.parseInt(args[3]);
-            Integer numToSend = Integer.parseInt(args[4]);
+            String serverPort = args[0];
+            String filename = args[1];
+            Integer rate = Integer.parseInt(args[2]);
+            Integer numrecords = Integer.parseInt(args[3]);
             Integer numThreads = 1;
 
-            if (numArgs == 6) {
-                numThreads = Integer.parseInt(args[5]);
+            switch (numargs) {
+                case 5:
+                    numThreads = Integer.parseInt(args[4]);
+                    break;
             }
 
-            KafkaUsingThreads t = new KafkaUsingThreads();
-            t.sendFile(brokers, topic, file, rate, numToSend, numThreads);
+            Tcp2 t = new Tcp2();
+            t.sendFile(serverPort, filename, rate, numrecords, numThreads);
 
         }
 

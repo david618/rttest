@@ -24,7 +24,7 @@
  *
  * Creator: David Jennings
  */
-package com.esri.rttest.sinks;
+package com.esri.rttest.sink;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -33,16 +33,22 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
  * @author david
  */
 public class TcpSink {
+    
+    private static final Logger LOG = LogManager.getLogger(TcpSink.class);
+    
 
     private class GetCounts extends TimerTask {
 
         ArrayList<TcpSinkServer> tssList;
+        Boolean autoTerminate;
 
         long st = 0L;
         long currentCnt = 0L;
@@ -51,8 +57,9 @@ public class TcpSink {
         int numSamples = 0;
         long tm;
 
-        public GetCounts(ArrayList<TcpSinkServer> tssList) {
+        public GetCounts(ArrayList<TcpSinkServer> tssList, Boolean autoTerminate) {
             this.tssList = tssList;
+            this.autoTerminate = autoTerminate;
             st = 0L;
             currentCnt = 0L;
             prevCnt = 0L;
@@ -100,7 +107,15 @@ public class TcpSink {
                         if (tss.lastTime > et) {
                             et = tss.lastTime;
                         }
-                        tss.terminate();
+                      
+                        if (autoTerminate) {
+                            tss.terminate();
+                            
+                        } else {
+                            tss.reset();
+                        }
+                        
+                        
 
                     }
 
@@ -137,22 +152,18 @@ public class TcpSink {
 
     }
 
-    Integer port;
-    Integer sampleEveryNSecs;
-    Boolean displayMessages;
-
     private void listenForConnections() {
         try {
             ServerSocket ss = new ServerSocket(port);
 
             System.out.println("After starting this; create or restart the GeoEvent service.");
-            System.out.println("Once connected you see a 'Listening' message");
+            System.out.println("Once connected you see a 'Thread Started' message for each connection.");
 
             ArrayList<TcpSinkServer> tssList = new ArrayList<>();
 
             // Setup Timer to Get Counts
             Timer timer = new Timer(true);
-            timer.scheduleAtFixedRate(new GetCounts(tssList), 0, 5000);
+            timer.scheduleAtFixedRate(new GetCounts(tssList, autoTerminate), 0, this.sampleEveryNSecs * 1000);
 
             while (true) {
                 Socket cs = ss.accept();
@@ -162,13 +173,20 @@ public class TcpSink {
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("ERROR",e);
         }
     }
 
-    public TcpSink(Integer port, Integer sampleEveryNSecs, Boolean displayMessages) {
+    Integer port;
+    Integer sampleEveryNSecs;
+    Boolean autoTerminate;
+    Boolean displayMessages;
+       
+    
+    public TcpSink(Integer port, Integer sampleEveryNSecs, Boolean autoTerminate, Boolean displayMessages) {
         this.port = port;
         this.sampleEveryNSecs = sampleEveryNSecs;
+        this.autoTerminate = autoTerminate;
         this.displayMessages = displayMessages;
         listenForConnections();
 
@@ -190,19 +208,28 @@ public class TcpSink {
          */
         int numargs = args.length;
 
-        if (numargs < 1 || numargs > 3) {
-            System.err.print("Usage: TcpSink <port-to-listen-on> (<sample-every-N-records/1000>) (<display-messages/false>)\n");
+        if (numargs < 1 || numargs > 4) {
+            System.err.println("Usage: TcpSink <port-to-listen-on> (<sample-every-N-seconds/5>) (<auto-terminate/true>) (<display-messages/false>)\n");
+            System.err.println("port-to-listen-on: The port to listen on");
+            System.err.println("samples-every-N-seconds: Will gather a sample every N seconds for linear regression and estimation of rate.");
+            System.err.println("auto-terminate: true or false defaults to true. If true when count stops increasing the socket is closed; GeoEvent expects socket to stay open.");
+            System.err.println("display-messages: true or false default to false. If true messages are displayed counts ignored. Useful for low rates and validating messages.");
+            
         } else {
 
+            
             switch (numargs) {
                 case 1:
-                    new TcpSink(Integer.parseInt(args[0]), 1000, false);
+                    new TcpSink(Integer.parseInt(args[0]), 5, true, false);
                     break;
                 case 2:
-                    new TcpSink(Integer.parseInt(args[0]), Integer.parseInt(args[1]), false);
+                    new TcpSink(Integer.parseInt(args[0]), Integer.parseInt(args[1]), true, false);
+                    break;
+                case 3:
+                    new TcpSink(Integer.parseInt(args[0]), Integer.parseInt(args[1]), Boolean.parseBoolean(args[2]), false);
                     break;
                 default:
-                    new TcpSink(Integer.parseInt(args[0]), Integer.parseInt(args[1]), Boolean.parseBoolean(args[2]));
+                    new TcpSink(Integer.parseInt(args[0]), Integer.parseInt(args[1]), Boolean.parseBoolean(args[2]), Boolean.parseBoolean(args[3]));
                     break;
             }
 

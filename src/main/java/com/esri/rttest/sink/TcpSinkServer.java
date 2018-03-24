@@ -21,22 +21,27 @@
  *
  * Creator: David Jennings
  */
-package com.esri.rttest.sinks;
+package com.esri.rttest.sink;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 /**
  *
  * @author david
  */
 public class TcpSinkServer extends Thread {
+    
+    private static final Logger LOG = LogManager.getLogger(TcpSinkServer.class);
+    
 
     private Socket socket = null;
+    boolean running;
     boolean displayMessages;
     long cnt;
     long lastTime;
@@ -48,6 +53,7 @@ public class TcpSinkServer extends Thread {
         this.lastTime = 0L;
         this.firstTime = 0L;
         this.displayMessages = displayMessages;
+        this.running = true;
     }
 
     public long getCnt() {
@@ -62,6 +68,11 @@ public class TcpSinkServer extends Thread {
         return firstTime;
     }
     
+    public void reset() {
+        this.cnt = 0;
+        this.lastTime = 0L;
+        this.firstTime = 0L;        
+    }
     
     
     public void terminate() {
@@ -71,10 +82,11 @@ public class TcpSinkServer extends Thread {
             this.lastTime = 0L;
             this.firstTime = 0L;
             socket.close();            
+            running = false;
             this.interrupt();
-            Thread.currentThread().interrupt();
-        } catch (IOException ex) {
-            Logger.getLogger(TcpSinkServer.class.getName()).log(Level.SEVERE, null, ex);
+            
+        } catch (IOException e) {
+            LOG.error("ERROR", e);
         }
     }    
 
@@ -102,11 +114,17 @@ public class TcpSinkServer extends Thread {
                         }
                     }
 
-                } 
+                } else {
+                    Thread.sleep(1000);
+                }
+                if (!running) {
+                    break;
+                }
+                
 
             }
 
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             //e.printStackTrace();
         }
 

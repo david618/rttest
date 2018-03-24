@@ -25,10 +25,12 @@
  * 
  * Creator: David Jennings
  */
-package com.esri.rttest.sinks;
+package com.esri.rttest.sink;
 
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import org.eclipse.jetty.websocket.WebSocket;
@@ -44,6 +46,9 @@ import org.eclipse.jetty.websocket.WebSocketClientFactory;
  */
 public class WebSocketSink {
     
+    private static final Logger LOG = LogManager.getLogger(WebSocketSink.class);
+    
+    
     final int MAX_MESSAGE_SIZE = 1000000;
     
     public void connectWebsocket(String url, int sampleEveryN, boolean showMessages) {
@@ -57,6 +62,7 @@ public class WebSocketSink {
             
             SslContextFactory sslContextFactory = new SslContextFactory();
             sslContextFactory.setTrustAll(true);
+            sslContextFactory.setValidateCerts(false);
             sslContextFactory.start();
 
             final WebSocketClientFactory factory = new WebSocketClientFactory();
@@ -64,7 +70,7 @@ public class WebSocketSink {
             factory.start();
 
             WebSocketClient client = factory.newWebSocketClient();
-
+            
             URI uri = new URI(url);
 
             //WebSocketMessage msg = new WebSocketSinkMsg();
@@ -95,7 +101,7 @@ public class WebSocketSink {
             } 
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("ERROR", e);
         }
     }
     

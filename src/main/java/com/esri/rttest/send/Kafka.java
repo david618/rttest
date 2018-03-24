@@ -18,9 +18,8 @@
  */
 
 
-package com.esri.rttest.producers;
+package com.esri.rttest.send;
 
-import com.esri.rttest.monitors.KafkaTopicMon;
 import com.esri.rttest.MarathonInfo;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -44,12 +43,14 @@ import org.apache.logging.log4j.Logger;
  */
 public class Kafka {
 
-    private static final Logger log = LogManager.getLogger(KafkaTopicMon.class);
+    private static final Logger LOG = LogManager.getLogger(Kafka.class);
     
     private Producer<String, String> producer;
     private String topic;
     
     public Kafka(String brokers, String topic) {
+        
+        
 
             // https://kafka.apache.org/documentation/#producerconfigs
             Properties props = new Properties();
@@ -237,7 +238,7 @@ public class Kafka {
         } catch (IOException | InterruptedException e) {
             // Could fail on very large files that would fill heap space 
             
-            log.error("ERROR", e);
+            LOG.error("ERROR", e);
             
         }
     }

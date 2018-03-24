@@ -16,32 +16,29 @@
  * Contributors:
  *     David Jennings
  */
-package com.esri.rttest.producers;
+package com.esri.rttest.send;
 
-import java.util.UUID;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.Socket;
 import java.util.concurrent.LinkedBlockingQueue;
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author david
  */
-public class KafkaSenderThread extends Thread {
-
+public class TcpSenderThread extends Thread {
+    
     LinkedBlockingQueue<String> lbq;
     private volatile boolean running = true;
 
-    private Producer<String, String> producer;
-    private String topic;
+    private final String ip;
+    private final int port;
+    
+    private OutputStream os;
 
-    public KafkaSenderThread(LinkedBlockingQueue<String> lbq, Producer<String, String> producer, String topic) {
-        this.lbq = lbq;
-        this.topic = topic;
-        this.producer = producer;
-
-
-    }
 
     private long cntErr;
     private long cnt;
@@ -54,14 +51,32 @@ public class KafkaSenderThread extends Thread {
         return cnt;
     }
 
+    public TcpSenderThread(LinkedBlockingQueue<String> lbq, String ip, int port) {
+        this.lbq = lbq;
+        this.ip = ip;
+        this.port = port;
+        try {
+            Socket skt = new Socket(this.ip, this.port);
+            this.os = skt.getOutputStream();
+        } catch (IOException e) {
+            System.out.println("Failed to created socket to: " +  this.ip + ":" + this.port);
+        }
+        
+        
+    }
+    
+    
     public void terminate() {
         running = false;
-        producer.flush();
+        try {
+            os.close();
+        } catch (IOException ex) {
+            Logger.getLogger(TcpSenderThread.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override
     public void run() {
-
         try {
             while (running) {
                 String line = lbq.take();
@@ -70,15 +85,17 @@ public class KafkaSenderThread extends Thread {
                 }
                 // Send the String
 
-                UUID uuid = UUID.randomUUID();
-                producer.send(new ProducerRecord<>(this.topic, uuid.toString(), line));
+                os.write(line.getBytes());
+                os.flush();
+
                 cnt += 1;
 
             }
 
-        } catch (InterruptedException e) {
-            // ok to ignore
+        } catch (InterruptedException | IOException ex) {
+            Logger.getLogger(HttpPosterThread.class.getName()).log(Level.SEVERE, null, ex);
+            cntErr += 1;
         }
-
-    }
+    }    
+    
 }
