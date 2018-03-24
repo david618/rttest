@@ -32,7 +32,9 @@ import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.config.ConnectionConfig;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
@@ -108,11 +110,16 @@ public class HttpPosterThread extends Thread {
 //        builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
 //        SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
 //                builder.build());
+//        RequestConfig reqConfig = RequestConfig.custom()
+//                .setConnectTimeout(10 * 1000)
+//                .build();
+//
         httpClient = HttpClients
                 .custom()
                 //.setDefaultCredentialsProvider(provider)
                 .setSSLContext(sslContext)
-                .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)              
+//                .setDefaultRequestConfig(reqConfig)
                 .build();
 
         //httpClient = HttpClientBuilder.create().build();
@@ -155,11 +162,9 @@ public class HttpPosterThread extends Thread {
 
             }
 
-        } catch (InterruptedException ex) {
+        } catch (InterruptedException | IOException ex) {
             Logger.getLogger(HttpPosterThread.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(HttpPosterThread.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             Logger.getLogger(HttpPosterThread.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
