@@ -96,9 +96,9 @@ public class IPPorts {
                 System.out.println("appName:" + appName);
                 System.out.println("portIndex:" + portIndex);
                 System.out.println("path:" + path);
-                //MarathonInfo mi = new MarathonInfo();
+                MarathonInfo mi = new MarathonInfo();
 
-                //ipPorts = mi.getIPPorts(appName, portIndex);
+                ipPorts = mi.getIPPorts(appName, portIndex);
             } else  {
 
                 URL aURL;
