@@ -163,7 +163,7 @@ public class Http {
 //
 //                }
                 IPPort ipport = ipPorts.get(i % ipPorts.size());
-                String thdURL = ipp.getProtocol() + ipport.getIp() + ":" + ipport.getPort() + ipp.getPath();
+                String thdURL = ipp.getProtocol() + "://" + ipport.getIp() + ":" + ipport.getPort() + ipp.getPath();
                 System.out.println(thdURL);
                 threads[i] = new HttpPosterThread(lbq, thdURL);
 
