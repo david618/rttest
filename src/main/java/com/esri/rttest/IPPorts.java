@@ -67,7 +67,7 @@ public class IPPorts {
                     + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\D.*";
 
             // See if the url contains app(name)
-            final String APP_PATTERN = "(.*)app\\[(.*)\\](.*)";
+            final String APP_PATTERN = "(.*)://app\\[(.*)\\](.*)";
 
             if (!appNamePattern.startsWith("http")) {
                 appNamePattern = "http://" + appNamePattern;
@@ -96,6 +96,7 @@ public class IPPorts {
                 System.out.println("appName:" + appName);
                 System.out.println("portIndex:" + portIndex);
                 System.out.println("path:" + path);
+                System.out.println("protocol:" + protocol);
                 MarathonInfo mi = new MarathonInfo();
 
                 ipPorts = mi.getIPPorts(appName, portIndex);
@@ -125,6 +126,8 @@ public class IPPorts {
                 System.out.println("ip: " + host);
                 System.out.println("port:" + port);
                 System.out.println("path:" + path);
+                System.out.println("protocol:" + protocol);
+                
 
                 if (IPmatcher.matches())  {
                     IPPort ipport = new IPPort(host, port);

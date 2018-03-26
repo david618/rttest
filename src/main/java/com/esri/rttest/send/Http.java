@@ -93,50 +93,6 @@ public class Http {
             ArrayList<IPPort> ipPorts = ipp.getIPPorts();
             
             
-//            // See if the url contains app(name)
-//            String appPat = "app\\[(.*)\\]";
-//
-//            Pattern pattern = Pattern.compile(appPat);
-//            Matcher matcher = pattern.matcher(url);
-//
-//            URL aURL = new URL(url);
-//            String server = aURL.getHost();
-//
-//            Pattern IPpattern = Pattern.compile(IPADDRESS_PATTERN);
-//            Matcher IPmatcher = IPpattern.matcher(server);
-//
-//            String appStr = null;
-//            ArrayList<IPPort> ipPorts = null;
-//            if (matcher.find()) {
-//                appStr = matcher.group();
-//                MarathonInfo mi = new MarathonInfo();
-//                ipPorts = mi.getIPPorts(matcher.group(1), 0);
-//            } else if (IPmatcher.matches()) {
-//                // This is an IP appStr and ipPorts leave null
-//                // Send url as is
-//            } else {
-//                Lookup lookup = new Lookup(server, Type.A);
-//                lookup.run();
-//                System.out.println(lookup.getErrorString());
-//                
-//                int port = aURL.getPort();
-//                
-//                if (port == -1) {
-//                    appStr = server;
-//                } else {
-//                    appStr = server + ":" + Integer.toString(port);
-//                }
-//               
-//                ipPorts = new ArrayList<>();
-//                for (Record ans : lookup.getAnswers()) {
-//                    String ip = ans.rdataToString();                    
-//                    IPPort ipport = new IPPort(ip, port);     
-//                    ipPorts.add(ipport);
-//                    System.out.println(ipport);
-//
-//                }
-//
-//            }
 
             // Get the System Time as st (Start Time)            
             Long st = System.currentTimeMillis();
@@ -147,21 +103,7 @@ public class Http {
             HttpPosterThread[] threads = new HttpPosterThread[numThreads];
 
             for (int i = 0; i < threads.length; i++) {
-//                if (appStr == null) {
-//                    threads[i] = new HttpPosterThread(lbq, url);
-//                } else {
-//                    
-//                    if (ipPorts.size() == 0) {
-//                        throw new Exception("No instances found!");
-//                    }
-//                    
-//                    IPPort ipPort = ipPorts.get((i + 1) % ipPorts.size());
-//
-//                    String urlIP = url.replace(appStr, ipPort.toString());
-//                    //System.out.println(urlIP);
-//                    threads[i] = new HttpPosterThread(lbq, urlIP);
-//
-//                }
+
                 IPPort ipport = ipPorts.get(i % ipPorts.size());
                 String thdURL = ipp.getProtocol() + "://" + ipport.getIp() + ":" + ipport.getPort() + ipp.getPath();
                 System.out.println(thdURL);
