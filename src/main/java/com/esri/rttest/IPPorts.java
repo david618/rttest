@@ -170,6 +170,17 @@ public class IPPorts {
         return ipPorts;
     }
 
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    
+    
+    
     public static void main(String[] args) {
 
 //        String name = "http://app[Someapp/Name:1234]/some/path/info";
