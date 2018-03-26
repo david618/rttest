@@ -24,8 +24,8 @@
  */
 package com.esri.rttest;
 
-import com.esri.rttest.sink.TcpSink;
 import java.net.InetAddress;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
@@ -42,26 +42,39 @@ import org.xbill.DNS.Type;
  * @author david
  */
 public class IPPorts {
-    
+
     private static final Logger LOG = LogManager.getLogger(IPPorts.class);
-    
 
-    private static final String IPADDRESS_PATTERN
-            = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
+    ArrayList<IPPort> ipPorts;
+    String protocol;
+    String path;
 
-    public ArrayList<IPPort> getIPPorts(String appNamePattern) {
+    public IPPorts(String appNamePattern) {
 
-        ArrayList<IPPort> ipPorts = new ArrayList<>();
+        ipPorts = new ArrayList<>();
+
+        System.out.println(appNamePattern);
 
         try {
+//            final String IPADDRESS_PATTERN = "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+//                    + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+//                    + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+//                    + "([01]?\\d\\d?|2[0-4]\\d|25[0-5]).*";
+
+            final String IPADDRESS_PATTERN = ".*\\D([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+                    + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+                    + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+                    + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\D.*";
+
             // See if the url contains app(name)
-            String appPat = "app\\[(.*)\\]";
+            final String APP_PATTERN = "(.*)app\\[(.*)\\](.*)";
+
+            if (!appNamePattern.startsWith("http")) {
+                appNamePattern = "http://" + appNamePattern;
+            }
 
             // Test to see if the appName pattern matches app[some-app-name]
-            Pattern appPattern = Pattern.compile(appPat);
+            Pattern appPattern = Pattern.compile(APP_PATTERN);
             Matcher appMatcher = appPattern.matcher(appNamePattern);
 
             // Test to see if the appName looks like it contains a ip address num.num.num.num
@@ -70,7 +83,9 @@ public class IPPorts {
 
             if (appMatcher.find()) {
                 // appNamePatter has app pattern
-                String appName = appMatcher.group(1);
+                protocol = appMatcher.group(1);
+                String appName = appMatcher.group(2);
+                path = appMatcher.group(3);
 
                 int portIndex = 0;
                 String appNameParts[] = appName.split(":");
@@ -80,48 +95,63 @@ public class IPPorts {
                 }
                 System.out.println("appName:" + appName);
                 System.out.println("portIndex:" + portIndex);
-                MarathonInfo mi = new MarathonInfo();
+                System.out.println("path:" + path);
+                //MarathonInfo mi = new MarathonInfo();
 
-                ipPorts = mi.getIPPorts(appName, portIndex);
-            } else if (IPmatcher.matches()) {
-                // appNamePattern looks like an IP
-                String ipPortParts[] = appNamePattern.split(":");
-                if (ipPortParts.length != 2) {
-                    throw new UnsupportedOperationException("You need to provide IP:port");
+                //ipPorts = mi.getIPPorts(appName, portIndex);
+            } else  {
+
+                URL aURL;
+                aURL = new URL(appNamePattern);
+                String host = aURL.getHost();
+                int port = aURL.getPort();
+
+                try {
+                    protocol = aURL.getProtocol();
+                } catch (Exception e) {
+                    protocol = "http";
                 }
-                int port = Integer.parseInt(ipPortParts[1]);
 
-                IPPort ipport = new IPPort(ipPortParts[0], port);
-                ipPorts.add(ipport);
-
-            } else {
-                // Assume it's a DNS-name:port
-
-                String namePortParts[] = appNamePattern.split(":");
-                if (namePortParts.length != 2) {
-                    throw new UnsupportedOperationException("You need to provide dns-name:port");
-                }
-                String dnsName = namePortParts[0];
-                int port = Integer.parseInt(namePortParts[1]);
-
-                Lookup lookup = new Lookup(dnsName, Type.A);
-                lookup.run();
-                //System.out.println(lookup.getErrorString());
-                if (lookup.getAnswers() == null) {
-                    InetAddress addr = InetAddress.getByName(dnsName);
-
-                    IPPort ipport = new IPPort(addr.getHostAddress(), port);
-                    ipPorts.add(ipport);
-                } else {
-                    for (Record ans : lookup.getAnswers()) {
-                        String ip = ans.rdataToString();
-                        IPPort ipport = new IPPort(ip, port);
-                        ipPorts.add(ipport);
-                        System.out.println(ipport);
-
+                if (port == -1) {
+                    if (protocol.equalsIgnoreCase("http")) {
+                        port = 80;
+                    } else {
+                        port = 443;
                     }
                 }
 
+                path = aURL.getPath();
+
+                System.out.println("ip: " + host);
+                System.out.println("port:" + port);
+                System.out.println("path:" + path);
+
+                if (IPmatcher.matches())  {
+                    IPPort ipport = new IPPort(host, port);
+                    ipPorts.add(ipport);
+                } else {
+                    
+                    // Lookup and populate ipPorts using host
+                    Lookup lookup = new Lookup(host, Type.A);
+                    lookup.run();
+                    //System.out.println(lookup.getErrorString());
+                    if (lookup.getAnswers() == null) {
+                        InetAddress addr = InetAddress.getByName(host);
+    
+                        IPPort ipport = new IPPort(addr.getHostAddress(), port);
+                        ipPorts.add(ipport);
+                    } else {
+                        for (Record ans : lookup.getAnswers()) {
+                            String ip = ans.rdataToString();
+                            IPPort ipport = new IPPort(ip, port);
+                            ipPorts.add(ipport);
+                            System.out.println(ipport);
+    
+                        }
+                    }
+                    
+                }
+                                
             }
 
             for (IPPort ipport : ipPorts) {
@@ -129,22 +159,41 @@ public class IPPorts {
                     ipPorts.remove(ipport);
                 }
             }
-            return ipPorts;
-        } catch (NumberFormatException | UnsupportedOperationException | UnknownHostException | TextParseException e) {
-            return ipPorts;
+        } catch (Exception e) {
+            ipPorts = null;
+            e.printStackTrace();
         }
+
     }
 
-    protected IPPorts() {
+    public ArrayList<IPPort> getIPPorts() {
+        return ipPorts;
     }
 
-    private static IPPorts instance = null;
+    public static void main(String[] args) {
 
-    public static IPPorts getInstance() {
-        if (instance == null) {
-            instance = new IPPorts();
-        }
-        return instance;
+//        String name = "http://app[Someapp/Name:1234]/some/path/info";
+//        IPPorts ipp = new IPPorts(name);
+//        //ipp.getIPPorts();
+//
+//        System.out.println();
+//        name = "https://172.16.0.133/somepath";
+//        ipp = new IPPorts(name);
+//
+//        System.out.println();
+//        name = "https://example.com/somepath";
+//        ipp = new IPPorts(name);
+
+        IPPorts ipp = new IPPorts((args[0]));
+        
+       ArrayList<IPPort> ipPorts = ipp.getIPPorts();
+
+       for (IPPort ipport : ipPorts) {
+          System.out.println(ipport.getIp() + ":" + ipport.getPort());
+       }
+
+        
+        
     }
 
 }

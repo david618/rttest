@@ -67,8 +67,9 @@ public class Tcp {
     public Tcp(String appNamePattern) {
 
         try {
-                        
-            ArrayList<IPPort> ipPorts = IPPorts.getInstance().getIPPorts(appNamePattern);
+             
+            IPPorts ipp = new IPPorts(appNamePattern);
+            ArrayList<IPPort> ipPorts = ipp.getIPPorts();
 
             if (ipPorts.isEmpty()) {
                 throw new UnsupportedOperationException("Could not discover the any ip port combinations.");

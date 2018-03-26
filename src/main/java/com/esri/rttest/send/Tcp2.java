@@ -82,7 +82,8 @@ public class Tcp2 {
     public void sendFile(String appNamePattern, String filename, Integer rate, Integer numToSend, Integer numThreads) {
         try {
 
-            ArrayList<IPPort> ipPorts = IPPorts.getInstance().getIPPorts(appNamePattern);
+            IPPorts ipp = new IPPorts(appNamePattern);
+            ArrayList<IPPort> ipPorts = ipp.getIPPorts();
 
             if (ipPorts.isEmpty()) {
                 throw new UnsupportedOperationException("Could not discover the any ip port combinations.");
