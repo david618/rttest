@@ -44,7 +44,7 @@ After Build; the target folder will contain:
 - rttest.jar: small executable jar without dependencies.
 - rttest-big.jar: big executable jar with dependencies.
 
-### Producers
+### Senders (send)
 These tools send lines from a file.
 - [ElasticsearchHttp](./docs/ElasticsearchHttp.md) : Send lines to Elasticsearch using HTTP API.
 - [ElasticsearchTrans](./docs/ElasticsearchTrans.md) : Send lines to Elasticsearch using Transport API.
@@ -52,12 +52,12 @@ These tools send lines from a file.
 - [Kafka](./docs/Kafka.md) : Send lines to Kafka topic.
 - [Tcp](./docs/Tcp.md) : Send lines to Server to TCP port.
 
-### Sinks
+### Sinks (sinks)
 These tools consume lines.
 - [TcpSink](./docs/TcpSink.md) : Receive lines on a TCP port; report count and rate.
 - [WebSocketSink](./docs/WebSocketSink.md) : Consume lines from WebSocket; report count and rate.
 
-### Monitors
+### Monintor (mon)
 These tools montior counts and report changes.
 - [ElasticIndexMon](./docs/ElasticIndexMon.md) : Monitor count and rate for Elasticsearch Index.
 - [FeatureLayerMon](./docs/FeatureLayerMon.md) : Monitor count and rate for Feature Layer.
