@@ -10,7 +10,7 @@ Changes
 
 <pre>
 java -cp target/rttest.jar com.esri.rttest.send.Http  
-Usage: Http &lt;url&gt; &lt;file&gt; &lt;rate&gt; &lt;numrecords&gt; (&lt;numthreads=1&gt;)
+Usage: Http (url) (file) (rate) (numrecords) [numthreads=1]
 </pre>
 
 Parameters
