@@ -1,4 +1,4 @@
-### com.esri.rttest.monitors.FeatureLayerMon
+### com.esri.rttest.mon.FeatureLayerMon
 
 After Started
 - Gets a count for the Feature-Layer
@@ -10,19 +10,19 @@ After Started
 
 
 <pre>
-$ java -cp rttest-big.jar com.esri.rttest.monitors.FeatureLayerMon 
+$ java -cp rttest-big.jar com.esri.rttest.mon.FeatureLayerMon 
 Usage: FeatureLayerMon &lt;Feature-Layer&gt; (&lt;Seconds-Between-Samples&gt; Default 5 seconds)  
 </pre>
 
 Examples:
 
 <pre>
-$ java -cp Simulator.jar com.esri.simulator.FeatureLayerMon http://dj52web.westus.cloudapp.azure.com/arcgis/rest/services/Hosted/FAA-Stream/FeatureServer/0
+$ java -cp Simulator.jar com.esri.rttest.mon.FeatureLayerMon http://dj52web.westus.cloudapp.azure.com/arcgis/rest/services/Hosted/FAA-Stream/FeatureServer/0
 </pre>
 
 
 <pre>
-java -cp target/rttest.jar com.esri.rttest.monitors.FeatureLayerMon http://localhost/bbc0398c-d19e-493c-aefc-c382d2eb1c05/arcgis/rest/services/planes-bat/FeatureServer/0  60
+java -cp target/rttest.jar com.esri.rttest.mon.FeatureLayerMon http://localhost/bbc0398c-d19e-493c-aefc-c382d2eb1c05/arcgis/rest/services/planes-bat/FeatureServer/0  60
 </pre>
 
 Seconds-Between-Samples is 60.
