@@ -1,4 +1,4 @@
-### com.esri.rttest.producers.Http
+### com.esri.rttest.send.Http
 
 Post lines from a file to URL. 
 
@@ -9,7 +9,7 @@ Changes
 - Added DNS lookup support; If DNS has multiple IP's; threads are assigned round-robin to the IP's
 
 <pre>
-java -cp target/rttest.jar com.esri.rttest.producers.Http  
+java -cp target/rttest.jar com.esri.rttest.send.Http  
 Usage: Http &lt;url&gt; &lt;file&gt; &lt;rate&gt; &lt;numrecords&gt; (&lt;numthreads=1&gt;)
 </pre>
 
@@ -24,7 +24,7 @@ Parameters
 
 Example
 <pre>
-java -cp target/rttest.jar com.esri.rttest.producers.Http  http<i></i>://app[sits/rcv-txt-rest-planes]/rtgis/receiver/planes/txt  planes00001.1M 50000 1000000 64
+java -cp target/rttest.jar com.esri.rttest.send.Http  http<i></i>://app[sits/rcv-txt-rest-planes]/rtgis/receiver/planes/txt  planes00001.1M 50000 1000000 64
 </pre>
 
 This command
