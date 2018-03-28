@@ -2,7 +2,7 @@
 Monitors a Kafka Topic count and measures and reports rate of change in count.
 
 $ java -cp target/rttest.jar com.esri.rttest.monitors.KafkaTopicMon
-Usage: KakfaTopicMon (brokers) (topic) [sampleRate]
+Usage: KakfaTopicMon (brokers) (topic) [sampleRateSec=5]
 
 $ java -cp target/rttest.jar com.esri.rttest.mon.KafkaTopicMon 172.17.2.5:9528 satellites-in 60
 
