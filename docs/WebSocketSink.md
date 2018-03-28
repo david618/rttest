@@ -1,7 +1,7 @@
 ### com.esri.rttest.sinks.WebSocketSink
 
 $ java -cp target/rttest.jar com.esri.rttest.sinks.WebSocketSink
-Usage: WebSocketSink &lt;ws-url&gt; (&lt;timeout-ms&gt;) (&lt;sample-every-N-records/1000&gt;) (&lt;display-messages/false&gt;)
+Usage: WebSocketSink (ws-url) [timeout] [sample-every-N-records=1000] [display-messages=false]
 
 $ java -cp target/rttest.jar com.esri.rttest.sinks.WebSocketSink  ws://localhost:8080/websats/SatStream/subscribe
 - Connects to the websocket 
