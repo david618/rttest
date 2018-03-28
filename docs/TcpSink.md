@@ -1,7 +1,7 @@
 ### com.esri.rttest.sinks.TcpSink
 
 $ java -cp target/rttest.jar com.esri.rttest.sinks.TcpSink
-Usage: TcpSink &lt;port-to-listen-on&gt; (&lt;sample-every-N-records/1000&gt;) (&lt;display-messages/false&gt;)
+Usage: TcpSink (port-to-listen-on) [sample-every-N-records=1000] [display-messages=false]
 
 - Listens on the port-to-listen-on for TCP 
 - Counts features arriving 
