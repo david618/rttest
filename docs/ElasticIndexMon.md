@@ -9,13 +9,13 @@
 
 <pre>
 java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon
-Usage: ElasticIndexMon &lt;ElasticsearchServerPort&gt; &lt;Index/Type&gt; (&lt;username&gt; &lt;password> &lt;sampleRateSec&gt;)
+Usage: ElasticIndexMon (ElasticsearchServerPort) (Index/Type) [sampleRateSec=5] [username=""] [password==""] 
 </pre>
 
 Example:
 
 <pre>
-java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon 172.17.2.5:9200 satellites/satellites - - 60
+java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon 172.17.2.5:9200 satellites/satellites 60
 
 - Elasticsearch running on 172.17.2.5 on default port of 9200
 - The index name is satellites and type name is satellites (satellites/satellites)
@@ -52,7 +52,7 @@ curl -u elastic:changeme data.sats-ds01.l4lb.thisdcos.directory:9200/_aliases?pr
 
 Example Command:
 <pre>
-java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon data.sats-ds01.l4lb.thisdcos.directory:9200 planes-bat/planes-bat elastic changeme 60
+java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon data.sats-ds01.l4lb.thisdcos.directory:9200 planes-bat/planes-bat 60 elastic changeme 
 </pre>
 
 **Note:** You may need to use larger sampleRateSec; to prevent false endings for slow loading data. This often happens if the index refresh is disabled for bulk loading.
