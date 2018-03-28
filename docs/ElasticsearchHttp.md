@@ -1,16 +1,16 @@
-### com.esri.rttest.producers.Elasticsearch
+### com.esri.rttest.send.Elasticsearch
 
 This tools sends json from a file to Elasticsearch using Elasticsearch Rest API.  
 
 <pre>
-$ java -cp target/rttest.jar com.esri.rttest.producers.Elasticsearch 
+$ java -cp target/rttest.jar com.esri.rttest.send.Elasticsearch 
 Usage: Elasticsearch &lt;elastic-search-transports&gt; &lt;cluster-name&gt; &lt;index&gt; &lt;type&gt; &lt;file&gt; &lt;rate&gt; &lt;numrecords&gt; (&lt;elastic-bulk-num&gt;)
 </pre>
 
 Example Command:
 
 <pre>
-java -cp target/rttest.jar com.esri.rttest.producers.Elasticsearch http://localhost:9200/my/planes planes.json 10000 500000
+java -cp target/rttest.jar com.esri.rttest.send.Elasticsearch http://localhost:9200/my/planes planes.json 10000 500000
 </pre>
 
 The last parameter is optional and default to 1,000. 
