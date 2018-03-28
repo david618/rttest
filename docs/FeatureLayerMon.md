@@ -11,7 +11,7 @@ After Started
 
 <pre>
 $ java -cp rttest-big.jar com.esri.rttest.mon.FeatureLayerMon 
-Usage: FeatureLayerMon &lt;Feature-Layer&gt; (&lt;Seconds-Between-Samples&gt; Default 5 seconds)  
+Usage: FeatureLayerMon (Feature-Layer) [Seconds-Between-Samples=5]  
 </pre>
 
 Examples:
