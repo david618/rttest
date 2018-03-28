@@ -1,4 +1,4 @@
-### com.esri.rttest.monitors.ElasticIndexMon
+### com.esri.rttest.mon.ElasticIndexMon
 
 - Monitors a Elasticsearch Index count and measures and reports rate of change in count.  
 - When the tool starts it gets the current count and starts sampling count every sampleRateSec seconds (defaults to 5 seconds).
@@ -8,14 +8,14 @@
 - After reporting the final count and rate the tool will continue monitoring for count changes.  Use **Ctrl-C** to stop.
 
 <pre>
-java -cp target/rttest.jar com.esri.rttest.monitors.ElasticIndexMon
+java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon
 Usage: ElasticIndexMon &lt;ElasticsearchServerPort&gt; &lt;Index/Type&gt; (&lt;username&gt; &lt;password> &lt;sampleRateSec&gt;)
 </pre>
 
 Example:
 
 <pre>
-java -cp target/rttest.jar com.esri.rttest.monitors.ElasticIndexMon 172.17.2.5:9200 satellites/satellites - - 60
+java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon 172.17.2.5:9200 satellites/satellites - - 60
 
 - Elasticsearch running on 172.17.2.5 on default port of 9200
 - The index name is satellites and type name is satellites (satellites/satellites)
@@ -52,7 +52,7 @@ curl -u elastic:changeme data.sats-ds01.l4lb.thisdcos.directory:9200/_aliases?pr
 
 Example Command:
 <pre>
-java -cp target/rttest.jar com.esri.rttest.monitors.ElasticIndexMon data.sats-ds01.l4lb.thisdcos.directory:9200 planes-bat/planes-bat elastic changeme 60
+java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon data.sats-ds01.l4lb.thisdcos.directory:9200 planes-bat/planes-bat elastic changeme 60
 </pre>
 
 **Note:** You may need to use larger sampleRateSec; to prevent false endings for slow loading data. This often happens if the index refresh is disabled for bulk loading.
