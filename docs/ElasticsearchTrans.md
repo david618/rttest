@@ -6,7 +6,7 @@ This tool sends lines from a file to Elasticsearch using the Trasport API.  High
 <pre>
 
 java -cp target/rttest.jar com.esri.rttest.send.ElasticsearchTrans
-Usage: ElasticsearchTrans &lt;elastic-search-transports&gt; &lt;cluster-name&gt; &lt;index&gt; &lt;type&gt; &lt;file&gt; &lt;rate&gt; &lt;numrecords&gt; (&lt;elastic-bulk-num&gt;)
+Usage: ElasticsearchTrans (elastic-search-transports) (cluster-name) (index) (type) (file) (rate) (numrecords) [elastic-bulk-num=1000]
 </pre>
 
 Default elastic-bulk-num = 1000.
