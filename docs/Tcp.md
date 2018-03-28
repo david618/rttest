@@ -1,4 +1,4 @@
-### com.esri.rttest.producers.Tcp
+### com.esri.rttest.send.Tcp
 
 - Sends lines from file to the specified server and port
 - The app tries to send numrecords at rate requested
@@ -7,8 +7,8 @@
 - While running the count and actual rate sent is displayed  (Count, Rate)
 
 <pre>
-java -cp target/rttest.jar com.esri.rttest.producers.Tcp
-Usage: Tcp2 &lt;server:port&gt; &lt;file&gt; &lt;rate&gt; &lt;numrecords&gt; (numThreads=1) (append-time=false)
+java -cp target/rttest.jar com.esri.rttest.send.Tcp
+Usage: Tcp2 (server:port) (file) (rate) (numrecords) [numThreads=1] [append-time=false]
 server:port: The IP or hostname of server to send events to. Could be ip:port, dns-name:port, or app[marathon-app-name(:portindex)]
 filename: sends line by line from this file.
 rate: Attempts to send at this rate.
