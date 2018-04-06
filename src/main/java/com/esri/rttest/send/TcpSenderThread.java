@@ -39,7 +39,7 @@ public class TcpSenderThread extends Thread {
     
     private OutputStream os;
 
-
+    private long lastUpdate;
     private long cntErr;
     private long cnt;
 
@@ -50,11 +50,19 @@ public class TcpSenderThread extends Thread {
     public long getCnt() {
         return cnt;
     }
+    
+    public long getLastUpdate() {
+        return lastUpdate;
+    }
+    
 
     public TcpSenderThread(LinkedBlockingQueue<String> lbq, String ip, int port) {
+        cnt = 0;
+        cntErr = 0;
+        lastUpdate = 0;
         this.lbq = lbq;
         this.ip = ip;
-        this.port = port;
+        this.port = port;        
         try {
             Socket skt = new Socket(this.ip, this.port);
             this.os = skt.getOutputStream();
@@ -89,6 +97,7 @@ public class TcpSenderThread extends Thread {
                 os.flush();
 
                 cnt += 1;
+                lastUpdate = System.currentTimeMillis();
 
             }
 

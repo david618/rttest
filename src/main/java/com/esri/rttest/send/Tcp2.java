@@ -79,7 +79,7 @@ public class Tcp2 {
      * file will resend from start.
      * @param numThreads
      */
-    public void sendFile(String appNamePattern, String filename, Integer rate, Integer numToSend, Integer numThreads) {
+    public void sendFile(String appNamePattern, String filename, Integer rate, Integer numToSend, Integer numThreads, Integer threadOffset) {
         try {
 
             IPPorts ipp = new IPPorts(appNamePattern);
@@ -118,7 +118,7 @@ public class Tcp2 {
 
             for (int i = 0; i < numThreads; i++) {
                 // Use modulo to get one of the ipport's 0
-                IPPort ipPort = ipPorts.get((i + 1) % ipPorts.size());
+                IPPort ipPort = ipPorts.get((i + threadOffset) % ipPorts.size());
                 System.out.println(ipPort);
                 threads[i] = new TcpSenderThread(lbq, ipPort.getIp(), ipPort.getPort());
                 threads[i].start();
@@ -134,16 +134,18 @@ public class Tcp2 {
                     // Calculate rate and output every 5000ms 
                     timeLastDisplayedRate = System.currentTimeMillis();
 
-                    int cnts = 0;
-                    int cntErr = 0;
+                    long cnts = 0;
+                    long cntErr = 0;
+                    long et = 0;
 
                     // Get Counts from Threads
                     for (TcpSenderThread thread : threads) {
                         cnts += thread.getCnt();
                         cntErr += thread.getCntErr();
+                        if (thread.getLastUpdate() > et) et = thread.getLastUpdate();
                     }
 
-                    Double curRate = (double) cnts / (System.currentTimeMillis() - st) * 1000;
+                    Double curRate = (double) cnts / (et - st) * 1000;
 
                     System.out.println(cnts + "," + cntErr + "," + String.format("%.0f", curRate));
 
@@ -170,9 +172,10 @@ public class Tcp2 {
                 }
             }
 
-            int cnts = 0;
-            int cntErr = 0;
-            int prevCnts = 0;
+            long cnts = 0;
+            long cntErr = 0;
+            long prevCnts = 0;
+            long et = 0;
 
             while (true) {
                 if (System.currentTimeMillis() - timeLastDisplayedRate > 5000) {
@@ -209,6 +212,7 @@ public class Tcp2 {
 
                     cnts = 0;
                     cntErr = 0;
+                    et = 0;
                     prevCnts = cnts;
 
                 }
@@ -225,9 +229,10 @@ public class Tcp2 {
             for (TcpSenderThread thread : threads) {
                 cnts += thread.getCnt();
                 cntErr += thread.getCntErr();
+                if (thread.getLastUpdate() > et) et = thread.getLastUpdate();
             }
 
-            Double sendRate = (double) cnts / (System.currentTimeMillis() - st) * 1000;
+            Double sendRate = (double) cnts / (et - st) * 1000;
 
             System.out.println(cnts + "," + cntErr + "," + String.format("%.0f", sendRate));
 
@@ -260,15 +265,31 @@ public class Tcp2 {
             Integer rate = Integer.parseInt(args[2]);
             Integer numrecords = Integer.parseInt(args[3]);
             Integer numThreads = 1;
+            Integer threadOffset = 0;
 
             switch (numargs) {
                 case 5:
-                    numThreads = Integer.parseInt(args[4]);
+                    String threadParts[] = args[4].split(".");
+                    try {
+                        numThreads = Integer.parseInt(threadParts[0]);
+
+                        if (threadParts.length > 1) {
+                            try {
+                                threadOffset = Integer.parseInt(threadParts[1]);
+                            } catch (NumberFormatException e) {
+                                threadOffset = 0;
+                            }
+                        }                    
+                        
+                    } catch (NumberFormatException e) {
+                        numThreads = 1;
+                    }
+                    
                     break;
             }
 
             Tcp2 t = new Tcp2();
-            t.sendFile(serverPort, filename, rate, numrecords, numThreads);
+            t.sendFile(serverPort, filename, rate, numrecords, numThreads, threadOffset);
 
         }
 
