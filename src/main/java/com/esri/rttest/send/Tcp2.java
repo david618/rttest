@@ -270,9 +270,7 @@ public class Tcp2 {
             switch (numargs) {
                 case 5:
                     String threadParts[] = args[4].split("\\.");
-                    System.out.println(args[4]);
                     try {
-                        System.out.println(threadParts.length);
                         numThreads = Integer.parseInt(threadParts[0]);
 
                         if (threadParts.length > 1) {
