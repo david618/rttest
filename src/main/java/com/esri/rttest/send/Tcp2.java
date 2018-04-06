@@ -119,6 +119,7 @@ public class Tcp2 {
             for (int i = 0; i < numThreads; i++) {
                 // Use modulo to get one of the ipport's 0
                 IPPort ipPort = ipPorts.get((i + 1) % ipPorts.size());
+                System.out.println(ipPort);
                 threads[i] = new TcpSenderThread(lbq, ipPort.getIp(), ipPort.getPort());
                 threads[i].start();
 

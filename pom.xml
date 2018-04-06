@@ -112,7 +112,7 @@
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
-                    <finalName>${project.name}-big</finalName>
+                    <finalName>${project.name}-full</finalName>
                     <appendAssemblyId>false</appendAssemblyId>                    
                 </configuration>
                 <executions>
