@@ -22,13 +22,12 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.logging.Level;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import org.apache.http.HttpResponse;
+import org.apache.http.NoHttpResponseException;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.config.ConnectionConfig;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -53,9 +52,11 @@ public class HttpPosterThread extends Thread {
     private final String USER_AGENT = "Mozilla/5.0";
 
     //private CloseableHttpClient httpClient;
-    private final CloseableHttpClient httpClient;
+    private CloseableHttpClient httpClient;
 
-    private final HttpPost httpPost;
+    private HttpPost httpPost;
+    
+    SSLContext sslContext;
 
     private long cntErr;
     private long cnt;
@@ -72,7 +73,7 @@ public class HttpPosterThread extends Thread {
         this.lbq = lbq;
         this.url = url;
 
-        SSLContext sslContext = SSLContext.getInstance("SSL");
+        sslContext = SSLContext.getInstance("SSL");
 
         // Could be extended to allow username/password authentication
 //        CredentialsProvider provider = new BasicCredentialsProvider();
@@ -119,7 +120,8 @@ public class HttpPosterThread extends Thread {
 
         //httpClient = HttpClientBuilder.create().build();
         httpPost = new HttpPost(url);
-
+        httpPost.setHeader("Content-type", "application/json");
+        
         cntErr = 0;
     }
 
@@ -137,31 +139,40 @@ public class HttpPosterThread extends Thread {
                 }
                 StringEntity postingString = new StringEntity(line);
 
-                httpPost.setEntity(postingString);
-                //httpPost.setHeader("Content-type","plain/text");
-                httpPost.setHeader("Content-type", "application/json");
+                try {
+                
+                    httpPost.setEntity(postingString);
 
-                HttpResponse resp = httpClient.execute(httpPost);
-                //CloseableHttpResponse resp = httpClient.execute(httpPost);
+                    HttpResponse resp = httpClient.execute(httpPost);
+                    //CloseableHttpResponse resp = httpClient.execute(httpPost);
 
-                if (resp.getStatusLine().getStatusCode() != 200) {
-                    cntErr += 1;
+                    if (resp.getStatusLine().getStatusCode() != 200) {
+                        cntErr += 1;
+                    }
+
+                    // Using EntityUtils.consume hurt my kafkaHttp; did not help other ingest
+                    //HttpEntity respEntity = resp.getEntity();
+                    //EntityUtils.consume(respEntity);
+                    httpPost.releaseConnection();
+
+                    cnt += 1;
+                } catch (NoHttpResponseException e) {
+                    LOG.error(e.getMessage());
+                    httpClient = HttpClients
+                            .custom()
+                            .setSSLContext(sslContext)
+                            .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)              
+                            .build();
+
+                    httpPost = new HttpPost(url);
+                    httpPost.setHeader("Content-type", "application/json");                    
                 }
-
-                // Using EntityUtils.consume hurt my kafkaHttp; did not help other ingest
-                //HttpEntity respEntity = resp.getEntity();
-                //EntityUtils.consume(respEntity);
-                httpPost.releaseConnection();
-
-                cnt += 1;
 
             }
 
         } catch (InterruptedException | IOException e) {
             LOG.error("ERROR",e);
-        } catch (Exception e) {
-            LOG.error("ERROR",e);
-
+            
         }
     }
 }

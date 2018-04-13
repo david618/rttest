@@ -27,23 +27,13 @@ package com.esri.rttest.send;
 
 import com.esri.rttest.IPPort;
 import com.esri.rttest.IPPorts;
-import com.esri.rttest.MarathonInfo;
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.xbill.DNS.Lookup;
-import org.xbill.DNS.Record;
-import org.xbill.DNS.Type;
-
 /**
  *
  * @author david
