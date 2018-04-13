@@ -165,7 +165,8 @@ public class HttpPosterThread extends Thread {
                             .build();
 
                     httpPost = new HttpPost(url);
-                    httpPost.setHeader("Content-type", "application/json");                    
+                    httpPost.setHeader("Content-type", "application/json");  
+                    cnt -= 1;
                 }
 
             }
