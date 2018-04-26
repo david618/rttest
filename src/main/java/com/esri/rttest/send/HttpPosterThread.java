@@ -58,6 +58,7 @@ public class HttpPosterThread extends Thread {
     
     SSLContext sslContext;
 
+    private long lastUpdate;    
     private long cntErr;
     private long cnt;
 
@@ -68,6 +69,10 @@ public class HttpPosterThread extends Thread {
     public long getCnt() {
         return cnt;
     }
+    
+    public long getLastUpdate() {
+        return lastUpdate;
+    }    
 
     HttpPosterThread(LinkedBlockingQueue<String> lbq, String url) throws Exception {
         this.lbq = lbq;
@@ -156,6 +161,8 @@ public class HttpPosterThread extends Thread {
                     httpPost.releaseConnection();
 
                     cnt += 1;
+                    lastUpdate = System.currentTimeMillis();
+                    
                 } catch (NoHttpResponseException e) {
                     LOG.error(e.getMessage());
                     httpClient = HttpClients

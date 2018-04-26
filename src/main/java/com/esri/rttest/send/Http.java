@@ -158,6 +158,7 @@ public class Http {
             int cnts = 0;
             int cntErr = 0;
             int prevCnts = 0;
+            long et = 0;            
 
             while (true) {
                 if (System.currentTimeMillis() - timeLastDisplayedRate > 5000) {
@@ -210,9 +211,10 @@ public class Http {
             for (HttpPosterThread thread : threads) {
                 cnts += thread.getCnt();
                 cntErr += thread.getCntErr();
+                if (thread.getLastUpdate() > et) et = thread.getLastUpdate();                
             }
 
-            Double sendRate = (double) cnts / (System.currentTimeMillis() - st) * 1000;
+            Double sendRate = (double) cnts / (et - st) * 1000;
 
             System.out.println(cnts + "," + cntErr + "," + String.format("%.0f", sendRate));
 
