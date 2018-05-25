@@ -122,11 +122,11 @@ public class KafkaTopicMon {
                 }
 
                 t1 = System.currentTimeMillis();
-		if (cnt2 == -1) {
-			System.out.println("Watching for changes in count...  Use Ctrl-C to Exit.");
-			System.out.println("|Sample Number|Epoch|Count|Linear Regression Rate|Approx. Instantaneous Rate|");
-			System.out.println("|-------------|-----|-----|----------------------|--------------------------|");
-		}
+                if (cnt2 == -1) {
+                    System.out.println("Watching for changes in count...  Use Ctrl-C to Exit.");
+                    System.out.println("|Sample Number|Epoch|Count|Linear Regression Rate|Approx. Instantaneous Rate|");
+                    System.out.println("|-------------|-----|-----|----------------------|--------------------------|");
+                }
 
                 if (cnt2 == -1 || cnt1 < cnt2) {
                     cnt2 = cnt1;
@@ -144,11 +144,9 @@ public class KafkaTopicMon {
                     regression.addData(t1, cnt1);
                     samples.put(t1, cnt1);
 
-
-
                     if (numSamples >= 2) {
                         double regRate = regression.getSlope() * 1000;
-		        double iRate = (double)(cnt1 - cnt2)/(double)(t1 - t2) * 1000.0;
+                        double iRate = (double) (cnt1 - cnt2) / (double) (t1 - t2) * 1000.0;
                         if (sendStdout) {
                             System.out.println("| " + numSamples + " | " + t1 + " | " + (cnt1 - startCount) + " | " + String.format("%.0f", regRate) + " | " + String.format("%.0f", iRate) + " |");
                         }
@@ -158,7 +156,7 @@ public class KafkaTopicMon {
 
                 } else if (cnt1 == cnt2 && numSamples > 0) {
 
-			System.out.println("Count is no longer increasing...");
+                    System.out.println("Count is no longer increasing...");
 
                     endCount = cnt1;
 
@@ -175,22 +173,28 @@ public class KafkaTopicMon {
                     for (Map.Entry pair : samples.entrySet()) {
                         long time = (long) pair.getKey();
                         long count = (long) pair.getValue();
-                        if (time < minTime) minTime = time;
-                        if (time > maxTime) maxTime = time;
-                        if (count < minCount) minCount = count;
-                        if (count > maxCount) maxCount = count;
+                        if (time < minTime) {
+                            minTime = time;
+                        }
+                        if (time > maxTime) {
+                            maxTime = time;
+                        }
+                        if (count < minCount) {
+                            minCount = count;
+                        }
+                        if (count > maxCount) {
+                            maxCount = count;
+                        }
                     }
-                    double avgRate = (double)(maxCount - minCount)/(double)(maxTime - minTime) * 1000.0;
-
+                    double avgRate = (double) (maxCount - minCount) / (double) (maxTime - minTime) * 1000.0;
 
                     if (sendStdout) {
                         System.out.println("Removing sample: " + t2 + "|" + (cnt2 - startCount));
                     }
 
-
                     // Output Results
                     long cnt = cnt2 - startCount;
-		    		   
+
                     double regRate = regression.getSlope() * 1000;  // converting from ms to seconds
 
                     //if (numSamples > 5) {
