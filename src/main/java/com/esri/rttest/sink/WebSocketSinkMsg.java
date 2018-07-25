@@ -89,12 +89,15 @@ public class WebSocketSinkMsg implements WebSocket.OnTextMessage {
     public void onMessage(String s) {
         cnt++;
 
-        if (printmessages) {
-            System.out.println(s);
-        } else if (cnt % sampleEvery == 0) {
+        if (cnt % sampleEvery == 0) {
             long t = System.currentTimeMillis();
             regression.addData(t, cnt);
             numSamples += 1;
+
+            if (printmessages) {
+                System.out.println(s);
+            }
+            
             if (numSamples > 2) {
                 double rcvRate = regression.getSlope() * 1000;
                 System.out.println(numSamples + "," + t + "," + cnt + "," + rcvRate);
