@@ -56,8 +56,8 @@ public class Kafka {
             Properties props = new Properties();
             props.put("bootstrap.servers",brokers);
             props.put("client.id", Kafka.class.getName());
-            props.put("acks", "all");
-            props.put("retries", 10);
+            props.put("acks", "1");
+            props.put("retries", 0);
             props.put("batch.size", 16384);
             props.put("linger.ms", 1);
             props.put("buffer.memory", 8192000);
@@ -66,7 +66,6 @@ public class Kafka {
             props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
             /* Addin Simple Partioner didn't help */
             //props.put("partitioner.class", SimplePartitioner.class.getCanonicalName());
-            props.put("enable.idempotence",true);
             
             this.producer = new KafkaProducer<>(props);
             this.topic = topic;
