@@ -124,9 +124,9 @@ public class Kafka {
                 if (ns < 0) ns = 0;  // can't be less than 0 
 
 
+                
 
-
-                while (cnt < numToSend) {
+                while (cnt < numToSend || numToSend < 0) {
                     
                    if (cnt % rate == 0 && cnt > 0) {
                         // Calculate rate and adjust as needed
@@ -152,6 +152,8 @@ public class Kafka {
                         }
 
                     }                             
+                    
+                    if (cnt == Integer.MAX_VALUE) cnt = 0;
                     
                     cnt += 1;
 
