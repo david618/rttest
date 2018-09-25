@@ -153,7 +153,10 @@ public class Kafka {
 
                     }                             
                     
-                    if (cnt == Integer.MAX_VALUE) cnt = 0;
+                    if (cnt == Integer.MAX_VALUE) {
+                        cnt = 0;
+                        st = System.currentTimeMillis();
+                    }
                     
                     cnt += 1;
 
@@ -187,7 +190,7 @@ public class Kafka {
                 
                 Integer delay = burstDelay;
 
-                while (cnt < numToSend) {
+                while (cnt < numToSend || numToSend < 0) {
                     
                    // Adjust delay every burst
                     Double curRate = (double) cnt / (System.currentTimeMillis() - st) * 1000;
@@ -207,6 +210,12 @@ public class Kafka {
                         if (cnt % rate == 0 && cnt > 0) {
                             curRate = (double) cnt / (System.currentTimeMillis() - st) * 1000;
                             System.out.println(cnt + "," + String.format("%.0f", curRate));
+                        }                        
+                        
+                        if (cnt == Integer.MAX_VALUE) {
+                            cnt = 0;
+                            st = System.currentTimeMillis();
+                            break;
                         }                        
                         
                         cnt += 1;
