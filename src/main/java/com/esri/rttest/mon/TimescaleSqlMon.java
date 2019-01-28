@@ -1,43 +1,20 @@
 package com.esri.rttest.mon;
 
 import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.apache.http.Header;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
-import org.json.JSONObject;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class PostgreSqlMon {
+public class TimescaleSqlMon {
   private static final Logger LOG = LogManager.getLogger(SolrIndexMon.class);
 
   class CheckCount extends TimerTask {
@@ -112,75 +89,18 @@ public class PostgreSqlMon {
               prefix.append(parts[i]);
             }
             prefix.append("_");
-            chunkTableName = prefix.toString();
+            hyperTablePrefix = prefix.toString();
 
           }
         }
 
-        ResultSet hyperTableCount = statement.executeQuery("SE")
-        //SSLContext sslContext = SSLContext.getInstance("SSL");
+        ResultSet hyperTableCount = statement.executeQuery("SELECT sum(n_tup_ins) from pg_stat_user_tables where" +
+            " relname like '" + hyperTablePrefix + "%';");
 
-
-//        CredentialsProvider provider = new BasicCredentialsProvider();
-//        UsernamePasswordCredentials credentials
-//            = new UsernamePasswordCredentials(user, userpw);
-//        provider.setCredentials(AuthScope.ANY, credentials);
-//
-//        sslContext.init(null, new TrustManager[]{new X509TrustManager() {
-//          @Override
-//          public X509Certificate[] getAcceptedIssuers() {
-//            if (sendStdout) {
-//              System.out.println("getAcceptedIssuers =============");
-//            }
-//            return null;
-//          }
-//
-//          @Override
-//          public void checkClientTrusted(X509Certificate[] certs,
-//                                         String authType) {
-//            if (sendStdout) {
-//              System.out.println("checkClientTrusted =============");
-//            }
-//          }
-//
-//          @Override
-//          public void checkServerTrusted(X509Certificate[] certs,
-//                                         String authType) {
-//            if (sendStdout) {
-//              System.out.println("checkServerTrusted =============");
-//            }
-//          }
-//        }}, new SecureRandom());
-//
-//        CloseableHttpClient httpclient = HttpClients
-//            .custom()
-//            .setDefaultCredentialsProvider(provider)
-//            .setSSLContext(sslContext)
-//            .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
-//            .build();
-//
-//        HttpGet request = new HttpGet(url);
-//        CloseableHttpResponse response = httpclient.execute(request);
-//        BufferedReader rd = new BufferedReader(
-//            new InputStreamReader(response.getEntity().getContent()));
-//
-//        Header contentType = response.getEntity().getContentType();
-//        String ct = contentType.getValue().split(";")[0];
-//
-//        int responseCode = response.getStatusLine().getStatusCode();
-//
-//        String line;
-//        StringBuilder result = new StringBuilder();
-//        while ((line = rd.readLine()) != null) {
-//          result.append(line);
-//        }
-//
-//        JSONObject json = new JSONObject(result.toString());
-//        request.abort();
-//        response.close();
-//
-//        cnt1 = json.getJSONObject("response").getInt("numFound");
-//        t1 = System.currentTimeMillis();
+        if(hyperTableCount.next()) {
+          cnt1 = hyperTableCount.getLong(0);
+          t1 = System.currentTimeMillis();
+        }
 
         if (cnt2 == -1 || cnt1 < cnt2) {
           cnt2 = cnt1;
@@ -260,7 +180,7 @@ public class PostgreSqlMon {
   int sampleRateSec;
   boolean sendStdout;
 
-  public PostgreSqlMon(String connectionUrl, String schema, String tableName, int sampleRateSec, String user, String userpw, boolean sendStdout) {
+  public TimescaleSqlMon(String connectionUrl, String schema, String tableName, int sampleRateSec, String user, String userpw, boolean sendStdout) {
 
     this.connectionUrl = connectionUrl;
     this.sampleRateSec = sampleRateSec;
@@ -275,7 +195,7 @@ public class PostgreSqlMon {
     try {
 
       timer = new Timer();
-      timer.schedule(new PostgreSqlMon.CheckCount(), 0, sampleRateSec * 1000);
+      timer.schedule(new TimescaleSqlMon.CheckCount(), 0, sampleRateSec * 1000);
 
     } catch (Exception e) {
       LOG.error("ERROR", e);
@@ -296,8 +216,8 @@ public class PostgreSqlMon {
     LOG.info("Entering application.");
     int numargs = args.length;
     if (numargs != 3 && numargs != 4 && numargs != 6) {
-      System.err.print("Usage: PostgreSqlMon [connectionUrl] [schema] [tableName] (sampleRateSec) ((username) (password))  \n");
-      System.err.println("Example: java -cp target/rttest.jar com.esri.rttest.mon.SolrIndexMon jdbc:postgresql://HostName:5432/dbName realtime safegraph 20 user pass");
+      System.err.print("Usage: TimescaleSqlMon [connectionUrl] [schema] [tableName] (sampleRateSec) ((username) (password))  \n");
+      System.err.println("Example: java -cp target/rttest.jar com.esri.rttest.mon.TimescaleSqlMon jdbc:postgresql://HostName:5432/dbName realtime safegraph 20 user pass");
     } else {
       connectionUrl = args[0];
       schema = args[1];
@@ -312,7 +232,7 @@ public class PostgreSqlMon {
         password = args[5];
       }
 
-      PostgreSqlMon t = new PostgreSqlMon(connectionUrl, schema, tableName, sampleRateSec, username, password, sendStdout);
+      TimescaleSqlMon t = new TimescaleSqlMon(connectionUrl, schema, tableName, sampleRateSec, username, password, sendStdout);
       t.run();
 
     }
