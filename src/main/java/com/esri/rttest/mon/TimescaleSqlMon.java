@@ -65,7 +65,6 @@ public class TimescaleSqlMon {
       try {
 
         LOG.info("Checking Count");
-
         //String url = "jdbc:postgresql://$kTimescaleHost:5432/$schema";
         Properties properties = new Properties();
         properties.put("user", "realtime");
@@ -80,15 +79,15 @@ public class TimescaleSqlMon {
 
           if (chunks.next()){
             //chunk table name format: _hyper_[tableid]_[chunkid]_chunk
-            String fullTableName = chunks.getString(0);
-            String chunkTableName = fullTableName.split(".")[1];
+            String fullTableName = chunks.getString(1);
+            String chunkTableName = fullTableName.split("\\.")[1];
             String[] parts = chunkTableName.split("_");
             StringBuilder prefix = new StringBuilder();
             prefix.append("_");
             for (int i = 0; i < parts.length - 2; i++) {
               prefix.append(parts[i]);
+              prefix.append("_");
             }
-            prefix.append("_");
             hyperTablePrefix = prefix.toString();
 
           }
@@ -98,7 +97,7 @@ public class TimescaleSqlMon {
             " relname like '" + hyperTablePrefix + "%';");
 
         if(hyperTableCount.next()) {
-          cnt1 = hyperTableCount.getLong(0);
+          cnt1 = hyperTableCount.getLong(1);
           t1 = System.currentTimeMillis();
         }
 
