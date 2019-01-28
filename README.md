@@ -62,6 +62,8 @@ These tools montior counts and report changes.
 - [ElasticIndexMon](./docs/ElasticIndexMon.md) : Monitor count and rate for Elasticsearch Index.
 - [FeatureLayerMon](./docs/FeatureLayerMon.md) : Monitor count and rate for Feature Layer.
 - [KafkaTopicMon](./docs/KafkaTopicMon.md) : Monitor count and rate for Kafka Topic.
+- [SolrIndexMon](./docs/SolrIndexMon.md) : Monitor count and rate for Solr Index.
+
 
 
 ### Data
