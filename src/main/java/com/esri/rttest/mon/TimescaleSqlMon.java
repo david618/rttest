@@ -85,8 +85,10 @@ public class TimescaleSqlMon {
             StringBuilder prefix = new StringBuilder();
             prefix.append("_");
             for (int i = 0; i < parts.length - 2; i++) {
-              prefix.append(parts[i]);
-              prefix.append("_");
+              if(!"".equalsIgnoreCase(parts[i])) {
+                prefix.append(parts[i]);
+                prefix.append("_");
+              }
             }
             hyperTablePrefix = prefix.toString();
 
