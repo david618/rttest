@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -110,6 +111,12 @@ public class TimescaleSqlMon {
         hyperTableCount.close();
         statement.close();
 
+        if (cnt2 == -1) {
+          System.out.println("Watching for changes in count...  Use Ctrl-C to Exit.");
+          System.out.println("|Sample Number|Epoch|Count|Linear Regression Rate|Approx. Instantaneous Rate|");
+          System.out.println("|-------------|-----|-----|----------------------|--------------------------|");
+        }
+
         if (cnt2 == -1 || cnt1 < cnt2) {
           cnt2 = cnt1;
           startCount = cnt1;
@@ -119,42 +126,70 @@ public class TimescaleSqlMon {
           numSamples = 0;
 
         } else if (cnt1 > cnt2) {
+          // Increase number of samples
+          numSamples += 1;
+
           // Add to Linear Regression
           regression.addData(t1, cnt1);
           samples.put(t1, cnt1);
-          // Increase number of samples
-          numSamples += 1;
-          if (numSamples > 2) {
-            double rcvRate = regression.getSlope() * 1000;
-            System.out.format("%d,%d,%d,%.0f\n", numSamples, t1, cnt1, rcvRate);
+
+          if (numSamples >= 2) {
+            double regRate = regression.getSlope() * 1000;
+            double iRate = (double) (cnt1 - cnt2) / (double) (t1 - t2) * 1000.0;
+            if (sendStdout) {
+              System.out.println("| " + numSamples + " | " + t1 + " | " + (cnt1 - startCount) + " | " + String.format("%.0f", regRate) + " | " + String.format("%.0f", iRate) + " |");
+            }
           } else {
-            System.out.format("%d,%d,%d\n", numSamples, t1, cnt1);
+            System.out.println("| " + numSamples + " | " + t1 + " | " + (cnt1 - startCount) + " |           |           |");
           }
 
         } else if (cnt1 == cnt2 && numSamples > 0) {
+          System.out.println("Count is no longer increasing...");
+
+          endCount = cnt1;
           numSamples -= 1;
+
           // Remove the last sample
           regression.removeData(t2, cnt2);
           samples.remove(t2, cnt2);
+
+          // Calculate Average Rate
+          long minTime = Long.MAX_VALUE;
+          long maxTime = Long.MIN_VALUE;
+          long minCount = Long.MAX_VALUE;
+          long maxCount = Long.MIN_VALUE;
+          for (Map.Entry pair : samples.entrySet()) {
+            long time = (long) pair.getKey();
+            long count = (long) pair.getValue();
+            if (time < minTime) {
+              minTime = time;
+            }
+            if (time > maxTime) {
+              maxTime = time;
+            }
+            if (count < minCount) {
+              minCount = count;
+            }
+            if (count > maxCount) {
+              maxCount = count;
+            }
+          }
+          double avgRate = (double) (maxCount - minCount) / (double) (maxTime - minTime) * 1000.0;
+
           if (sendStdout) {
-            System.out.println("Removing: " + t2 + "," + cnt2);
+            System.out.println("Removing sample: " + t2 + "|" + (cnt2 - startCount));
           }
           // Output Results
           long cnt = cnt2 - startCount;
-          double rcvRate = regression.getSlope() * 1000;  // converting from ms to seconds
+          double regRate = regression.getSlope() * 1000;  // converting from ms to seconds
 
-          if (numSamples > 5) {
-            double rateStdErr = regression.getSlopeStdErr();
+          if (numSamples >= 2) {
             if (sendStdout) {
-              System.out.format("%d , %.2f, %.4f\n", cnt, rcvRate, rateStdErr);
-            }
-          } else if (numSamples >= 2) {
-            if (sendStdout) {
-              System.out.format("%d , %.2f\n", cnt, rcvRate);
+              System.out.format("Total Count: %,d | Linear Regression Rate:  %,.0f | Average Rate: %,.0f\n\n", cnt, regRate, avgRate);
             }
           } else {
             if (sendStdout) {
-              System.out.println("Not enough samples to calculate rate. ");
+              System.out.format("Total Count: %,d | Not enough samples Rate calculations. \n\n", cnt);
             }
           }
 
