@@ -83,7 +83,7 @@ public class Kafka {
      * @param numToSend Number of lines to send. If more than number of lines in file will resend from start.
      * @param burstDelay Number of milliseconds to burst at; set to 0 to send one line at a time
      */
-    public Integer sendFile(String filename, Integer rate, Integer numToSend, Integer burstDelay, Integer startingCount) {
+    public long sendFile(String filename, Integer rate, long numToSend, Integer burstDelay, long startingCount) {
         try {
             FileReader fr = new FileReader(filename);
             BufferedReader br = new BufferedReader(fr);
@@ -105,7 +105,7 @@ public class Kafka {
             // Get the System Time
             Long st = System.currentTimeMillis();
 
-            Integer cnt = startingCount;
+            long cnt = startingCount;
             
             // Tweak used to adjust delays to try and get requested rate
             Long tweak = 0L;              
@@ -268,7 +268,7 @@ public class Kafka {
    * @param numToSend Number of lines to send. If more than number of lines in file will resend from start.
    * @param burstDelay Number of milliseconds to burst at; set to 0 to send one line at a time
    */
-  public void sendFiles(String path, Integer rate, Integer numToSend, Integer burstDelay) {
+  public void sendFiles(String path, Integer rate, long numToSend, Integer burstDelay) {
     try {
 
       File inputPath = new File(path);
@@ -278,7 +278,7 @@ public class Kafka {
         File[] listOfFiles = inputPath.listFiles();
         Arrays.sort(listOfFiles);
 
-        Integer count = 0;
+        long count = 0;
         for (int i = 0; i < listOfFiles.length && count < numToSend; i++) {
           if (listOfFiles[i].isFile()) {
             count = sendFile(listOfFiles[i].getAbsolutePath(), rate, numToSend, burstDelay, count);
@@ -318,9 +318,9 @@ public class Kafka {
 
             Kafka t = new Kafka(brokers, args[1]);
             if (args.length == 5) {
-              t.sendFiles(args[2], Integer.parseInt(args[3]), Integer.parseInt(args[4]), 0);
+              t.sendFiles(args[2], Integer.parseInt(args[3]), Long.parseLong(args[4]), 0);
             } else {
-              t.sendFiles(args[2], Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]));
+              t.sendFiles(args[2], Integer.parseInt(args[3]), Long.parseLong(args[4]), Integer.parseInt(args[5]));
             }
 
         }
