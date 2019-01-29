@@ -15,7 +15,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class TimescaleSqlMon {
-  private static final Logger LOG = LogManager.getLogger(SolrIndexMon.class);
+  private static final Logger LOG = LogManager.getLogger(TimescaleSqlMon.class);
 
   class CheckCount extends TimerTask {
 

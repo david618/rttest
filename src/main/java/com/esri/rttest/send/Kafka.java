@@ -22,12 +22,16 @@ package com.esri.rttest.send;
 
 import com.esri.rttest.MarathonInfo;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.UUID;
+
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -79,7 +83,7 @@ public class Kafka {
      * @param numToSend Number of lines to send. If more than number of lines in file will resend from start.
      * @param burstDelay Number of milliseconds to burst at; set to 0 to send one line at a time
      */
-    public void sendFile(String filename, Integer rate, Integer numToSend, Integer burstDelay) {
+    public Integer sendFile(String filename, Integer rate, Integer numToSend, Integer burstDelay, Integer startingCount) {
         try {
             FileReader fr = new FileReader(filename);
             BufferedReader br = new BufferedReader(fr);
@@ -101,7 +105,7 @@ public class Kafka {
             // Get the System Time
             Long st = System.currentTimeMillis();
 
-            Integer cnt = 0;
+            Integer cnt = startingCount;
             
             // Tweak used to adjust delays to try and get requested rate
             Long tweak = 0L;              
@@ -245,6 +249,8 @@ public class Kafka {
             Double sendRate = (double) cnt / (System.currentTimeMillis() - st) * 1000;
             
             System.out.println(cnt + "," + String.format("%.0f", sendRate));
+
+            return cnt;
                              
         } catch (IOException | InterruptedException e) {
             // Could fail on very large files that would fill heap space 
@@ -252,7 +258,44 @@ public class Kafka {
             LOG.error("ERROR", e);
             
         }
+        return startingCount;
     }
+
+  /**
+   *
+   * @param path Path to a file or directory, with one or more files, with lines of data to be sent.
+   * @param rate Rate in lines per second to send.
+   * @param numToSend Number of lines to send. If more than number of lines in file will resend from start.
+   * @param burstDelay Number of milliseconds to burst at; set to 0 to send one line at a time
+   */
+  public void sendFiles(String path, Integer rate, Integer numToSend, Integer burstDelay) {
+    try {
+
+      File inputPath = new File(path);
+
+      if(inputPath.isDirectory()) {
+
+        File[] listOfFiles = inputPath.listFiles();
+        Arrays.sort(listOfFiles);
+
+        Integer count = 0;
+        for (int i = 0; i < listOfFiles.length && count < numToSend; i++) {
+          if (listOfFiles[i].isFile()) {
+            count = sendFile(listOfFiles[i].getAbsolutePath(), rate, numToSend, burstDelay, count);
+          }
+        }
+      }
+      else{
+        sendFile(inputPath.getAbsolutePath(), rate, numToSend, burstDelay, 0);
+      }
+
+    } catch (Exception e) {
+      // Could fail on very large files that would fill heap space
+
+      LOG.error("ERROR", e);
+
+    }
+  }
     
     
     
@@ -272,17 +315,15 @@ public class Kafka {
                 // Try hub name. Name cannot have a ':' and brokers must have it.
                 brokers = new MarathonInfo().getBrokers(brokers);
             }   // Otherwise assume it's brokers 
-                        
-            
+
             Kafka t = new Kafka(brokers, args[1]);
             if (args.length == 5) {
-                t.sendFile(args[2], Integer.parseInt(args[3]), Integer.parseInt(args[4]), 0);
+              t.sendFiles(args[2], Integer.parseInt(args[3]), Integer.parseInt(args[4]), 0);
             } else {
-                t.sendFile(args[2], Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]));
+              t.sendFiles(args[2], Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]));
             }
 
         }
-                
-       
+
     }
 }
