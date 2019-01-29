@@ -65,12 +65,16 @@ public class TimescaleSqlMon {
       try {
 
         LOG.info("Checking Count");
-        //String url = "jdbc:postgresql://$kTimescaleHost:5432/$schema";
-        Properties properties = new Properties();
-        properties.put("user", "realtime");
-        properties.put("password", "esri.test");
 
-        Connection connection = DriverManager.getConnection(connectionUrl, properties);
+
+        if(connection == null || connection.isClosed()){
+          //String url = "jdbc:postgresql://$kTimescaleHost:5432/$schema";
+          Properties properties = new Properties();
+          properties.put("user", "realtime");
+          properties.put("password", "esri.test");
+          connection = DriverManager.getConnection(connectionUrl, properties);
+        }
+
 
         Statement statement = connection.createStatement();
         if(hyperTablePrefix == null || "".equalsIgnoreCase(hyperTablePrefix)) {
@@ -93,6 +97,7 @@ public class TimescaleSqlMon {
             hyperTablePrefix = prefix.toString();
 
           }
+          chunks.close();
         }
 
         ResultSet hyperTableCount = statement.executeQuery("SELECT sum(n_tup_ins) from pg_stat_user_tables where" +
@@ -102,6 +107,8 @@ public class TimescaleSqlMon {
           cnt1 = hyperTableCount.getLong(1);
           t1 = System.currentTimeMillis();
         }
+        hyperTableCount.close();
+        statement.close();
 
         if (cnt2 == -1 || cnt1 < cnt2) {
           cnt2 = cnt1;
@@ -180,6 +187,7 @@ public class TimescaleSqlMon {
   String hyperTablePrefix;
   int sampleRateSec;
   boolean sendStdout;
+  Connection connection;
 
   public TimescaleSqlMon(String connectionUrl, String schema, String tableName, int sampleRateSec, String user, String userpw, boolean sendStdout) {
 
