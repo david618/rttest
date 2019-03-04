@@ -34,6 +34,7 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 
@@ -245,7 +246,10 @@ public class WebSocketSink {
             timer = new Timer();
             timer.schedule(new WebSocketSink.CheckCount(), 0, sampleRate * 1000);
 
-            WebSocketClient client = new WebSocketClient();
+            SslContextFactory sslContextFactory = new SslContextFactory();
+            sslContextFactory.setTrustAll(true);             
+            
+            WebSocketClient client = new WebSocketClient(sslContextFactory);
             try {
                 client.start();
 

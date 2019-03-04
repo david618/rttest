@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 
@@ -49,33 +50,27 @@ public class WebSocketSink2 {
         String destUri = url;
         //String destUri = "ws://echo.websocket.org";
 
+        SslContextFactory sslContextFactory = new SslContextFactory();
+        sslContextFactory.setTrustAll(true);
 
-        WebSocketClient client = new WebSocketClient();
+        WebSocketClient client = new WebSocketClient(sslContextFactory);
         WebSocketSinkMsg2 socket = new WebSocketSinkMsg2(sampleEveryN, showMessages);
-        try
-        {
+        try {
             client.start();
 
             URI echoUri = new URI(destUri);
             ClientUpgradeRequest request = new ClientUpgradeRequest();
-            client.connect(socket,echoUri,request);
-            System.out.printf("Connecting to : %s%n",echoUri);
+            client.connect(socket, echoUri, request);
+            System.out.printf("Connecting to : %s%n", echoUri);
 
             // wait for closed socket connection.
-            socket.awaitClose(5,TimeUnit.DAYS);
-        }
-        catch (Throwable t)
-        {
+            socket.awaitClose(5, TimeUnit.DAYS);
+        } catch (Throwable t) {
             t.printStackTrace();
-        }
-        finally
-        {
-            try
-            {
+        } finally {
+            try {
                 client.stop();
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
