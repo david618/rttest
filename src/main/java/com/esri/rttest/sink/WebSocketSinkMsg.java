@@ -17,128 +17,77 @@
  *     David Jennings
  */
 /**
- * Used by WebSocketSink
+ * Used by WebSocketSink2
  *
  * Creator: David Jennings
  */
 package com.esri.rttest.sink;
 
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.jetty.websocket.WebSocket;
+
+import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
+import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 
 /**
  *
  * @author david
  */
-//@WebSocket(maxBinaryMessageSize = 1024 * 1024)
-public class WebSocketSinkMsg implements WebSocket.OnTextMessage {
+@WebSocket(maxTextMessageSize = 64 * 1024)
+public class WebSocketSinkMsg {
 
     private static final Logger LOG = LogManager.getLogger(WebSocketSinkMsg.class);
 
-    boolean printmessages;
+    boolean printMessages;
     int sampleEvery;
-
-    public WebSocketSinkMsg(int sampleEvery, boolean printmessages) {
-        this.printmessages = printmessages;
-        this.sampleEvery = sampleEvery;
-        this.numSamples = 0;
-        this.cnt = 0;
-        this.timer = new Timer();
-        this.regression = new SimpleRegression();
-
-    }
-
-    class resetCounts extends TimerTask {
-
-        @Override
-        public void run() {
-            double rcvRate = regression.getSlope() * 1000;
-            if (numSamples > 5) {
-                double rateStdErr = regression.getSlopeStdErr();
-                System.out.format("%d , %.2f, %.4f\n", cnt, rcvRate, rateStdErr);
-            } else if (numSamples >= 3) {
-                System.out.format("%d , %.2f\n", cnt, rcvRate);
-            } else {
-                System.out.println("Not enough samples to calculate rate. ");
-            }
-            numSamples = 0;
-            cnt = 0;
-            timer = new Timer();
-            regression = new SimpleRegression();
-        }
-
-    }
-
-    Timer timer;
-    int numSamples;
+    Integer numSamples;
+    long cnt;
     SimpleRegression regression;
-    Connection con;
 
-    public Integer getCnt() {
+    public Long getCnt() {
         return cnt;
     }
 
-    private Integer cnt = 0;
-    //private Connection con;
+    private final CountDownLatch closeLatch;
+    @SuppressWarnings("unused")
+    private Session session;
 
-    @Override
-    public void onMessage(String s) {
-        cnt++;
+    public WebSocketSinkMsg(boolean printMessages) {
+        this.closeLatch = new CountDownLatch(1);
+        this.printMessages = printMessages;
+        this.cnt = 0L;
+    }
 
-        if (cnt % sampleEvery == 0) {
-            long t = System.currentTimeMillis();
-            regression.addData(t, cnt);
-            numSamples += 1;
+    public boolean awaitClose(int duration, TimeUnit unit) throws InterruptedException {
+        return this.closeLatch.await(duration, unit);
+    }
 
-            if (printmessages) {
-                System.out.println(s);
-            }
-            
-            if (numSamples > 2) {
-                double rcvRate = regression.getSlope() * 1000;
-                System.out.println(numSamples + "," + t + "," + cnt + "," + rcvRate);
-            } else {
-                System.out.println(numSamples + "," + t + "," + cnt);
-            }
-        }
+    @OnWebSocketClose
+    public void onClose(int statusCode, String reason) {
+        this.session = null;
+        this.closeLatch.countDown(); // trigger latch
+    }
+
+    @OnWebSocketConnect
+    public void onConnect(Session session) {
+        //System.out.printf("Got connect: %s%n", session);
+        this.session = session;
 
     }
 
-    @Override
-    public void onOpen(Connection connection) {
-        if (cnt > 0) {
-            System.out.println("Websocket connected");
-            numSamples = 0;
-            cnt = 0;
-            timer = new Timer();
-            regression = new SimpleRegression();
-            con = connection;
-        } else {
-            System.out.println("Listening");
-        }
-    }
+    @OnWebSocketMessage
+    public void onMessage(String msg) {
+        this.cnt++;
 
-    @Override
-    public void onClose(int i, String s) {
-        //System.out.println(System.currentTimeMillis());
-        double rcvRate = 0.0;
-        if (numSamples >= 3) {
-            rcvRate = regression.getSlope() * 1000;
+        if (printMessages) {
+            System.out.println(msg);
         }
-        if (numSamples > 5) {
-            double rateStdErr = regression.getSlopeStdErr();
-            System.out.println("Number of Samples,Count,Rate,StdErr");
-            System.out.format("%d, %d , %.2f, %.4f\n", numSamples, cnt, rcvRate, rateStdErr);
-        } else if (numSamples >= 3) {
-            System.out.println("Number of Samples,Count,Rate,StdErr");
-            System.out.format("%d, %d , %.2f\n", numSamples, cnt, rcvRate);
-        }
-        //System.out.println("Websocket connection lost");
-        //System.out.println("Number Received: " + this.cnt);
 
     }
 }

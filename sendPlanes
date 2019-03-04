@@ -1,0 +1,25 @@
+#!/bin/bash
+
+
+if [ "$#" -ne 6 ];then
+  echo "Usage: $0 [broker] [topic] [file] [rate-1000-per-thread] [number-million-per-instance] [numtimes]"
+  echo "Example: $0 a41:9092 planes80 planes00000 200 75 1"
+  echo "Runs on instance of send.Kafka to Send 75000000 lines from planes00000 file to Kafka broker a41:9092 topic planes80"
+  exit 99
+fi
+
+KAFKA=$1
+TOPIC=$2
+FILE=$3
+RATEPER=$(($4*1000))
+NUMPER=$(($5*1000000))
+NUMTIMES=$6
+
+
+echo "Sending $5 million messages at $4 thousand per second from file ${FILE} to Kafka Broker ${KAFKA} topic ${TOPIC} for each thread"
+
+for i in $(seq 1 ${NUMTIMES}); do
+  LOGFILE="k${i}.out"
+  echo "Log file for thread ${i}: : ${LOGFILE}"
+  java -cp target/rttest.jar com.esri.rttest.send.Kafka ${KAFKA} ${TOPIC} ${FILE} ${RATEPER} ${NUMPER} > ${LOGFILE} 2>&1 &
+done

@@ -16,138 +16,291 @@
  * Contributors:
  *     David Jennings
  */
-
 /**
- * Listens on on Web Socket for messages. 
- * Counts Messages based on value of sampleEveryMessages adds a point to the linear regresssion
- * After collecting three samples it will output the rate.
- * After 10 second pause the count and regression are reset.
- * 
+ * Listens on on Web Socket for messages.
+ * Updated; based on https://www.eclipse.org/jetty/documentation/9.4.x/jetty-websocket-client-api.html
+ *
  * Creator: David Jennings
  */
 package com.esri.rttest.sink;
 
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
-
-import org.eclipse.jetty.websocket.WebSocket;
-import org.eclipse.jetty.websocket.WebSocketClient;
-import org.eclipse.jetty.websocket.WebSocketClientFactory;
-
-// Embedded Example
-// https://github.com/jetty-project/embedded-jetty-websocket-examples
+import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
+import org.eclipse.jetty.websocket.client.WebSocketClient;
 
 /**
  *
  * @author david
  */
 public class WebSocketSink {
-    
+
     private static final Logger LOG = LogManager.getLogger(WebSocketSink.class);
-    
-    
-    final int MAX_MESSAGE_SIZE = 1000000;
-    
-    public void connectWebsocket(String url, int sampleEveryN, boolean showMessages) {
-        
-        try {
-            int timeout = 9000; // 9 seconds
-            
-            System.out.println("NOTE: For GeoEvent Stream Service append /subscribe to the Web Socket URL");            
-            System.out.println("Starting: If you see rapid connection lost messages. Ctrl-C and check you're URL");
-            
-            
-            SslContextFactory sslContextFactory = new SslContextFactory();
-            sslContextFactory.setTrustAll(true);
-            sslContextFactory.setValidateCerts(false);
-            sslContextFactory.start();
 
-            final WebSocketClientFactory factory = new WebSocketClientFactory();
+    WebSocketSinkMsg socket;
 
-            factory.start();
+    // ******************* TimerTask Class ******************************
+    class CheckCount extends TimerTask {
 
-            WebSocketClient client = factory.newWebSocketClient();
-            
-            URI uri = new URI(url);
+        long cnt1 = 0;
+        long cnt2 = -1;
+        long startCount = 0;
+        long endCount = 0;
+        int numSamples = 0;
+        HashMap<Long, Long> samples;
+        long t1 = 0L;
+        long t2 = 0L;
+        SimpleRegression regression;
 
-            //WebSocketMessage msg = new WebSocketSinkMsg();
+        public CheckCount() {
+            regression = new SimpleRegression();
+            cnt1 = 0;
+            cnt2 = -1;
+            startCount = 0;
+            numSamples = 0;
+            t1 = 0L;
+            t2 = 0L;
 
-            //WebSocket.Connection websocketConnection = client.open(uri, new WebSocketSinkMsg(sampleEveryN, showMessages)).get(5, TimeUnit.SECONDS);
-            WebSocket.Connection websocketConnection = client.open(uri, new WebSocketSinkMsg(sampleEveryN, showMessages),timeout, TimeUnit.SECONDS);
+        }
 
-            //System.out.println(System.currentTimeMillis());
-            websocketConnection.setMaxTextMessageSize(MAX_MESSAGE_SIZE);
-            //System.out.println(timeout);
-            websocketConnection.setMaxIdleTime(timeout);
-            
-            
-            
-            
-            //websocketConnection.setMaxIdleTime(-1);
-            while (true) {
-                if (websocketConnection.isOpen()) {                    
-                    // Wait a second
-                    Thread.sleep(1000);
-                } else {
-                    // Reopen
-                    
-                    websocketConnection = client.open(uri, new WebSocketSinkMsg(sampleEveryN, showMessages)).get(5, TimeUnit.SECONDS);
-                    websocketConnection.setMaxTextMessageSize(MAX_MESSAGE_SIZE);
-                    websocketConnection.setMaxIdleTime(timeout);
+        boolean inCounting() {
+            if (cnt1 > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        HashMap<Long, Long> getSamples() {
+            return samples;
+        }
+
+        long getStartCount() {
+            return startCount;
+        }
+
+        long getEndCount() {
+            return endCount;
+        }
+
+        @Override
+        public void run() {
+
+            try {
+                LOG.info("Checking Count");
+
+                cnt1 = socket.getCnt();
+                t1 = System.currentTimeMillis();
+
+                if (cnt2 == -1) {
+                    if (sendStdout) {
+                        System.out.println("Watching for changes in count...  Use Ctrl-C to Exit.");
+                        System.out.println("|Sample Number|Epoch|Count|Linear Regression Rate|Approx. Instantaneous Rate|");
+                        System.out.println("|-------------|-----|-----|----------------------|--------------------------|");
+                    }
                 }
-            } 
+
+                if (cnt2 == -1 || cnt1 < cnt2) {
+                    cnt2 = cnt1;
+                    startCount = cnt1;
+                    endCount = cnt1;
+                    regression = new SimpleRegression();
+                    samples = new HashMap<>();
+                    numSamples = 0;
+
+                } else if (cnt1 > cnt2) {
+                    // Increase number of samples
+                    numSamples += 1;
+
+                    // Add to Linear Regression
+                    regression.addData(t1, cnt1);
+                    samples.put(t1, cnt1);
+
+                    if (numSamples >= 2) {
+                        double regRate = regression.getSlope() * 1000;
+                        double iRate = (double) (cnt1 - cnt2) / (double) (t1 - t2) * 1000.0;
+                        if (sendStdout) {
+                            System.out.println("| " + numSamples + " | " + t1 + " | " + (cnt1 - startCount) + " | " + String.format("%.0f", regRate) + " | " + String.format("%.0f", iRate) + " |");
+                        }
+                    } else {
+                        if (sendStdout) {
+                            System.out.println("| " + numSamples + " | " + t1 + " | " + (cnt1 - startCount) + " |           |           |");
+                        }
+                    }
+
+                } else if (cnt1 == cnt2 && numSamples > 0) {
+
+                    if (sendStdout) {
+                        System.out.println("Count is no longer increasing...");
+                    }
+
+                    endCount = cnt1;
+
+                    numSamples -= 1;
+                    // Remove the last sample
+                    regression.removeData(t2, cnt2);
+                    samples.remove(t2, cnt2);
+
+                    // Calculate Average Rate
+                    long minTime = Long.MAX_VALUE;
+                    long maxTime = Long.MIN_VALUE;
+                    long minCount = Long.MAX_VALUE;
+                    long maxCount = Long.MIN_VALUE;
+                    for (Map.Entry pair : samples.entrySet()) {
+                        long time = (long) pair.getKey();
+                        long count = (long) pair.getValue();
+                        if (time < minTime) {
+                            minTime = time;
+                        }
+                        if (time > maxTime) {
+                            maxTime = time;
+                        }
+                        if (count < minCount) {
+                            minCount = count;
+                        }
+                        if (count > maxCount) {
+                            maxCount = count;
+                        }
+                    }
+                    double avgRate = (double) (maxCount - minCount) / (double) (maxTime - minTime) * 1000.0;
+
+                    if (sendStdout) {
+                        System.out.println("Removing sample: " + t2 + "|" + (cnt2 - startCount));
+                    }
+
+                    // Output Results
+                    long cnt = cnt2 - startCount;
+
+                    double regRate = regression.getSlope() * 1000;  // converting from ms to seconds
+
+                    //if (numSamples > 5) {
+                    //    double rateStdErr = regression.getSlopeStdErr();
+                    //    if (sendStdout) {
+                    //      System.out.format("%d , %.0f, %.4f\n", cnt, regRate, rateStdErr);
+                    //        System.out.format("%d , %.0f\n", cnt, regRate);
+                    //    }
+                    //} else if (numSamples >= 2) {
+                    if (numSamples >= 2) {
+                        if (sendStdout) {
+                            System.out.format("Total Count: %,d | Linear Regression Rate:  %,.0f | Average Rate: %,.0f\n\n", cnt, regRate, avgRate);
+                        }
+                    } else {
+                        if (sendStdout) {
+                            System.out.format("Total Count: %,d | Not enough samples Rate calculations. \n\n", cnt);
+                        }
+                    }
+
+                    // Reset 
+                    cnt1 = -1;
+                    cnt2 = -1;
+                    startCount = 0;
+                    numSamples = 0;
+                    t1 = 0L;
+                    t2 = 0L;
+                    regression = new SimpleRegression();
+
+                }
+
+                cnt2 = cnt1;
+                t2 = t1;
+            } catch (Exception e) {
+                LOG.error("ERROR", e);
+
+            }
+
+        }
+
+    }
+    // *****************************************************************
+
+    final int MAX_MESSAGE_SIZE = 1000000;
+    boolean sendStdout;
+    Timer timer;
+    long sampleRate;
+    String destUri;
+
+    public WebSocketSink(String url, Integer sampleRateSec, boolean printMessages, boolean sendStdout) {
+
+        this.sendStdout = sendStdout;
+        this.sampleRate = sampleRateSec;
+
+        this.destUri = url;
+        //String destUri = "ws://echo.websocket.org";
+
+        socket = new WebSocketSinkMsg(printMessages);
+
+    }
+
+    public void run() {
+        try {
+
+            timer = new Timer();
+            timer.schedule(new WebSocketSink.CheckCount(), 0, sampleRate * 1000);
+
+            WebSocketClient client = new WebSocketClient();
+            try {
+                client.start();
+
+                URI echoUri = new URI(destUri);
+                ClientUpgradeRequest request = new ClientUpgradeRequest();
+                client.connect(socket, echoUri, request);
+                //System.out.printf("Connecting to : %s%n", echoUri);
+
+                // wait for closed socket connection.
+                socket.awaitClose(5, TimeUnit.DAYS);
+            } catch (Exception t) {
+                t.printStackTrace();
+            } finally {
+                try {
+                    client.stop();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
 
         } catch (Exception e) {
             LOG.error("ERROR", e);
         }
-    }
-    
-    
 
-    
-    
+    }
+
     public static void main(String[] args) {
-        
-        
 
-
-
-            //String url = "wss://W12AGS104.JENNINGS.HOME:6143/arcgis/ws/services/FAA/StreamServer/subscribe";
-            //String url = "wss://W12.EXAMPLE.COM:6143/arcgis/ws/services/FAA-Stream/StreamServer/subscribe";
-            //String url = "ws://W12.EXAMPLE.COM:6180/arcgis/ws/services/FAA-Stream/StreamServer/subscribe";
-            //String url = "ws://localhost:8080/WhiteboardApp/whiteboardendpoint";
-            //String url = "ws://localhost:8080/websats/satstream";
-//            String url = "ws://localhost:8084/websats/SatStream/subscribe";
-//            String url = "ws://esri105.westus.cloudapp.azure.com/websats/SatStream/subscribe";
-            
-        
         int numargs = args.length;
-        
-        if (numargs < 1 || numargs > 3 ) {
-            System.err.print("Usage: WebSocketSink <ws-url> (<sample-every-N-records/1000>) (<display-messages/false>)\n");            
-            System.err.print("NOTE: For GeoEvent Stream Service append /subscribe to the Web Socket URL\n");            
+
+        if (numargs < 1) {
+            System.err.println("Usage: WebSocketSink (ws-url) [(sample-rate-sec) (print-messages=false)]");
+            System.err.println("NOTE: For GeoEvent Stream Service append /subscribe to the Web Socket URL.");
         } else {
-            WebSocketSink a = new WebSocketSink();
-            
-            switch (numargs) {
-                case 1:
-                    a.connectWebsocket(args[0], 1000, false);                
-                    break;
-                case 2:
-                    a.connectWebsocket(args[0], Integer.parseInt(args[1]), false);                
-                    break;
-                default:                    
-                    a.connectWebsocket(args[0], Integer.parseInt(args[1]), Boolean.parseBoolean(args[2]) );                
-                    break;
+
+            String websockerurl = args[0];
+            Integer sampleRateSec = 5;
+            Boolean printMessages = false;
+            Boolean sendStdout = true;
+
+            LOG.info("Entering application");
+
+            if (numargs > 1) {
+                sampleRateSec = Integer.parseInt(args[1]);
             }
-            
-            
-        }        
-        
-        
-        
+            if (numargs > 2) {
+                printMessages = Boolean.parseBoolean(args[2]);
+                if (printMessages) {
+                    sendStdout = false;
+                }
+            }
+
+            WebSocketSink webSocketSink = new WebSocketSink(websockerurl, sampleRateSec, printMessages, sendStdout);
+            webSocketSink.run();
+        }
     }
+
 }
