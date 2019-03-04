@@ -1,14 +1,30 @@
 ### com.esri.rttest.sinks.WebSocketSink
 
-$ java -cp target/rttest.jar com.esri.rttest.sinks.WebSocketSink
-Usage: WebSocketSink (ws-url) [timeout] [sample-every-N-records=1000] [display-messages=false]
+```
+java -cp target/rttest.jar com.esri.rttest.sinks.WebSocketSink
+```
+Usage: WebSocketSink (wsUrl) [(sampleRatePerSec=10) (printMessages=false)]
 
-$ java -cp target/rttest.jar com.esri.rttest.sinks.WebSocketSink  ws://localhost:8080/websats/SatStream/subscribe
-- Connects to the websocket 
-- Uses default timeout-ms; Waits for data; after 10000 ms (10s) disconnect and reconnects
-- The default sample rate is every 1,000 records
+```
+java -cp target/rttest.jar com.esri.rttest.sink.WebSocketSink ws://websats.westus2.cloudapp.azure.com/websats/SatStream/subscribe 
+```
 
-$ java -cp target/rttest.jar com.esri.rttest.sinks.WebSocketSink  ws://localhost:8080/websats/SatStream/subscribe 100 true
-- Connects to the websocket 
-- Sample rate is 100 samples (This would be better for measuring slow rates)
-- Setting display-messages to true will cause the sink to just display messages
+Output will look like:
+
+```
+Watching for changes in count...  Use Ctrl-C to Exit.
+|Sample Number|Epoch|Count|Linear Regression Rate|Approx. Instantaneous Rate|
+|-------------|-----|-----|----------------------|--------------------------|
+| 1 | 1551736479117 | 3670 |           |           |
+| 2 | 1551736484118 | 7340 | 734 | 734 |
+| 3 | 1551736489118 | 10511 | 684 | 634 |
+| 4 | 1551736494122 | 14680 | 724 | 833 |
+| 5 | 1551736499126 | 18350 | 734 | 733 |
+| 6 | 1551736504130 | 22020 | 736 | 733 |
+| 7 | 1551736509134 | 25690 | 737 | 733 |
+| 8 | 1551736514138 | 27158 | 700 | 293 |
+Count is no longer increasing...
+Removing sample: 1551736514138|27158
+Total Count: 27,158 | Linear Regression Rate:  737 | Average Rate: 734
+```
+
