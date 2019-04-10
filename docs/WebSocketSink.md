@@ -3,7 +3,7 @@
 ```
 java -cp target/rttest.jar com.esri.rttest.sinks.WebSocketSink
 ```
-Usage: WebSocketSink (wsUrl) [(sampleRatePerSec=10) (printMessages=false)]
+Usage: WebSocketSink (wsUrl) [(sample-rate-sec=5) (printMessages=false)]
 
 ```
 java -cp target/rttest.jar com.esri.rttest.sink.WebSocketSink ws://websats.westus2.cloudapp.azure.com/websats/SatStream/subscribe 
