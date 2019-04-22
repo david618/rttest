@@ -8,4 +8,5 @@ COPY planes.csv /opt/rttest/planes.csv
 COPY planes.json /opt/rttest/planes.json
 COPY planes00000 /opt/rttest/planes00000
 COPY planes00001 /opt/rttest/planes00001
+COPY Flight.csv /opt/rttest/Flight.csv
 COPY sendPlanes /opt/rttest/sendPlanes

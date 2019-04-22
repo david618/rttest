@@ -33,8 +33,6 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import javax.net.ssl.SSLContext;
@@ -66,45 +64,62 @@ public class ElasticIndexMon {
 
     class CheckCount extends TimerTask {
 
-        long cnt1 = 0;
-        long cnt2 = -1;
-        long startCount = 0;
-        long endCount = 0;
-        int numSamples = 0;
-        HashMap<Long, Long> samples;
+        long cnt0 = -1;  // current sample
+        long cnt1 = -1;  // previous sample
+        long cnt2 = -1;  // previous previous sample
+        long t0 = 0L;
         long t1 = 0L;
         long t2 = 0L;
+        long startCount = 0;
+        long firstSampleTime = 0;
+        long firstSampleCount = 0;
+        int numSamples = 0;
         SimpleRegression regression;
 
         public CheckCount() {
-            regression = new SimpleRegression();
-            cnt1 = 0;
+            cnt0 = -1;
+            cnt1 = -1;
             cnt2 = -1;
-            startCount = 0;
-            numSamples = 0;
+            t0 = 0L;
             t1 = 0L;
             t2 = 0L;
-            samples = null;
+            startCount = 0;
+            firstSampleTime = 0;
+            firstSampleCount = 0;
+            numSamples = 0;
+            regression = new SimpleRegression();
         }
 
         boolean inCounting() {
-            if (cnt1 > 0) {
+            if (cnt2 > 0) {
                 return true;
             } else {
                 return false;
             }
         }
 
-        HashMap<Long, Long> getSamples() {
-            return samples;
-        }
-
         long getStartCount() {
             return startCount;
         }
 
-        long getEndCount() {
-            return endCount;
+
+        private void resetStart() {
+            startCount = cnt0;
+
+            regression = new SimpleRegression();
+            numSamples = 0;
+            
+            firstSampleCount = 0;
+            firstSampleTime = 0;
+
+            System.out.println("Start Count: " + startCount);
+            System.out.println();
+            System.out.println("Watching for changes in count...  Use Ctrl-C to Exit.");
+            System.out.println("|Sample Number|Epoch|Count|Linear Regression Rate| Rate from Previous Sample|Rate from First Sample|");
+            System.out.println("|-------------|-----|-----|----------------------|--------------------------|----------------------|");
+
+            cnt1 = cnt0;
+            t1 = t0;
         }
 
         @Override
@@ -113,170 +128,159 @@ public class ElasticIndexMon {
 
                 LOG.info("Checking Count");
 
-                // index/type
                 String url = elasticSearchUrl + "/_count";
-                SSLContext sslContext = SSLContext.getInstance("SSL");
 
-                CredentialsProvider provider = new BasicCredentialsProvider();
-                UsernamePasswordCredentials credentials
-                        = new UsernamePasswordCredentials(user, userpw);
-                provider.setCredentials(AuthScope.ANY, credentials);
+                try {
+                    // index/type
+                    SSLContext sslContext = SSLContext.getInstance("SSL");
 
-                sslContext.init(null, new TrustManager[]{new X509TrustManager() {
-                    @Override
-                    public X509Certificate[] getAcceptedIssuers() {
-                        if (sendStdout) {
+                    CredentialsProvider provider = new BasicCredentialsProvider();
+                    UsernamePasswordCredentials credentials
+                            = new UsernamePasswordCredentials(user, userpw);
+                    provider.setCredentials(AuthScope.ANY, credentials);
+
+                    sslContext.init(null, new TrustManager[]{new X509TrustManager() {
+                        @Override
+                        public X509Certificate[] getAcceptedIssuers() {
                             System.out.println("getAcceptedIssuers =============");
+                            return null;
                         }
-                        return null;
-                    }
 
-                    @Override
-                    public void checkClientTrusted(X509Certificate[] certs,
-                            String authType) {
-                        if (sendStdout) {
+                        @Override
+                        public void checkClientTrusted(X509Certificate[] certs,
+                                String authType) {
                             System.out.println("checkClientTrusted =============");
                         }
-                    }
 
-                    @Override
-                    public void checkServerTrusted(X509Certificate[] certs,
-                            String authType) {
-                        if (sendStdout) {
+                        @Override
+                        public void checkServerTrusted(X509Certificate[] certs,
+                                String authType) {
                             System.out.println("checkServerTrusted =============");
                         }
+                    }}, new SecureRandom());
+
+                    CloseableHttpClient httpclient = HttpClients
+                            .custom()
+                            .setDefaultCredentialsProvider(provider)
+                            .setSSLContext(sslContext)
+                            .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                            .build();
+
+                    JSONObject json = new JSONObject();
+
+                    HttpGet request = new HttpGet(url);
+                    CloseableHttpResponse response = httpclient.execute(request);
+                    BufferedReader rd = new BufferedReader(
+                            new InputStreamReader(response.getEntity().getContent()));
+
+                    Header contentType = response.getEntity().getContentType();
+                    String ct = contentType.getValue().split(";")[0];
+
+                    response.getStatusLine().getStatusCode();
+
+                    String line;
+                    StringBuilder result = new StringBuilder();
+                    while ((line = rd.readLine()) != null) {
+                        result.append(line);
                     }
-                }}, new SecureRandom());
 
-                CloseableHttpClient httpclient = HttpClients
-                        .custom()
-                        .setDefaultCredentialsProvider(provider)
-                        .setSSLContext(sslContext)
-                        .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
-                        .build();
+                    json = new JSONObject(result.toString());
+                    request.abort();
+                    response.close();
 
-                HttpGet request = new HttpGet(url);
-                CloseableHttpResponse response = httpclient.execute(request);
-                BufferedReader rd = new BufferedReader(
-                        new InputStreamReader(response.getEntity().getContent()));
+                    cnt0 = json.getInt("count");
 
-                Header contentType = response.getEntity().getContentType();
-                String ct = contentType.getValue().split(";")[0];
+                } catch (KeyManagementException | NoSuchAlgorithmException e) {
 
-                int responseCode = response.getStatusLine().getStatusCode();
-
-                String line;
-                StringBuilder result = new StringBuilder();
-                while ((line = rd.readLine()) != null) {
-                    result.append(line);
+                } catch (IOException e) {
+                    cnt0 = -1;
+                    System.out.println("Elasticsearch call failed");
+                } catch (JSONException e) {
+                    cnt0 = -1;
+                    System.out.println("Index may not exist");
                 }
 
-                JSONObject json = new JSONObject(result.toString());
-                request.abort();
-                response.close();
+                t0 = System.currentTimeMillis();
 
-                cnt1 = json.getInt("count");
-
-                t1 = System.currentTimeMillis();
-                
-                if (cnt2 == -1) {
-                    System.out.println("Watching for changes in count...  Use Ctrl-C to Exit.");
-                    System.out.println("|Sample Number|Epoch|Count|Linear Regression Rate|Approx. Instantaneous Rate|");
-                    System.out.println("|-------------|-----|-----|----------------------|--------------------------|");
-                }                 
-
-                if (cnt2 == -1 || cnt1 < cnt2) {
-                    cnt2 = cnt1;
-                    startCount = cnt1;
-                    endCount = cnt1;
-                    regression = new SimpleRegression();
-                    samples = new HashMap<>();
-                    numSamples = 0;
-
-                } else if (cnt1 > cnt2) {
-                    // Increase number of samples
-                    numSamples += 1;
-
-                    // Add to Linear Regression
-                    regression.addData(t1, cnt1);
-                    samples.put(t1, cnt1);
-
-                    if (numSamples >= 2) {
-                        double regRate = regression.getSlope() * 1000;
-                        double iRate = (double) (cnt1 - cnt2) / (double) (t1 - t2) * 1000.0;
-                        if (sendStdout) {
-                            System.out.println("| " + numSamples + " | " + t1 + " | " + (cnt1 - startCount) + " | " + String.format("%.0f", regRate) + " | " + String.format("%.0f", iRate) + " |");
-                        }
+                if (cnt0 == -1) {
+                    // skip; elasticsearch or index failed to return (message about error printed)
+                } else {
+                    // if cnt2 == -1 then; set startCount and startTime; reset; and output header
+                    if (cnt1 == -1) {
+                        // Set start counts (hits this one time on startup) 
+                        resetStart();
                     } else {
-                        System.out.println("| " + numSamples + " | " + t1 + " | " + (cnt1 - startCount) + " |           |           |");
-                    }
 
-                } else if (cnt1 == cnt2 && numSamples > 0) {
-                    
-                    System.out.println("Count is no longer increasing...");
-                    
-                    endCount = cnt1;
-                                        
-                    numSamples -= 1;
-                    // Remove the last sample
-                    regression.removeData(t2, cnt2);
-                    samples.remove(t2, cnt2);
-                    
-                    // Calculate Average Rate
-                    long minTime = Long.MAX_VALUE;
-                    long maxTime = Long.MIN_VALUE;
-                    long minCount = Long.MAX_VALUE;
-                    long maxCount = Long.MIN_VALUE;
-                    for (Map.Entry pair : samples.entrySet()) {
-                        long time = (long) pair.getKey();
-                        long count = (long) pair.getValue();
-                        if (time < minTime) {
-                            minTime = time;
-                        }
-                        if (time > maxTime) {
-                            maxTime = time;
-                        }
-                        if (count < minCount) {
-                            minCount = count;
-                        }
-                        if (count > maxCount) {
-                            maxCount = count;
-                        }
-                    }
-                    double avgRate = (double) (maxCount - minCount) / (double) (maxTime - minTime) * 1000.0;                    
-                    
-                    if (sendStdout) {
-                        System.out.println("Removing sample: " + t2 + "|" + (cnt2 - startCount));
-                    }
-                    
-                    // Output Results
-                    long cnt = cnt2 - startCount;
-                    double rcvRate = regression.getSlope() * 1000;  // converting from ms to seconds
+                        if (cnt0 > cnt1) {
+                            // The count increased from last sample
+                            numSamples += 1;
 
-                    double regRate = regression.getSlope() * 1000;  // converting from ms to seconds
+                            if (numSamples == 1) {
+                                firstSampleCount = cnt0;
+                                firstSampleTime = t0;
+                            }
+                            
+                            // Add to Linear Regression
+                            regression.addData(t0, cnt0);
 
-                    if (numSamples >= 2) {
-                        if (sendStdout) {
-                            System.out.format("Total Count: %,d | Linear Regression Rate:  %,.0f | Average Rate: %,.0f\n\n", cnt, regRate, avgRate);
+                            if (numSamples >= 2) {
+                                double LinearRegressionRate = regression.getSlope() * 1000;
+                                double avgRateFromLast = (double) (cnt0 - cnt1) / (double) (t0 - t1) * 1000.0;
+                                double avgRateFromFirst = (double) (cnt0 - firstSampleCount) / (double) (t0 - firstSampleTime) * 1000.0;
+                                System.out.println("| " + numSamples + " | " + t0 + " | " + (cnt0 - startCount) + " | "
+                                        + String.format("%.0f", LinearRegressionRate) + " | " + String.format("%.0f", avgRateFromLast) + " |" + String.format("%.0f", avgRateFromFirst) + " |");
+                            } else {
+                                System.out.println("| " + numSamples + " | " + t0 + " | " + (cnt0 - startCount) + " |             |              |              |");
+                            }
+
+                            cnt2 = cnt1;
+                            t2 = t1;
+                            cnt1 = cnt0;
+                            t1 = t0;
+
+                        } else if (cnt0 <= cnt1) {
+                            // The count hasn't incrased from last sample or has decreased
+
+                            if (cnt0 == cnt1) {
+                                if (numSamples > 0) {
+                                    System.out.println("Count is no longer increasing...");
+                                    numSamples -= 1;
+                                    // Remove the previous sample from regression calculation
+                                    regression.removeData(t1, cnt1);
+
+                                    System.out.println("Removing sample: " + t1 + "|" + (cnt1 - startCount));
+
+                                    // Output Results 
+                                    long totalCnt = cnt1 - startCount;  // Total count ignoring last sample
+                                    double linearRegressionRate = regression.getSlope() * 1000;  // converting from ms to seconds
+
+                                    if (numSamples >= 2) {
+
+                                        double avgRate = (double) (cnt2 - firstSampleCount) / (double) (t2 - firstSampleTime) * 1000.0;
+
+                                        System.out.format("Total Count: %,d | Linear Regression Rate:  %,.0f | Average Rate: %,.0f\n\n", totalCnt, linearRegressionRate, avgRate);
+                                    } else {
+                                        System.out.format("Total Count: %,d | Not enough samples Rate calculations. \n\n", totalCnt);
+                                    }
+                                    resetStart();
+
+                                }
+
+                            } else {
+                                System.out.println("Count decreased...");
+                                resetStart();
+                            }
+
+                            cnt2 = -1;
+                            t2 = 0;
+
                         }
-                    } else {
-                        if (sendStdout) {
-                            System.out.format("Total Count: %,d | Not enough samples Rate calculations. \n\n", cnt);
-                        }
+
                     }
-
-                    // Reset 
-                    cnt1 = -1;
-                    cnt2 = -1;
-                    t1 = 0L;
-                    t2 = 0L;
 
                 }
 
-                cnt2 = cnt1;
-                t2 = t1;
-
-            } catch (IOException | UnsupportedOperationException | KeyManagementException | NoSuchAlgorithmException | JSONException e) {
+            } catch (UnsupportedOperationException e) {
                 LOG.error("ERROR", e);
 
             }
@@ -291,19 +295,13 @@ public class ElasticIndexMon {
     String user;
     String userpw;
     int sampleRateSec;
-    boolean sendStdout;
 
-    public ElasticIndexMon(String elasticSearchUrl, int sampleRateSec, String user, String userpw, boolean sendStdout) {
+    public ElasticIndexMon(String elasticSearchUrl, int sampleRateSec, String user, String userpw) {
 
-//        esServer = "ags:9220";
-//        index = "FAA-Stream/FAA-Stream";
-//        user = "els_ynrqqnh";
-//        userpw = "8jychjwcgn";
         this.elasticSearchUrl = elasticSearchUrl;
         this.sampleRateSec = sampleRateSec;
         this.user = user;
         this.userpw = userpw;
-        this.sendStdout = sendStdout;
     }
 
     public void run() {
@@ -323,8 +321,7 @@ public class ElasticIndexMon {
         String elasticSearchUrl = "";
         String username = "";   // default to empty string
         String password = "";  // default to empty string
-        int sampleRateSec = 5; // default to 5 seconds.  
-        Boolean sendStdout = true;
+        int sampleRateSec = 10; // default to 5 seconds.  
 
         LOG.info("Entering application.");
         int numargs = args.length;
@@ -343,7 +340,7 @@ public class ElasticIndexMon {
                 password = args[3];
             }
 
-            ElasticIndexMon t = new ElasticIndexMon(elasticSearchUrl, sampleRateSec, username, password, sendStdout);
+            ElasticIndexMon t = new ElasticIndexMon(elasticSearchUrl, sampleRateSec, username, password);
             t.run();
 
         }
