@@ -31,7 +31,7 @@ Removing sample: 1556025459755|25000000
 Total Count: 25,000,000 | Linear Regression Rate:  504,279 | Average Rate: 504,492
 ```
 
-The format of the sample data has pipes `|`; makes the data eay to copy and paste into Github.
+The format of the sample data has pipes `|`. The pipes makes the data eay to copy and paste into Github or a Spreadsheet.
 
 - Sample Number: Is literally the sample number for this test run starting with 1.
 - Epoch: System time with count was made in milliseconds from epoch (midnight on 1 Jan 1970)
