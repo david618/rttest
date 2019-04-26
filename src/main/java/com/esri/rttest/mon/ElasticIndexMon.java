@@ -127,12 +127,12 @@ public class ElasticIndexMon {
 
             //1556230066000
             System.out.println("Start Count: " + startCount);
-            System.out.println();
             System.out.println("Watching for changes in count...  Use Ctrl-C to Exit.");
-            System.out.println("|Query Number|Sample Number|Epoch (ms)    |Time (s) |Count          |Linear Regression Rate|Rate from Previous Sample|Rate from First Sample|");
-            System.out.println("|------------|-------------|--------------|---------|---------------|----------------------|-------------------------|----------------------|");
+            System.out.println();
+            System.out.println("|Query Number|Sample Number|Epoch (ms)    |Time (s) |Count             |Linear Reg. Rate  |Rate From Previous|Rate From First   |");
+            System.out.println("|------------|-------------|--------------|---------|------------------|------------------|------------------|------------------|");
 
-            // 12 | 13 | 14 | 9 | 15 | 22 | 25 | 22
+            // 12 | 13 | 14 | 9 | 18 | 22 | 25 | 22
             cnt1 = cnt0;
             t1 = t0;
             cnt2 = -1;
@@ -160,10 +160,10 @@ public class ElasticIndexMon {
                     + " |" + padLeft(numSamples, 12)
                     + " |" + padLeft(t0, 13)
                     + " |" + padLeft(timeSec, 8)
-                    + " |" + padLeft(cnt, 14)
-                    + " |" + padLeft(strLinearRegressionRate, 21)
-                    + " |" + padLeft(strAvgRateFromLast, 24)
-                    + " |" + padLeft(strAvgRateFromFirst, 21) + " |");
+                    + " |" + padLeft(cnt, 17)
+                    + " |" + padLeft(strLinearRegressionRate, 17)
+                    + " |" + padLeft(strAvgRateFromLast, 17)
+                    + " |" + padLeft(strAvgRateFromFirst, 17) + " |");
         }
 
         @Override
@@ -302,7 +302,8 @@ public class ElasticIndexMon {
                             numTimesEqualToLast++;
 
                             if (numTimesEqualToLast >= numSampleEqualBeforeExit) {
-
+                                System.out.println();
+                                
                                 System.out.println("For last " + numSampleEqualBeforeExit * sampleRateSec + "  seconds the count has not increased...");
                                 numSamples -= 1;
                                 // Remove the previous sample from regression calculation
@@ -313,13 +314,13 @@ public class ElasticIndexMon {
 
                                 // Output Results 
                                 long totalCnt = cnt1 - startCount;  // Total count ignoring last sample
-
+                               
                                 if (numSamples >= 2) {
 
                                     double avgRate = (double) (cnt2 - firstSampleCount) / (double) (t2 - firstSampleTime) * 1000.0;
                                     double linearRegressionRate = regression.getSlope() * 1000;  // converting from ms to seconds
                                     double linearRegressionError = regression.getSlopeStdErr();
-
+                                                                        
                                     if (numSamples > 2) {
                                         System.out.format("Total Count: %,d | Linear Regression Rate:  %,.0f | Linear Regression Standard Error: %,.2f | Average Rate: %,.0f\n\n", totalCnt, linearRegressionRate, linearRegressionError, avgRate);
                                     } else {
