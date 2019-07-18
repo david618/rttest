@@ -127,7 +127,13 @@ public class KafkaTopicMon extends Monitor {
         int numargs = args.length;
         if (numargs < 2 ) {
             System.err.println("Usage: KakfaTopicMon [brokers] [topic] (sampleRateSec=10) (numSampleEqualBeforeExit=1)");
-            System.err.println("Example Command: java -cp target/rttest.jar com.esri.rttest.mon.KafkaTopicMon broker.kafka.l4lb.thisdcos.directory:9092 planes 30");
+            System.err.println("Example Command: KafkaTopicMon broker:9092 planes 30");
+            System.err.println("");
+            System.err.println("brokers: Server name or ip of broker(s)");
+            System.err.println("topic: Kafka Topic");
+            System.err.println("sampleRateSecs: How many seconds to wait between samples.");
+            System.err.println("numSampleEqualBeforeExit: Summarize and reset after this many samples where count does not change.");
+            System.err.println("");
         } else {
             broker = args[0];
             topic = args[1];

@@ -120,13 +120,15 @@ public class TcpSink extends Monitor {
         int numargs = args.length;
 
         if (numargs < 1 || numargs > 5) {
-            System.err.println("Usage: TcpSink <portToListenOn> (sampleRateSec=5) (numSampleEqualBeforeExit=1) (autoTerminate=true) (displayMesages=false)");
+            System.err.println("Usage: TcpSink <portToListenOn> (sampleRateSec=5) (numSampleEqualBeforeExit=1) (autoTerminate=true)");
+            //System.err.println("Usage: TcpSink <portToListenOn> (sampleRateSec=5) (numSampleEqualBeforeExit=1) (autoTerminate=true) (displayMesages=false)");
             System.err.println("");
             System.err.println("portToListenOn: The port to listen on");
-            System.err.println("sampleRateSecs: Will gather a sample every N seconds for linear regression and estimation of rate.");
-            System.err.println("numSampleEqualBeforeExit: Number of samples that are equal before exit");
-            System.err.println("auto-terminate: true or false defaults to true. If true when count stops increasing the socket is closed; GeoEvent expects socket to stay open use false.");
-            System.err.println("display-messages: true or false default to false. If true messages are displayed counts ignored. Useful for low rates and validating messages.");
+            System.err.println("sampleRateSecs: How many seconds to wait between samples.");
+            System.err.println("numSampleEqualBeforeExit: Summarize and reset after this many samples where count does not change.");
+            System.err.println("auto-terminate: true or false; If true when count stops increasing the socket is closed; for GeoEvent use false.");
+            //System.err.println("display-messages: true or false; If true messages are displayed counts ignored. Useful for low rates and validating messages.");
+            System.err.println("");
             
         } else {
 

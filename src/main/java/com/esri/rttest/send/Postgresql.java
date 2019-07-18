@@ -280,11 +280,18 @@ public class Postgresql extends Send {
         int numargs = args.length;
 
         if (numargs != 4 && numargs != 9) {
+            System.err.println("**** WARNING:  This tool is in development; still does not output rates ***");
+            System.err.println("");
             System.err.println("Usage Print Create Table: Postgresql [tableName] [fileName] [geomFieldName] [oidFieldName]");
+            System.err.println("or");
             System.err.println("Usage Load Data: Postgresql [tableName] [fileName] [geomFieldName] [oidFieldName] [serverConn] [username] [password] [lonFieldName] [latFieldName]");
+            System.err.println("");
             System.err.println("Example: java -cp target/rttest.jar com.esri.rttest.send.Postgresql planes planes.json geom gid 192.168.57.2:5432/gis1 gis PASSWORD lon lat");
+            System.err.println("");
             System.err.println("Loads lines from file planes.json to table planes. The table planes has oidFieldName of gid and geomFieldName of geom.  The serverConn is the IP:PORT/database.");
             System.err.println("  You'll need to specify the username and password that can insert into the table.  The lonFieldName (lon) and latFieldname (lat) from the json that will be used to create points.");
+            System.err.println("");
+
 
         } else {
             tableName = args[0];

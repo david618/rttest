@@ -102,8 +102,15 @@ public class ElasticIndexMon extends Monitor {
         LOG.info("Entering application.");
         int numargs = args.length;
         if (numargs < 1) {
-            System.err.println("Usage: ElasticIndexMon [ElasticsearchUrl] (sampleRateSec=10) (numSampleEqualBeforeExit=1) (username) (password)");
-            System.err.println("Example: java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon http://coordinator.sats-ds01.l4lb.thisdcos.directory:9200/planes/planes 20 elasic changeme");
+            System.err.println("Usage: ElasticIndexMon [elasticsearchUrl] (sampleRateSec=10) (numSampleEqualBeforeExit=1) (username=\"\") (password=\"\")");
+            System.err.println("Example: ElasticIndexMon http://es:9200/planes 20 elasic changeme");
+            System.err.println("");
+            System.err.println("elasticsearchUrl: Elasticsearch Index URL");
+            System.err.println("sampleRateSecs: How many seconds to wait between samples.");
+            System.err.println("numSampleEqualBeforeExit: Summarize and reset after this many samples where count does not change.");
+            System.err.println("username: Elasticsearch username");
+            System.err.println("password: Elasticsearch password");
+            System.err.println("");
         } else {
             elasticSearchUrl = args[0];
 

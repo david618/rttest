@@ -89,8 +89,15 @@ public class SolrCoreMon extends Monitor {
         LOG.info("Entering application.");
         int numargs = args.length;
         if (numargs < 1) {
-            System.err.print("Usage: SolrCoreMon [SolrSearchURL] (sampleRateSec) ((username) (password))  \n");
-            System.err.println("Example: java -cp target/rttest.jar com.esri.rttest.mon.SolrCoreMon http://localhost:8983/solr/realtime.safegraph 20 user pass");
+            System.err.print("Usage: SolrCoreMon [SolrSearchURL] (sampleRateSec=5) ((username=\"\") (password=\"\"))  \n");
+            System.err.println("Example: SolrCoreMon http://server:8983/solr/planes 20");
+            System.err.println("");
+            System.err.println("SolrSearchURL: Solr Search URL");
+            System.err.println("sampleRateSecs: How many seconds to wait between samples.");
+            System.err.println("numSampleEqualBeforeExit: Summarize and reset after this many samples where count does not change.");
+            System.err.println("username: Solr username");
+            System.err.println("password: Solr password");
+            System.err.println("");
         } else {
             solrSearchUrl = args[0];
 

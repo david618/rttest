@@ -120,9 +120,16 @@ public class WebSocketSink extends Monitor {
         int numargs = args.length;
 
         if (numargs < 1) {
-            System.err.println("Usage: WebSocketSink [ws-url] (sampleRateSec=10) (numSampleEqualBeforeExit=1) (printMmessages=false)]");
+            System.err.println("Usage: WebSocketSink [ws-url] (sampleRateSec=10) (numSampleEqualBeforeExit=1)]");
+            //System.err.println("Usage: WebSocketSink [ws-url] (sampleRateSec=10) (numSampleEqualBeforeExit=1) (printMmessages=false)]");
             System.err.println("NOTE: For GeoEvent Stream Service append /subscribe to the Web Socket URL.");
-            System.err.println("Example: java -cp target/rttest.jar com.esri.rttest.sink.WebSocketSink ws://websats.westus2.cloudapp.azure.com/websats/SatStream/subscribe");
+            System.err.println("Example: WebSocketSink ws://websats.westus2.cloudapp.azure.com/websats/SatStream/subscribe");
+            System.err.println("");
+            System.err.println("ws-url: Web Socket URL to consume");
+            System.err.println("sampleRateSecs: How many seconds to wait between samples.");
+            System.err.println("numSampleEqualBeforeExit: Summarize and reset after this many samples where count does not change.");
+            //System.err.println("display-messages: true or false; If true messages are displayed counts ignored. Useful for low rates and validating messages.");
+            System.err.println("");
         } else {
 
             String websockerurl = args[0];

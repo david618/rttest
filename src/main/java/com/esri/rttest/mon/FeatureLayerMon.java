@@ -71,9 +71,13 @@ public class FeatureLayerMon extends  Monitor {
         LOG.info("Entering application.");
         int numargs = args.length;
         if (numargs < 1) {
-            System.err.print("Usage: FeatureLayerMon [Feature-Layer] (sampleRateSec) \n");
-            System.err.println("Example: java -cp target/rttest.jar com.esri.rttest.mon.FeatureLayerMon2 http://p1/2b2ed39f-7656-463b-9df9-e7ce0d04ecbe/arcgis/rest/services/planes-bat/FeatureServer/0 30");
-
+            System.err.print("Usage: FeatureLayerMon [featureLayerUrl] (sampleRateSec=10) (numSampleEqualBeforeExit=1)\n");
+            System.err.println("Example: FeatureLayerMon http://p1/arcgis/rest/services/planes/FeatureServer/0 10");
+            System.err.println("");
+            System.err.println("featureLayerUrl: URL to Feature Layer");
+            System.err.println("sampleRateSec: Will gather a sample every N seconds for linear regression and estimation of rate.");
+            System.err.println("numSampleEqualBeforeExit: Number of samples that are equal before exit");
+            System.err.println("");
 
         } else {
             url = args[0];

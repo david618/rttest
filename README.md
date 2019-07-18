@@ -159,6 +159,8 @@ rttest-send includes addition larger planes datasets.
   - Flat Triangle Hash  
 - planes00001 - 5 million lines; planes schema 
 
+**NOTE:** rttest-send is much larger (~1GB) compared to rttest-mon (~200MB).
+
 ### How Docker Image was Created
 
 For example, from project root run docker build.

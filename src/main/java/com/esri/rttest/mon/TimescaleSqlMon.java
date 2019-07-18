@@ -119,7 +119,17 @@ public class TimescaleSqlMon extends Monitor {
     int numargs = args.length;
     if (numargs < 3) {
       System.err.print("Usage: TimescaleSqlMon [connectionUrl] [schema] [tableName] (sampleRateSec=10)  (numSampleEqualBeforeExit=1) (username=\"\") (password=\"\")  \n");
-      System.err.println("Example: java -cp target/rttest.jar com.esri.rttest.mon.TimescaleSqlMon jdbc:postgresql://HostName:5432/dbName realtime safegraph 20 user pass");
+      System.err.println("Example: TimescaleSqlMon jdbc:postgresql://HostName:5432/dbName realtime safegraph 20 user pass");
+      System.err.println("");
+      System.err.println("connectionUrl: Database connection string.");
+      System.err.println("schema: Database schema");
+      System.err.println("tableName: Database table name");
+      System.err.println("sampleRateSecs: How many seconds to wait between samples.");
+      System.err.println("numSampleEqualBeforeExit: Summarize and reset after this many samples where count does not change.");
+      System.err.println("username: Database username");
+      System.err.println("password: Database password");
+      System.err.println("");
+
     } else {
       connectionUrl = args[0];
       schema = args[1];

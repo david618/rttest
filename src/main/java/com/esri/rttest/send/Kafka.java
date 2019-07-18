@@ -105,6 +105,14 @@ public class Kafka extends Send {
         int numargs = args.length;
         if (numargs < 5 ) {
             System.err.print("Usage: Kafka [brokers] [topic] [file] [desiredRatePerSec] [numToSend] (reuseFile=true) \n");
+            System.err.println("");
+            System.err.println("broker: hostname or ip of the broker(s)");
+            System.err.println("topic: Kafka Topic");
+            System.err.println("file: file with lines of text to send to Elasticsearch; if folder than all files in the folder are sent and reuseFile is set to false.");
+            System.err.println("desiredRatePerSec: Desired Rate. The tool will try to send at this rate if possible");
+            System.err.println("numToSend: Number of lines to send");
+            System.err.println("resueFile: true or false; if true the file is reused as needed to if numToSend is greater than number of lines in the file");
+            System.err.println("");
         } else {
 
             String brokers = args[0];
