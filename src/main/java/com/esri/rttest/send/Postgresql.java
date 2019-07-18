@@ -33,6 +33,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -44,7 +45,19 @@ import org.json.JSONObject;
  *
  * @author david
  */
-public class Postgresql {
+public class Postgresql extends Send {
+
+
+    @Override
+    public long sendBatch(ArrayList<String> lines) {
+
+        return 0;
+    }
+
+    @Override
+    public void sendDone() {
+
+    }
 
     private static final Logger LOG = LogManager.getLogger(Postgresql.class);
 

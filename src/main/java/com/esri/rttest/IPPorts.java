@@ -15,8 +15,8 @@
  *
  * Contributors:
  *     David Jennings
- * 
- * Given appNamePattern return a list of ips and ports 
+ *
+ * Given appNamePattern return a list of ips and ports
  *     dns-name:port returns all ip's associated with the dns-name
  *     app[Marathon-App-Name[:index]) returns all ip and ports for the Marathon-App-Name the index is the port index defaults to 0
  *     host:port returns names from hosts file and port
@@ -127,20 +127,20 @@ public class IPPorts {
                 System.out.println("port:" + port);
                 System.out.println("path:" + path);
                 System.out.println("protocol:" + protocol);
-                
+
 
                 if (IPmatcher.matches())  {
                     IPPort ipport = new IPPort(host, port);
                     ipPorts.add(ipport);
                 } else {
-                    
+
                     // Lookup and populate ipPorts using host
                     Lookup lookup = new Lookup(host, Type.A);
                     lookup.run();
                     //System.out.println(lookup.getErrorString());
                     if (lookup.getAnswers() == null) {
                         InetAddress addr = InetAddress.getByName(host);
-    
+
                         IPPort ipport = new IPPort(addr.getHostAddress(), port);
                         ipPorts.add(ipport);
                     } else {
@@ -149,12 +149,12 @@ public class IPPorts {
                             IPPort ipport = new IPPort(ip, port);
                             ipPorts.add(ipport);
                             System.out.println(ipport);
-    
+
                         }
                     }
-                    
+
                 }
-                                
+
             }
 
             for (IPPort ipport : ipPorts) {
@@ -181,9 +181,9 @@ public class IPPorts {
         return path;
     }
 
-    
-    
-    
+
+
+
     public static void main(String[] args) {
 
 //        String name = "http://app[Someapp/Name:1234]/some/path/info";
@@ -199,15 +199,15 @@ public class IPPorts {
 //        ipp = new IPPorts(name);
 
         IPPorts ipp = new IPPorts((args[0]));
-        
-       ArrayList<IPPort> ipPorts = ipp.getIPPorts();
 
-       for (IPPort ipport : ipPorts) {
-          System.out.println(ipport.getIp() + ":" + ipport.getPort());
-       }
+        ArrayList<IPPort> ipPorts = ipp.getIPPorts();
 
-        
-        
+        for (IPPort ipport : ipPorts) {
+            System.out.println(ipport.getIp() + ":" + ipport.getPort());
+        }
+
+
+
     }
 
 }

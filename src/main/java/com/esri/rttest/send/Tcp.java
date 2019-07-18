@@ -40,15 +40,14 @@
  */
 package com.esri.rttest.send;
 
-import com.esri.rttest.IPPort;
-import com.esri.rttest.IPPorts;
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
+
+import com.esri.rttest.IPPort;
+import com.esri.rttest.IPPorts;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -56,42 +55,34 @@ import org.apache.logging.log4j.Logger;
  *
  * @author david
  */
-public class Tcp {
+public class Tcp extends Send {
 
     private static final Logger LOG = LogManager.getLogger(Tcp.class);
-    
 
-    private OutputStream[] os;
-    private Integer numStream;
+    @Override
+    public long sendBatch(ArrayList<String> lines) {
+        Iterator<String> linesIterator = lines.iterator();
+        int cnt = 0;
+        while (linesIterator.hasNext()) {
+            String line = linesIterator.next() + "\n";  // For TCP you need to end with line feed
+            try {
+                int i = cnt % numStream;
+                os[i].write(line.getBytes());
+                os[i].flush();
+                cnt += 1;
+            } catch (Exception e) {
+                LOG.error("ERROR",e);
 
-    public Tcp(String appNamePattern) {
-
-        try {
-             
-            IPPorts ipp = new IPPorts(appNamePattern);
-            ArrayList<IPPort> ipPorts = ipp.getIPPorts();
-
-            if (ipPorts.isEmpty()) {
-                throw new UnsupportedOperationException("Could not discover the any ip port combinations.");
             }
 
-            numStream = ipPorts.size();
-            this.os = new OutputStream[numStream];
-            int i = 0;
-            for (IPPort ipport : ipPorts) {
-                Socket skt = new Socket(ipport.getIp(), ipport.getPort());
-                this.os[i] = skt.getOutputStream();
-                i++;
-            }
-
-        } catch (IOException | NumberFormatException | UnsupportedOperationException e) {
-            LOG.error("ERROR",e);
-            
         }
 
+
+        return cnt;
     }
 
-    public void shutdown() {
+    @Override
+    public void sendDone() {
         int i = 0;
         while (i < numStream) {
             try {
@@ -104,154 +95,70 @@ public class Tcp {
 
     }
 
-    /**
-     *
-     * @param filename File with lines of data to be sent.
-     * @param rate Rate in lines per second to send.
-     * @param numLines
-     */
-    public void sendFile(String filename, Integer rate, Integer numLines) {
+
+    private OutputStream[] os;
+    private Integer numStream;
+
+    public Tcp(String serverPort,String filename, Integer desiredRatePerSec, Long numToSend, boolean reuseFile) {
+
         try {
 
-            Boolean recycle = true;
-            Integer numToSend = numLines;
+            IPPorts ipp = new IPPorts(serverPort);
+            ArrayList<IPPort> ipPorts = ipp.getIPPorts();
 
-            if (numLines == 0) {
-                // Send the file one time and stop
-                numToSend = Integer.MAX_VALUE;
-                recycle = false;
+            if (ipPorts.isEmpty()) {
+                throw new UnsupportedOperationException("Could not discover the any ip port combinations.");
             }
 
-            // Read File
-            FileReader fr = new FileReader(filename);
-            BufferedReader br = new BufferedReader(fr);
-
-            // Load Array with Lines from File
-            ArrayList<String> lines = new ArrayList<>();
-
-            String line;
-            while ((line = br.readLine()) != null) {
-                lines.add(line);
+            numStream = ipPorts.size();
+            os = new OutputStream[numStream];
+            int i = 0;
+            for (IPPort ipport : ipPorts) {
+                Socket skt = new Socket(ipport.getIp(), ipport.getPort());
+                os[i] = skt.getOutputStream();
+                i++;
             }
 
-            br.close();
-            fr.close();
+            // Part of Abstract Class Send
+            this.desiredRatePerSec = desiredRatePerSec;
+            this.numToSend = numToSend;
+            this.filename = filename;
+            this.reuseFile = reuseFile;
 
-            // Create Iterator from Array
-            Iterator<String> linesIt = lines.iterator();
+            sendFiles();
 
-            // Get the System Time as st (Start Time)            
-            Long st = System.currentTimeMillis();
 
-            // Count of Records Sent
-            Integer cnt = 0;
-
-            // Tweak used to adjust delays to try and get requested rate
-            Long tweak = 0L;
-
-            // Delay between each send in nano seconds            
-            Double ns_delay = 1000000000.0 / (double) rate;
-
-            long ns = ns_delay.longValue() - tweak;
-            if (ns < 0) {
-                ns = 0;  // can't be less than 0 
-            }
-
-            // *********** If burstDelay = 0 then send Constant Rate using nanosecond delay *********
-            while (cnt < numToSend) {
-
-                if (cnt % rate == 0 && cnt > 0) {
-                    // Calculate rate and adjust as needed
-                    Double curRate = (double) cnt / (System.currentTimeMillis() - st) * 1000;
-
-                    System.out.println(cnt + "," + String.format("%.0f", curRate));
-                }
-
-                if (cnt % 1000 == 0 && cnt > 0) {
-                    // Calculate rate and adjust as needed
-                    Double curRate = (double) cnt / (System.currentTimeMillis() - st) * 1000;
-
-                    // rate difference as percentage 
-                    Double rateDiff = (rate - curRate) / rate;
-
-                    // Add or subracts up to 100ns 
-                    tweak = (long) (rateDiff * rate);
-
-                    // By adding some to the delay you can fine tune to achieve the desired output
-                    ns = ns - tweak;
-                    if (ns < 0) {
-                        ns = 0;  // can't be less than 0 
-                    }
-
-                }
-
-                cnt += 1;
-
-                if (!linesIt.hasNext()) {
-                    if (recycle) {
-                        linesIt = lines.iterator();  // Reset Iterator
-                    } else {
-                        // Entire contents of file send or Integer.MAX_VALUE
-                        break;
-                    }
-                }
-
-                final long stime = System.nanoTime();
-
-                line = linesIt.next() + "\n";
-
-                int i = cnt % numStream;
-                this.os[i].write(line.getBytes());
-                this.os[i].flush();
-
-                long etime = 0;
-                do {
-                    // This approach uses a lot of CPU                    
-                    etime = System.nanoTime();
-                    // Adding the following sleep for a few microsecond reduces system load; however,
-                    // it also negatively effects the throughput
-                    //Thread.sleep(0,100);  
-                } while (stime + ns >= etime);
-
-            }
-
-            Double sendRate = (double) cnt / (System.currentTimeMillis() - st) * 1000;
-
-            System.out.println(cnt + "," + String.format("%.0f", sendRate));
-
-        } catch (IOException e) {
-            // Could fail on very large files that would fill heap space 
+        } catch (IOException | NumberFormatException | UnsupportedOperationException e) {
             LOG.error("ERROR",e);
-
+            
         }
+
     }
+
+
 
     public static void main(String args[]) {
 
-        // Example Command Line args: localhost 5565 faa-stream.csv 1000 10000
         int numargs = args.length;
-        if (numargs != 4) {
-            // append append time option was added to support end-to-end latency; I used it for Trinity testing
-            System.err.println("Usage: Tcp (server:port) (file) (rate) (numlines)");
-            System.err.println("");
-            System.err.println("server:port: The IP or hostname of server to send events to. Could be ip:port, dns-name:port, or app[marathon-app-name[:portindex]]");
-            System.err.println("filename: Send line by line from this file.");
-            System.err.println("rate: Attempts to send at this rate. Lines/seconds.");
-            System.err.println("numlines: Send numLine lines (reuse file if needed); if 0 then send all lines in file once.");
+        if (numargs < 4 ) {
+            System.err.print("Usage: Tcp [serverPort] [file] [desiredRatePerSec] [numToSend] (reuseFile=true) \n");
         } else {
-            // Initial the Tcp Class with the server and port
+
             String serverPort = args[0];
-            String filename = args[1];
-            Integer rate = Integer.parseInt(args[2]);
-            Integer numlines = Integer.parseInt(args[3]);
+            String file = args[1];
+            Integer desiredRatePerSec = Integer.parseInt(args[2]);
+            Long numToSend = Long.parseLong(args[3]);
 
-            Tcp t = new Tcp(serverPort);
+            boolean reuseFile = true;
+            if (numargs > 4) {
+                reuseFile = Boolean.parseBoolean(args[4]);
+            }
 
-            t.sendFile(filename, rate, numlines);
-
-            t.shutdown();
+            Tcp t = new Tcp(serverPort, file, desiredRatePerSec, numToSend, reuseFile);
 
         }
+
+
 
     }
 }

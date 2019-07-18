@@ -31,26 +31,26 @@ public class Help {
         
         System.out.println("");
         System.out.println("Classes that send.");        
-        System.out.println("com.esri.send.Elasticsearch   : Send lines from file to Elasticsearch using Transport Protocol.");
-        System.out.println("com.esri.send.Http            : Send lines from file to server using Http POST.");
-        System.out.println("com.esri.send.Kafka           : Send lines from file to Kafka.");
-        System.out.println("com.esri.send.Postgresql      : Send lines from a file to Postgresql Database.");        
-        System.out.println("com.esri.send.Tcp             : Send lines from file to server on tcp port.");
-        System.out.println("com.esri.send.Tcp2            : Send lines from file to server on tcp port (uses threads).");
-        
+        System.out.println("com.esri.rttest.send.Elasticsearch   : Send lines from file to Elasticsearch using Transport Protocol.");
+        System.out.println("com.esri.rttest.send.Http            : Send lines from file to server using Http POST.");
+        System.out.println("com.esri.rttest.send.Kafka           : Send lines from file to Kafka.");
+        System.out.println("com.esri.rttest.send.Postgresql      : Send lines from a file to Postgresql Database.");
+        System.out.println("com.esri.rttest.send.Tcp             : Send lines from file to server on tcp port.");
+
         System.out.println("");
-        System.out.println("Classes that monitor.");        
-        System.out.println("com.esri.mon.FeatureLayerMon : Monitor count on a Feature Layer.");
-        System.out.println("com.esri.mon.KafkaTopicMon   : Monitor count of a Kafka Topic.");
-        
-        System.out.println("");
-        System.out.println("Classes that sink.");                
-        System.out.println("com.esri.sink.TcpSink         : Count messages recevied via TCP on a specified port.");
-        System.out.println("com.esri.sink.WebSocketSink   : Count messages received via Web Socket on a specified port.");
+        System.out.println("Classes that monitor.");
+        System.out.println("com.esri.rttest.mon.ElasticIndexMon  : Monitor count Elasticsearch index.");
+        System.out.println("com.esri.rttest.mon.FeatureLayerMon  : Monitor count on a Feature Layer.");
+        System.out.println("com.esri.rttest.mon.HttpSink         : Count messages received via HTTP on specified port.");
+        System.out.println("com.esri.rttest.mon.KafkaTopicMon    : Monitor count of a Kafka Topic.");
+        System.out.println("com.esri.rttest.mon.SolrCoreMon      : Monitor count Solr core.");
+        System.out.println("com.esri.rttest.mon.TcpSink          : Count messages recevied via TCP on a specified port.");
+        System.out.println("com.esri.rttest.mon.TimescaleSqlMon  : Monitor count of TimescaleDB Table.");
+        System.out.println("com.esri.rttest.mon.WebSocketSink    : Count messages received via Web Socket on a specified port.");
         
         System.out.println("");
         System.out.println("For additional help on each command; execute without any command line arguments. ");
-        System.out.println("For example: java -cp target/Simulator.jar com.esri.simulator.Elasticsearch");
+        System.out.println("For example: java -cp target/rttest.jar com.esri.rttest.mon.ElasticsearchMon");
         
         
     }
