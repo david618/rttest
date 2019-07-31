@@ -30,10 +30,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
+import org.eclipse.jetty.websocket.api.annotations.*;
 
 /**
  *
@@ -45,33 +42,36 @@ public class WebSocketSinkMsg {
     private static final Logger LOG = LogManager.getLogger(WebSocketSinkMsg.class);
 
     boolean printMessages;
-    int sampleEvery;
-    Integer numSamples;
     long cnt;
-    SimpleRegression regression;
 
     public Long getCnt() {
         return cnt;
     }
 
     private final CountDownLatch closeLatch;
-    @SuppressWarnings("unused")
     private Session session;
 
     public WebSocketSinkMsg(boolean printMessages) {
-        this.closeLatch = new CountDownLatch(1);
         this.printMessages = printMessages;
-        this.cnt = 0L;
+
+        closeLatch = new CountDownLatch(1);
+        cnt = 0L;
+    }
+
+    public void awaitClose() throws InterruptedException {
+        this.closeLatch.await();
     }
 
     public boolean awaitClose(int duration, TimeUnit unit) throws InterruptedException {
+
         return this.closeLatch.await(duration, unit);
+
     }
 
     @OnWebSocketClose
     public void onClose(int statusCode, String reason) {
-        this.session = null;
-        this.closeLatch.countDown(); // trigger latch
+        session = null;
+        closeLatch.countDown(); // trigger latch
     }
 
     @OnWebSocketConnect
@@ -81,13 +81,20 @@ public class WebSocketSinkMsg {
 
     }
 
+
     @OnWebSocketMessage
     public void onMessage(String msg) {
-        this.cnt++;
+        cnt++;
 
         if (printMessages) {
             System.out.println(msg);
         }
-
     }
+
+    @OnWebSocketError
+    public void onError(Throwable cause) {
+        // Error or not increment count
+        cnt++;
+    }
+
 }

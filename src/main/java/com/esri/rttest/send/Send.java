@@ -51,16 +51,34 @@ abstract public class Send {
                 File[] listOfFiles = inputPath.listFiles();
                 Arrays.sort(listOfFiles);
 
-                reuseFile = false;
-
                 long count = 0;
-                for (int i = 0; i < listOfFiles.length && count < numToSend; i++) {
-                    if (listOfFiles[i].isFile()) {
-                        //System.out.println(listOfFiles[i].getAbsolutePath());
-                        count = sendFile(listOfFiles[i].getAbsolutePath());
+
+                int numFiles = listOfFiles.length;
+
+                int fileNumber = 0;
+
+                boolean resuseFiles = reuseFile;  // Set reuseFiles
+                reuseFile = false; // Don't send same file over and over
+
+                while (fileNumber < numFiles) {
+
+                    System.out.println("Sending : " + listOfFiles[fileNumber].getAbsolutePath());
+                    count += sendFile(listOfFiles[fileNumber].getAbsolutePath());
+
+                    if (count >= numToSend && numToSend != -1) break;
+                    // The numToSend has been reached and it's not -1; used to send forever
+
+                    fileNumber += 1;
+
+                    if (fileNumber == numFiles) {
+                        // if reusefile then go back to file 0
+                        if (resuseFiles) fileNumber = 0;
                     }
                 }
+
             } else {
+
+
                 sendFile(inputPath.getAbsolutePath());
             }
 
@@ -72,6 +90,7 @@ abstract public class Send {
             // Could fail on very large files that would fill heap space
 
             LOG.error("ERROR", e);
+            System.err.println(e.getMessage());
 
         }
     }
@@ -91,7 +110,7 @@ abstract public class Send {
 
             Iterator<String> linesIterator = lines.iterator();
 
-            while (numberSent < numToSend) {
+            while (numberSent < numToSend || numToSend == -1) {
 
                 batchNumber +=1;
 
@@ -100,7 +119,7 @@ abstract public class Send {
 
                 ArrayList<String> batchLines = new ArrayList<>();
                 // Create a batch of lines ArrayList<String> to send; up to desiredRatePerSec; stop sooner if numToSend met
-                while (numberSentThisBatch < desiredRatePerSec && numberSent < numToSend) {
+                while (numberSentThisBatch < desiredRatePerSec && (numberSent < numToSend || numToSend == -1)) {
                     // Reset Interator
                     if (!linesIterator.hasNext() && reuseFile) {
                         linesIterator = lines.iterator();
@@ -210,7 +229,9 @@ abstract public class Send {
             fr.close();
 
         } catch (IOException e) {
+            LOG.debug("ERROR", e);
 
+            System.err.println(e.getMessage());
         }
 
     }

@@ -61,6 +61,7 @@ public class WebSocketSink extends Monitor {
 
     @Override
     public void countEnded() {
+        startClient();
 
     }
 
@@ -70,6 +71,37 @@ public class WebSocketSink extends Monitor {
     final int MAX_MESSAGE_SIZE = 1000000;
     String destUri;
 
+
+    /**
+     * Moved out of constructor; called after countEnded to resume next count
+     */
+    private void startClient() {
+        SslContextFactory sslContextFactory = new SslContextFactory();
+        sslContextFactory.setTrustAll(true);
+
+        WebSocketClient client = new WebSocketClient(sslContextFactory);
+        try {
+            client.start();
+
+            URI echoUri = new URI(destUri);
+            ClientUpgradeRequest request = new ClientUpgradeRequest();
+            client.connect(socket, echoUri, request);
+            //System.out.printf("Connecting to : %s%n", echoUri);
+
+            // wait for closed socket connection.
+            socket.awaitClose();
+            //socket.awaitClose(5, TimeUnit.DAYS);
+
+        } catch (Exception t) {
+            t.printStackTrace();
+        } finally {
+            try {
+                client.stop();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
 
 
@@ -87,29 +119,7 @@ public class WebSocketSink extends Monitor {
         // Start Monitor Timer
         run();
 
-        SslContextFactory sslContextFactory = new SslContextFactory();
-        sslContextFactory.setTrustAll(true);
-
-        WebSocketClient client = new WebSocketClient(sslContextFactory);
-        try {
-            client.start();
-
-            URI echoUri = new URI(destUri);
-            ClientUpgradeRequest request = new ClientUpgradeRequest();
-            client.connect(socket, echoUri, request);
-            //System.out.printf("Connecting to : %s%n", echoUri);
-
-            // wait for closed socket connection.
-            socket.awaitClose(5, TimeUnit.DAYS);
-        } catch (Exception t) {
-            t.printStackTrace();
-        } finally {
-            try {
-                client.stop();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        startClient();
 
 
     }
@@ -141,7 +151,7 @@ public class WebSocketSink extends Monitor {
 
             Integer numSampleEqualBeforeExit = 1;
             if (numargs > 2) {
-                sampleRateSec = Integer.parseInt(args[2]);
+                numSampleEqualBeforeExit = Integer.parseInt(args[2]);
             }
 
             Boolean printMessages = false;
@@ -152,6 +162,7 @@ public class WebSocketSink extends Monitor {
 
             WebSocketSink webSocketSink = new WebSocketSink(websockerurl, sampleRateSec, numSampleEqualBeforeExit, printMessages);
             webSocketSink.run();
+
         }
     }
 

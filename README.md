@@ -13,13 +13,30 @@ You must have java, maven, and git installed.
 ```
 sudo yum -y install epel-release
 sudo yum -y install git
-sudo yum -y install java-1.8.0-openjdk
 sudo yum -y install maven
 ```
 
 #### Linux (Ubuntu)
+```
+sudo apt get install git 
+sudo apt-get install maven
+```
 
+#### Mac
 
+Install Java.   Try ``java -version``.  If nothing installed you can install using brew. 
+
+```
+ brew tap AdoptOpenJDK/openjdk
+ brew cask install jdk-12.0.1.jdk 
+```
+
+Install git and maven
+
+```
+brew install git
+brew install maven
+```
 
 #### Windows 
 - Install [Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) 
@@ -40,6 +57,7 @@ sudo yum -y install maven
 ```
 git clone https://github.com/david618/rttest
 cd rttest
+mvn clean
 mvn install 
 ```
 
