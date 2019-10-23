@@ -139,7 +139,7 @@ public class HttpThread extends Thread {
 
                 HttpResponse resp = httpClient.execute(httpPost);
 
-                if (resp.getStatusLine().getStatusCode() != 200) {
+                if (resp.getStatusLine().getStatusCode() > 299 || resp.getStatusLine().getStatusCode() < 200) {
                     cntErr += 1;
                 }
 
