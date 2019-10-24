@@ -26,6 +26,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.http.NoHttpResponseException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -151,11 +152,14 @@ public class HttpThread extends Thread {
 
             }
 
+        } catch (NoHttpResponseException e) {
+            LOG.debug("ERROR", e);
+            System.err.println(e.getClass() + ": " + e.getMessage());
+            //don't terminate
         } catch (Exception e) {
             LOG.debug("ERROR", e);
             System.err.println(e.getClass() + ": " + e.getMessage());
             terminate();
-
         }
     }
 }
