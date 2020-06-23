@@ -23,6 +23,12 @@
  * 
  * Creator: David Jennings
  */
+
+/*
+
+java -cp target/rttest.jar com.esri.rttest.send.Mqtt tcp://52.191.131.159:1883 test /Users/davi5017/Downloads/safegraph_time_grouped.txt 10000 1000000 username password
+*/
+
 package com.esri.rttest.send;
 
 import java.util.ArrayList;
@@ -42,7 +48,7 @@ public class Mqtt extends Send {
 
     @Override
     public long sendBatch(ArrayList<String> batchLines) {
-        Iterator<String> linesIterator = lines.iterator();
+        Iterator<String> linesIterator = batchLines.iterator();
 
         long cnt = 0;
 
@@ -50,9 +56,9 @@ public class Mqtt extends Send {
             String line = linesIterator.next();
             MqttMessage message = new MqttMessage(line.getBytes());
             message.setQos(this.qos);
-            try {            
-              this.mqttClient.publish(this.topic, message);
-              cnt += 1;
+            try {
+                this.mqttClient.publish(this.topic, message);
+                cnt += 1;
             } catch (MqttException me) {
                 System.out.println("reason " + me.getReasonCode());
                 System.out.println("msg " + me.getMessage());
@@ -62,61 +68,51 @@ public class Mqtt extends Send {
                 me.printStackTrace();
             }
         }
-        return cnt;        
-        
+        return cnt;
+
     }
 
     @Override
     public void sendDone() {
-        try {            
+        try {
             this.mqttClient.disconnect();
         } catch (MqttException me) {
             // Ok to ignore
-        }        
+        }
     }
 
     MqttClient mqttClient;
     String topic;
     Integer qos;
-    
-    public Mqtt(String host, String topic, String filename, Integer desiredRatePerSec, Long numToSend, String username, String password, boolean reuseFile,  String clientId, Integer qos) {
-        
+
+    public Mqtt(String host, String topic, String filename, Integer desiredRatePerSec, Long numToSend, String username, String password, boolean reuseFile, String clientId, Integer qos) {
+
         if (clientId == null) {
-          UUID uuid = UUID.randomUUID();
-          clientId = uuid.toString();
+            UUID uuid = UUID.randomUUID();
+            clientId = uuid.toString();
         }
-        
+
         this.qos = 0;
         if (qos != null) {
             this.qos = qos;
         }
-        
-            System.out.println("host: " + host);
-            System.out.println("topic: " + topic);
-            System.out.println("desiredRatePerSec: " + desiredRatePerSec);
-            System.out.println("numToSend: " + numToSend);
-            System.out.println("clientId: " + clientId);
-            System.out.println("qos: " + qos);
-            System.out.println("username: " + username);
-            System.out.println("password: " + password);
-            System.out.println("reuseFile: " + reuseFile);        
-        
+
         MemoryPersistence persistence = new MemoryPersistence();
         this.topic = topic;
 
-        try {        
-          this.mqttClient = new MqttClient(host, clientId, persistence);
-          MqttConnectOptions connOpts = new MqttConnectOptions();
-          connOpts.setCleanSession(true);
-          if (username != null) {
-            connOpts.setUserName(username);
-          }
-          if (password != null) {
-              connOpts.setPassword(password.toCharArray());   
-          }
-          this.mqttClient.connect(connOpts);
-          System.out.println("Connected");
-          
+        try {
+            this.mqttClient = new MqttClient(host, clientId, persistence);
+            MqttConnectOptions connOpts = new MqttConnectOptions();
+            connOpts.setCleanSession(true);
+            if (username != null) {
+                connOpts.setUserName(username);
+            }
+            if (password != null) {
+                connOpts.setPassword(password.toCharArray());
+            }
+            this.mqttClient.connect(connOpts);
+            System.out.println("Connected");
+
         } catch (MqttException me) {
             System.out.println("reason " + me.getReasonCode());
             System.out.println("msg " + me.getMessage());
@@ -126,7 +122,7 @@ public class Mqtt extends Send {
             me.printStackTrace();
             System.exit(1);
         }
-        
+
         // Part of Abstract Class Send
         this.desiredRatePerSec = desiredRatePerSec;
         this.numToSend = numToSend;
@@ -135,11 +131,11 @@ public class Mqtt extends Send {
 
         sendFiles();
 
-    }    
-    
+    }
+
     public static void main(String[] args) {
         int numargs = args.length;
-        if (numargs < 5 ) {
+        if (numargs < 5) {
             System.err.print("Usage: Mqqt [host] [topic] [file] [desiredRatePerSec] [numToSend] (username=null) (password=null) (reuseFile=true) (clientId=randomGuid) (qos=0) \n");
             System.err.println("");
             System.err.println("hostr: mqtt host (e.g. tcp://mqtt.eclipse.org:1883");
@@ -162,33 +158,32 @@ public class Mqtt extends Send {
             Integer qos = null;
             String username = null;
             String password = null;
-            
+
             boolean reuseFile = true;
-            
+
             if (numargs > 5) {
                 username = args[5];
             }
-            
+
             if (numargs > 6) {
                 password = args[6];
             }
-            
+
             if (numargs > 7) {
                 reuseFile = Boolean.parseBoolean(args[7]);
             }
-            
+
             if (numargs > 8) {
                 clientId = args[8];
             }
-            
+
             if (numargs > 9) {
                 qos = Integer.parseInt(args[9]);
             }
-            
 
             System.out.println("host: " + host);
             System.out.println("topic: " + topic);
-            System.out.println("file: " +file);
+            System.out.println("file: " + file);
             System.out.println("desiredRatePerSec: " + desiredRatePerSec);
             System.out.println("numToSend: " + numToSend);
             System.out.println("clientId: " + clientId);
@@ -196,8 +191,7 @@ public class Mqtt extends Send {
             System.out.println("username: " + username);
             System.out.println("password: " + password);
             System.out.println("reuseFile: " + reuseFile);
-            
-            
+
             Mqtt t = new Mqtt(host, topic, file, desiredRatePerSec, numToSend, username, password, reuseFile, clientId, qos);
 
         }
