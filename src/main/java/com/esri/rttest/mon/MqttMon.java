@@ -18,10 +18,6 @@
  * 
  * Creator: David Jennings
  */
-/*
-java -cp target/rttest.jar com.esri.rttest.mon.MqttMon tcp://52.191.131.159:1883 test username password 10 8
-
-*/
 
 package com.esri.rttest.mon;
 
@@ -74,6 +70,7 @@ public class MqttMon extends Monitor {
 
         if (numargs < 4) {
             System.err.append("Usages: MqqtMon [host] [topic] [username] [password] (sampleRateSec=10) (numSampleEqualBeforeExit=1)");
+            System.err.append("Example: java -cp target/rttest.jar com.esri.rttest.mon.MqttMon tcp://52.191.131.159:1883 test username password 10 8\n");
         }
 
         String host = args[0];

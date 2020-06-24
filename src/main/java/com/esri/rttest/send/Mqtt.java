@@ -15,19 +15,9 @@
  *
  * Contributors:
  *     David Jennings
- */
 
- /*
- * Sends lines of a text file to a HTTP Server using HTTP Post
- * Lines are sent at a specified rate.
- * 
  * Creator: David Jennings
  */
-
-/*
-
-java -cp target/rttest.jar com.esri.rttest.send.Mqtt tcp://52.191.131.159:1883 test /Users/davi5017/Downloads/safegraph_time_grouped.txt 10000 1000000 username password
-*/
 
 package com.esri.rttest.send;
 
@@ -136,7 +126,8 @@ public class Mqtt extends Send {
     public static void main(String[] args) {
         int numargs = args.length;
         if (numargs < 5) {
-            System.err.print("Usage: Mqqt [host] [topic] [file] [desiredRatePerSec] [numToSend] (username=null) (password=null) (reuseFile=true) (clientId=randomGuid) (qos=0) \n");
+            System.err.println("Usage: Mqqt [host] [topic] [file] [desiredRatePerSec] [numToSend] (username=null) (password=null) (reuseFile=true) (clientId=randomGuid) (qos=0) \n");
+            System.err.println("java -cp target/rttest.jar com.esri.rttest.send.Mqtt tcp://52.191.131.159:1883 test /Users/davi5017/Downloads/safegraph_time_grouped.txt 10000 1000000 username password");
             System.err.println("");
             System.err.println("hostr: mqtt host (e.g. tcp://mqtt.eclipse.org:1883");
             System.err.println("topic: Mqtt Topic");
