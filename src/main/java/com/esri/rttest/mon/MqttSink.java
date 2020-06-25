@@ -20,7 +20,13 @@
  */
 package com.esri.rttest.mon;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.util.UUID;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -48,6 +54,21 @@ public class MqttSink implements MqttCallback {
         return cnt;
     }
 
+    class TrustEveryoneManager implements X509TrustManager {
+
+        public void checkClientTrusted(X509Certificate[] arg0, String arg1) {
+        }
+
+        public void checkServerTrusted(X509Certificate[] arg0, String arg1) {
+        }
+
+        public X509Certificate[] getAcceptedIssuers() {
+            return null;
+        }
+    }
+
+    TrustManager[] myTrustManagerArray = new TrustManager[]{new TrustEveryoneManager()};    
+    
     public MqttSink(String host, String topic, String username, String password, boolean printMessages) {
         this.printMessages = printMessages;
 
@@ -63,6 +84,16 @@ public class MqttSink implements MqttCallback {
             System.out.println("Connecting to broker: " + host);
             connOpts.setUserName(username);
             connOpts.setPassword(password.toCharArray());
+            
+            String proto = host.split(":")[0];
+            if ( proto.equalsIgnoreCase("ssl") ) {
+                System.out.println("SSL");
+                SSLContext sc = SSLContext.getInstance("SSL");
+                sc.init(null, myTrustManagerArray, new java.security.SecureRandom());            
+                connOpts.setSocketFactory(sc.getSocketFactory());            
+                connOpts.setHttpsHostnameVerificationEnabled(false);
+            }            
+            
             sampleClient.connect(connOpts);
             System.out.println("Connected");
             sampleClient.setCallback(this);
@@ -75,8 +106,13 @@ public class MqttSink implements MqttCallback {
             System.out.println("cause " + me.getCause());
             System.out.println("excep " + me);
             me.printStackTrace();
+        } catch (KeyManagementException e) {
+            System.out.println("KeyManagementException");
+            System.err.println(e.getMessage());
+        } catch (NoSuchAlgorithmException e) {
+            System.out.println("NoSuchAlgorithmException");
+            System.err.println(e.getMessage());
         }        
-        
     }
 
 

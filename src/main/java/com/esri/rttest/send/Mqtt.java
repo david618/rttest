@@ -18,12 +18,17 @@
 
  * Creator: David Jennings
  */
-
 package com.esri.rttest.send;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.UUID;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -71,6 +76,22 @@ public class Mqtt extends Send {
         }
     }
 
+    class TrustEveryoneManager implements X509TrustManager {
+
+        public void checkClientTrusted(X509Certificate[] arg0, String arg1) {
+        }
+
+        public void checkServerTrusted(X509Certificate[] arg0, String arg1) {
+        }
+
+        public X509Certificate[] getAcceptedIssuers() {
+            return null;
+        }
+    }
+
+    TrustManager[] myTrustManagerArray = new TrustManager[]{new TrustEveryoneManager()};
+        
+
     MqttClient mqttClient;
     String topic;
     Integer qos;
@@ -87,11 +108,11 @@ public class Mqtt extends Send {
             this.qos = qos;
         }
 
-        MemoryPersistence persistence = new MemoryPersistence();
         this.topic = topic;
 
         try {
-            this.mqttClient = new MqttClient(host, clientId, persistence);
+            
+            this.mqttClient = new MqttClient(host, clientId);
             MqttConnectOptions connOpts = new MqttConnectOptions();
             connOpts.setCleanSession(true);
             if (username != null) {
@@ -100,6 +121,16 @@ public class Mqtt extends Send {
             if (password != null) {
                 connOpts.setPassword(password.toCharArray());
             }
+
+            String proto = host.split(":")[0];
+            if ( proto.equalsIgnoreCase("ssl") ) {
+                System.out.println("SSL");
+                SSLContext sc = SSLContext.getInstance("SSL");
+                sc.init(null, myTrustManagerArray, new java.security.SecureRandom());            
+                connOpts.setSocketFactory(sc.getSocketFactory());            
+                connOpts.setHttpsHostnameVerificationEnabled(false);
+            }
+            
             this.mqttClient.connect(connOpts);
             System.out.println("Connected");
 
@@ -111,6 +142,12 @@ public class Mqtt extends Send {
             System.out.println("excep " + me);
             me.printStackTrace();
             System.exit(1);
+        } catch (KeyManagementException e) {
+            System.out.println("KeyManagementException");
+            System.err.println(e.getMessage());
+        } catch (NoSuchAlgorithmException e) {
+            System.out.println("NoSuchAlgorithmException");
+            System.err.println(e.getMessage());
         }
 
         // Part of Abstract Class Send
