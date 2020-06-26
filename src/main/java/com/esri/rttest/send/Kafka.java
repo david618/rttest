@@ -67,7 +67,7 @@ public class Kafka extends Send {
     private Producer<String, String> producer;
     private String topic;
 
-    public Kafka(String brokers, String topic, String filename, Integer desiredRatePerSec, Long numToSend, boolean reuseFile) {
+    public Kafka(String brokers, String topic, String filename, Integer desiredRatePerSec, Long numToSend, boolean reuseFile, Integer groupFieldIndex) {
 
 
         // https://kafka.apache.org/documentation/#producerconfigs
@@ -93,6 +93,7 @@ public class Kafka extends Send {
         this.numToSend = numToSend;
         this.filename = filename;
         this.reuseFile = reuseFile;
+        this.groupFieldIndex = groupFieldIndex;
 
         sendFiles();
 
@@ -126,7 +127,12 @@ public class Kafka extends Send {
                 reuseFile = Boolean.parseBoolean(args[5]);
             }
 
-            Kafka t = new Kafka(brokers,topic, file, desiredRatePerSec, numToSend, reuseFile);
+            int groupFieldIndex = -1;
+            if (numargs > 6) {
+                groupFieldIndex = Integer.parseInt(args[6]);
+            }
+
+            Kafka t = new Kafka(brokers,topic, file, desiredRatePerSec, numToSend, reuseFile, groupFieldIndex);
 
         }
 
