@@ -105,7 +105,7 @@ public class Kafka extends Send {
 
         int numargs = args.length;
         if (numargs < 5 ) {
-            System.err.print("Usage: Kafka [brokers] [topic] [file] [desiredRatePerSec] [numToSend] (reuseFile=true) \n");
+            System.err.print("Usage: Kafka [brokers] [topic] [file] [desiredRatePerSec] [numToSend] (reuseFile=true) (groupFieldIndex=-1)\n");
             System.err.println("");
             System.err.println("broker: hostname or ip of the broker(s)");
             System.err.println("topic: Kafka Topic");
@@ -113,6 +113,7 @@ public class Kafka extends Send {
             System.err.println("desiredRatePerSec: Desired Rate. The tool will try to send at this rate if possible");
             System.err.println("numToSend: Number of lines to send");
             System.err.println("resueFile: true or false; if true the file is reused as needed to if numToSend is greater than number of lines in the file");
+            System.err.println("groupFieldIndex: The Field index to send messaged by groups rather than rate.  desiredRatePerSec will be ignored");
             System.err.println("");
         } else {
 

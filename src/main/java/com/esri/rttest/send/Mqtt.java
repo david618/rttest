@@ -96,7 +96,7 @@ public class Mqtt extends Send {
     String topic;
     Integer qos;
 
-    public Mqtt(String host, String topic, String filename, Integer desiredRatePerSec, Long numToSend, String username, String password, boolean reuseFile, String clientId, Integer qos) {
+    public Mqtt(String host, String topic, String filename, Integer desiredRatePerSec, Long numToSend, String username, String password, boolean reuseFile, String clientId, Integer qos, Integer groupFieldIndex) {
 
         if (clientId == null) {
             UUID uuid = UUID.randomUUID();
@@ -163,7 +163,7 @@ public class Mqtt extends Send {
     public static void main(String[] args) {
         int numargs = args.length;
         if (numargs < 5) {
-            System.err.println("Usage: Mqqt [host] [topic] [file] [desiredRatePerSec] [numToSend] (username=null) (password=null) (reuseFile=true) (clientId=randomGuid) (qos=0) \n");
+            System.err.println("Usage: Mqqt [host] [topic] [file] [desiredRatePerSec] [numToSend] (username=null) (password=null) (reuseFile=true) (clientId=randomGuid) (qos=0) (groupFieldIndex=-1)\n");
             System.err.println("java -cp target/rttest.jar com.esri.rttest.send.Mqtt tcp://52.191.131.159:1883 test /Users/davi5017/Downloads/safegraph_time_grouped.txt 10000 1000000 username password");
             System.err.println("");
             System.err.println("hostr: mqtt host (e.g. tcp://mqtt.eclipse.org:1883");
@@ -174,6 +174,7 @@ public class Mqtt extends Send {
             System.err.println("resueFile: true or false; if true the file is reused as needed to if numToSend is greater than number of lines in the file");
             System.err.println("clientId: defaults to Random GUID");
             System.err.println("qos (Quality of Service): defaults to 2 exactly once");
+            System.err.println("groupFieldIndex: The Field index to send messaged by groups rather than rate.  desiredRatePerSec will be ignored");
             System.err.println("");
         } else {
 
@@ -209,6 +210,11 @@ public class Mqtt extends Send {
                 qos = Integer.parseInt(args[9]);
             }
 
+            int groupFieldIndex = -1;
+            if (numargs > 10) {
+                groupFieldIndex = Integer.parseInt(args[9]);
+            }
+
             System.out.println("host: " + host);
             System.out.println("topic: " + topic);
             System.out.println("file: " + file);
@@ -220,7 +226,7 @@ public class Mqtt extends Send {
             System.out.println("password: " + password);
             System.out.println("reuseFile: " + reuseFile);
 
-            Mqtt t = new Mqtt(host, topic, file, desiredRatePerSec, numToSend, username, password, reuseFile, clientId, qos);
+            Mqtt t = new Mqtt(host, topic, file, desiredRatePerSec, numToSend, username, password, reuseFile, clientId, qos, groupFieldIndex);
 
         }
     }
