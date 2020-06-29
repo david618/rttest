@@ -155,6 +155,7 @@ public class Mqtt extends Send {
         this.numToSend = numToSend;
         this.filename = filename;
         this.reuseFile = reuseFile;
+        this.groupFieldIndex = groupFieldIndex;
 
         sendFiles();
 
@@ -212,7 +213,7 @@ public class Mqtt extends Send {
 
             int groupFieldIndex = -1;
             if (numargs > 10) {
-                groupFieldIndex = Integer.parseInt(args[9]);
+                groupFieldIndex = Integer.parseInt(args[10]);
             }
 
             System.out.println("host: " + host);
