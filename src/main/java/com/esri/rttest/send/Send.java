@@ -65,8 +65,8 @@ abstract public class Send {
                 System.out.println("Start Send");
                 System.out.println("Use Ctrl-C to Abort.");
                 System.out.println();
-                System.out.println("|Number Sent Batch   |");
-                System.out.println("|--------------------|");                
+                System.out.println("|Number Sent         |Current Rate Per Sec|Overall Rate Per Sec|Group Value         |");
+                System.out.println("|--------------------|--------------------|--------------------|--------------------|");                    
                 
             } else {
                 this.groupFieldDelimiter = null;
@@ -146,7 +146,7 @@ abstract public class Send {
             // This will find assuming no Json Arrays in the path 
             JSONObject json = new JSONObject(line);
             while (jsonPathIndex < jsonPathParts.length) {
-                System.out.println(jsonPathIndex + jsonPathParts[jsonPathIndex]);
+                //System.out.println(jsonPathIndex + jsonPathParts[jsonPathIndex]);
                 if (jsonPathIndex < jsonPathParts.length - 1) {
                     // Every field before the last is an object
                     json = json.getJSONObject(jsonPathParts[jsonPathIndex]);
@@ -157,7 +157,8 @@ abstract public class Send {
                 jsonPathIndex += 1;
             }
         } else {
-            groupVal = line.split(this.groupFieldDelimiter)[this.groupFieldNumber];
+            // Use +1 to make the index human friendly field 1 is first field instead of field 0 is first field
+            groupVal = line.split(this.groupFieldDelimiter)[this.groupFieldNumber - 1];
         }
 
         return groupVal;
@@ -183,12 +184,14 @@ abstract public class Send {
             // Get the first line and groupValue
             String line;
             String groupValue;
+            String prevGroupValue;
             
             if (linesIterator.hasNext()) {
                 line = linesIterator.next();
 
                 // get first group field value from line 
                 groupValue = getGroupValue(line);
+                prevGroupValue = groupValue;
                 
                 if (groupValue == null) {
                     System.err.println("Can't find groupField in line");
@@ -211,10 +214,11 @@ abstract public class Send {
                 // Add the first line for this batch 
                 batchLines.add(line);
                 numberSentThisBatch += 1;
-                boolean groupValueSame = true;
+                boolean groupValueSame = true;                                
                 
                 // Create a batch of lines ArrayList<String> to send; up to desiredRatePerSec; stop sooner if numToSend met
-                while (groupValueSame && (numberSent < numToSend || numToSend == -1)) {
+                long numberSentSoFar = numberSent;
+                while (groupValueSame && ( numberSentSoFar < numToSend - 1 || numToSend == -1) ) {
                     // Reset Interator if needed 
                     if (!linesIterator.hasNext() && reuseFile) {
                         linesIterator = lines.iterator();
@@ -227,7 +231,9 @@ abstract public class Send {
                         if (groupValue.equalsIgnoreCase(nextGroupValue)) {
                             batchLines.add(line);
                             numberSentThisBatch += 1;
+                            numberSentSoFar += 1;
                         } else {
+                            prevGroupValue = groupValue;
                             groupValue = nextGroupValue;
                             groupValueSame = false;
                             // line will be added to next batch
@@ -243,8 +249,7 @@ abstract public class Send {
                 numberSentThisBatch = sendBatch(batchLines);
                 numberSent += numberSentThisBatch;
                 numberSentThisFile += numberSentThisBatch;
-                System.out.println("|" + numberSentThisBatch + "|"); 
-
+                
                 Long remainingMilliseconds = msToWait - (System.currentTimeMillis() - startBatchTime);
 
                 // Sleep by remainder of msToWait
@@ -252,6 +257,11 @@ abstract public class Send {
                     Thread.sleep(remainingMilliseconds);
                 }
 
+                double currentRatePerSec = (double) numberSentThisBatch / (double) (System.currentTimeMillis() - startBatchTime) * 1000.0;
+                double overallRatePerSec = (double) numberSent / (double) (System.currentTimeMillis() - startTime) * 1000.0;
+                
+                printline(numberSent, currentRatePerSec, overallRatePerSec, groupValue);
+                                
             }
         } catch (InterruptedException e) {
             // From Sleep
@@ -324,7 +334,7 @@ abstract public class Send {
                 double currentRatePerSec = (double) numberSentThisBatch / (double) (System.currentTimeMillis() - startBatchTime) * 1000.0;
                 double overallRatePerSec = (double) numberSent / (double) (System.currentTimeMillis() - startTime) * 1000.0;
 
-                printline(numberSent, currentRatePerSec, overallRatePerSec);
+                printline(numberSent, currentRatePerSec, overallRatePerSec, null);
 
                 double rateRatio = ((double) overallRatePerSec) / (double) desiredRatePerSec;
 
@@ -355,8 +365,24 @@ abstract public class Send {
     private String padLeft(String s, int n) {
         return String.format("%" + n + "s", s);
     }
+    
+    private void printlineGroup(long numSent, String groupVal, long totalSend) {
 
-    private void printline(long numSent, Double currentRate, Double overallRate) {
+        String strNumSent = Long.toString(numSent);
+        String strTotalSend = Long.toString(totalSend);
+        
+        if (totalSend > -1) {
+            System.out.println("|" + padLeft(strNumSent, 19)
+                    + " |" + padLeft(groupVal, 19)
+                    + " |" + padLeft(strTotalSend, 19) + " |");            
+        } else {
+            System.out.println("|" + padLeft(strNumSent, 19)
+                    + " |" + padLeft(groupVal, 19) + " |");                        
+        }
+        
+    }    
+
+    private void printline(long numSent, Double currentRate, Double overallRate, String groupVal) {
 
         String strNumSent = Long.toString(numSent);
 
@@ -370,9 +396,17 @@ abstract public class Send {
             strOverallRate = String.format("%,.0f", overallRate);
         }
 
-        System.out.println("|" + padLeft(strNumSent, 19)
+        if (groupVal == null) {
+            System.out.println("|" + padLeft(strNumSent, 19)
                 + " |" + padLeft(strCurrentRate, 19)
-                + " |" + padLeft(strOverallRate, 19) + " |");
+                + " |" + padLeft(strOverallRate, 19) + " |");            
+        } else {
+            System.out.println("|" + padLeft(strNumSent, 19)
+                + " |" + padLeft(strCurrentRate, 19)
+                + " |" + padLeft(strOverallRate, 19)
+                + " |" + padLeft(groupVal, 19) + " |");            
+        }
+
     }
 
     public void loadFile(String filename) {

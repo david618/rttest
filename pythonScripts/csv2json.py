@@ -3,8 +3,8 @@ import json
 if __name__ == '__main__':
     print "Start"
 
-    fin = open("simFile_5000_10s.dat")
-    fout = open("simFile_5000_10s.json", "w")
+    fin = open("planes.csv")
+    fout = open("planes.json", "w")
 
     for line in fin:
         
