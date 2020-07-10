@@ -23,7 +23,7 @@ abstract public class Send {
     String groupField = null;
     Integer groupRateSec = null;
 
-    private String groupFieldDelimiter = null;
+    private Character groupFieldDelimiter = null;
     private Integer groupFieldNumber = null;
     private String[] jsonPathParts = null; 
     
@@ -47,19 +47,30 @@ abstract public class Send {
             startTime = System.currentTimeMillis();
 
             if (groupField != null) {
-                // set either field delimiter and field number or fieldJsonPath 
-                this.groupFieldDelimiter = String.valueOf(groupField.charAt(0));
+                char[] groupFieldChars = groupField.toCharArray();                
+                groupFieldDelimiter = Character.valueOf(groupFieldChars[0]);
+                
+                // Using toCharArray handled case where first char is \t (tab)
 
-                if (this.groupFieldDelimiter.equalsIgnoreCase(".")) {
+                if ( groupFieldDelimiter == '.' ) {
+                    // This is a json path
                     jsonPathParts = groupField.split("\\.");
-                    this.groupFieldNumber = null;
+                    groupFieldNumber = null;
                 } else {
+                    
                     try {
-                        this.groupFieldNumber = Integer.parseInt(groupField.substring(1));
+                        if ( groupFieldDelimiter == 't') {
+                            // Trim (remove tab) and convert to Integer
+                            groupFieldDelimiter = '\t';
+                            groupFieldNumber = Integer.parseInt(groupField.substring(1));
+                        } else {
+                            // Drop first Char and convert to Integer
+                            groupFieldNumber = Integer.parseInt(groupField.substring(1));
+                        }                        
                     } catch (NumberFormatException e) {
-                        System.err.println("Failed to parts the specified groupField");
+                        System.err.println("Failed to parse Integer from: " + groupField );
                     }
-                    this.jsonPathParts = null;
+                    jsonPathParts = null;
                 }
 
                 System.out.println("Start Send");
@@ -69,9 +80,9 @@ abstract public class Send {
                 System.out.println("|--------------------|--------------------|--------------------|--------------------|");                    
                 
             } else {
-                this.groupFieldDelimiter = null;
-                this.groupFieldNumber = null;
-                this.jsonPathParts = null;
+                groupFieldDelimiter = null;
+                groupFieldNumber = null;
+                jsonPathParts = null;
             
                 System.out.println("Start Send");
                 System.out.println("Use Ctrl-C to Abort.");
@@ -139,7 +150,7 @@ abstract public class Send {
     private String getGroupValue(String line) {
         String groupVal = null;
 
-        if (this.groupFieldDelimiter.equalsIgnoreCase(".")) {
+        if (this.groupFieldDelimiter == '.') {
             // Starting from first label after . 
             int jsonPathIndex = 1;
 
@@ -158,7 +169,7 @@ abstract public class Send {
             }
         } else {
             // Use +1 to make the index human friendly field 1 is first field instead of field 0 is first field
-            groupVal = line.split(this.groupFieldDelimiter)[this.groupFieldNumber - 1];
+            groupVal = line.split(this.groupFieldDelimiter.toString())[this.groupFieldNumber - 1];
         }
 
         return groupVal;
@@ -211,14 +222,18 @@ abstract public class Send {
 
                 ArrayList<String> batchLines = new ArrayList<>();
 
-                // Add the first line for this batch 
+                // Add the first line to batch 
                 batchLines.add(line);
                 numberSentThisBatch += 1;
-                boolean groupValueSame = true;                                
+                long numberSentSoFar = numberSent + 1;  
                 
-                // Create a batch of lines ArrayList<String> to send; up to desiredRatePerSec; stop sooner if numToSend met
-                long numberSentSoFar = numberSent;
-                while (groupValueSame && ( numberSentSoFar < numToSend - 1 || numToSend == -1) ) {
+                boolean groupValueSame = true;                                                
+                
+                while (groupValueSame && ( numberSentSoFar < numToSend || numToSend == -1) ) {
+                    // Stops adding items to batch if GroupValue Changes 
+                   
+                    // Stops if numSentSoFar + number in this batch reaches numToSend or doesn't stop if numToSend = -1
+                    
                     // Reset Interator if needed 
                     if (!linesIterator.hasNext() && reuseFile) {
                         linesIterator = lines.iterator();
@@ -240,15 +255,15 @@ abstract public class Send {
                         }
                     }
                 }
-
+                             
                 if (batchLines.isEmpty()) {
                     // all lines in file have been sent 
                     break;
                 }
 
-                numberSentThisBatch = sendBatch(batchLines);
+                numberSentThisBatch = sendBatch(batchLines); // sendBatch returns actual number sent for this batch; if error is encounter it might be less than number in batchLines                
                 numberSent += numberSentThisBatch;
-                numberSentThisFile += numberSentThisBatch;
+                numberSentThisFile += numberSentThisBatch; // Number of lines from this file that were successfully sent
                 
                 Long remainingMilliseconds = msToWait - (System.currentTimeMillis() - startBatchTime);
 
@@ -260,7 +275,11 @@ abstract public class Send {
                 double currentRatePerSec = (double) numberSentThisBatch / (double) (System.currentTimeMillis() - startBatchTime) * 1000.0;
                 double overallRatePerSec = (double) numberSent / (double) (System.currentTimeMillis() - startTime) * 1000.0;
                 
-                printline(numberSent, currentRatePerSec, overallRatePerSec, groupValue);
+                if ( numberSent >= numToSend ) {
+                    prevGroupValue = groupValue;
+                }
+                
+                printline(numberSent, currentRatePerSec, overallRatePerSec, prevGroupValue);
                                 
             }
         } catch (InterruptedException e) {
