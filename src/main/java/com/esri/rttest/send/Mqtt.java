@@ -175,6 +175,7 @@ public class Mqtt extends Send {
             System.err.println("  groupField examples: ");
             System.err.println("    \",1\": comma delimited text field 1");
             System.err.println("    \"|3\": pipe delimited text field 3 ");
+            System.err.println("    \"t2\": tab delimited text field 2 ");            
             System.err.println("    \".ts\": json data with field at path ts");
             System.err.println("    \".properties.ts\": json data with field at path properties.ts");
             System.err.println("numToSend: Number of lines to send");

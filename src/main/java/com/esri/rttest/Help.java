@@ -34,6 +34,7 @@ public class Help {
         System.out.println("com.esri.rttest.send.Elasticsearch   : Send lines from file to Elasticsearch using Transport Protocol.");
         System.out.println("com.esri.rttest.send.Http            : Send lines from file to server using Http POST.");
         System.out.println("com.esri.rttest.send.Kafka           : Send lines from file to Kafka.");
+        System.out.println("com.esri.rttest.send.Mqtt            : Send lines from file to Mqtt Server.");
         System.out.println("com.esri.rttest.send.Postgresql      : Send lines from a file to Postgresql Database.");
         System.out.println("com.esri.rttest.send.Tcp             : Send lines from file to server on tcp port.");
 
@@ -43,6 +44,7 @@ public class Help {
         System.out.println("com.esri.rttest.mon.FeatureLayerMon  : Monitor count on a Feature Layer.");
         System.out.println("com.esri.rttest.mon.HttpSink         : Count messages received via HTTP on specified port.");
         System.out.println("com.esri.rttest.mon.KafkaTopicMon    : Monitor count of a Kafka Topic.");
+        System.out.println("com.esri.rttest.mon.MqttMon          : Monitor count of a Mqtt Topic.");
         System.out.println("com.esri.rttest.mon.SolrCoreMon      : Monitor count Solr core.");
         System.out.println("com.esri.rttest.mon.TcpSink          : Count messages recevied via TCP on a specified port.");
         System.out.println("com.esri.rttest.mon.TimescaleSqlMon  : Monitor count of TimescaleDB Table.");
