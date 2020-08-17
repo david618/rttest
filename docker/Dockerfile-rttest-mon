@@ -1,8 +1,9 @@
+# docker build -t david62243/rttest-mon:20200710 -f docker/Dockerfile-rttest-mon .
 FROM centos:7.6.1810
 
 RUN yum install -y java-1.8.0-openjdk vim tmux
 
 COPY target/lib /opt/rttest/target/lib
 COPY target/rttest.jar /opt/rttest/target/rttest.jar
-COPY planes.csv /opt/rttest/planes.csv
-COPY planes.json /opt/rttest/planes.json
+
+WORKDIR /opt/rttest

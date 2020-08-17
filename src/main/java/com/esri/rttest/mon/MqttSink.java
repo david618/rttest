@@ -78,7 +78,7 @@ public class MqttSink implements MqttCallback {
         cnt = 0L;
         
         try {
-            MqttClient sampleClient = new MqttClient(host, clientId);
+            MqttClient sampleClient = new MqttClient(host, clientId, null);
             MqttConnectOptions connOpts = new MqttConnectOptions();
             connOpts.setCleanSession(true);
             System.out.println("Connecting to broker: " + host);
