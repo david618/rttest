@@ -96,7 +96,7 @@ public class MqttMon extends Monitor {
             printMessages = Boolean.parseBoolean(args[6]);
         }
 
-        MqttMon mqttMon = new MqttMon(host, topic, username, password, sampleRateSec, numSampleEqualBeforeExit, printMessages);
+        new MqttMon(host, topic, username, password, sampleRateSec, numSampleEqualBeforeExit, printMessages);
         
     }
 

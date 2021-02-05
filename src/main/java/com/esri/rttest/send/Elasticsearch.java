@@ -131,7 +131,7 @@ public class Elasticsearch extends Send {
         httpPost.setHeader("Content-type", "application/json");
 
         ResponseHandler<String> responseHandler = new BasicResponseHandler();
-        String resp = httpClient.execute(httpPost, responseHandler);
+        httpClient.execute(httpPost, responseHandler);
 
         //JSONObject jsonResp = new JSONObject(resp);
         //System.out.println(jsonResp);
@@ -164,7 +164,7 @@ public class Elasticsearch extends Send {
                 reuseFile = Boolean.parseBoolean(args[4]);
             }
 
-            Elasticsearch t = new Elasticsearch(indexUrl, file, desiredRatePerSec, numToSend, reuseFile);
+            new Elasticsearch(indexUrl, file, desiredRatePerSec, numToSend, reuseFile);
 
         }
 

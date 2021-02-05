@@ -25,9 +25,7 @@ package com.esri.rttest.mon;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
 
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.*;
@@ -39,7 +37,6 @@ import org.eclipse.jetty.websocket.api.annotations.*;
 @WebSocket(maxTextMessageSize = 64 * 1024)
 public class WebSocketSinkMsg {
 
-    private static final Logger LOG = LogManager.getLogger(WebSocketSinkMsg.class);
 
     boolean printMessages;
     long cnt;
@@ -49,12 +46,10 @@ public class WebSocketSinkMsg {
     }
 
     private final CountDownLatch closeLatch;
-    private Session session;
-
     public WebSocketSinkMsg(boolean printMessages) {
         this.printMessages = printMessages;
 
-        closeLatch = new CountDownLatch(1);
+        closeLatch = new CountDownLatch(1);      
         cnt = 0L;
     }
 
@@ -70,14 +65,12 @@ public class WebSocketSinkMsg {
 
     @OnWebSocketClose
     public void onClose(int statusCode, String reason) {
-        session = null;
+        System.out.println(reason);
         closeLatch.countDown(); // trigger latch
     }
 
     @OnWebSocketConnect
     public void onConnect(Session session) {
-        //System.out.printf("Got connect: %s%n", session);
-        this.session = session;
 
     }
 

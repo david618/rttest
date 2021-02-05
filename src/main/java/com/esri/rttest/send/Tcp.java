@@ -161,7 +161,7 @@ public class Tcp extends Send {
                 reuseFile = Boolean.parseBoolean(args[4]);
             }
 
-            Tcp t = new Tcp(serverPort, file, desiredRatePerSec, numToSend, reuseFile);
+            new Tcp(serverPort, file, desiredRatePerSec, numToSend, reuseFile);
 
         }
 

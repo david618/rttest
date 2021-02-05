@@ -385,21 +385,21 @@ abstract public class Send {
         return String.format("%" + n + "s", s);
     }
     
-    private void printlineGroup(long numSent, String groupVal, long totalSend) {
-
-        String strNumSent = Long.toString(numSent);
-        String strTotalSend = Long.toString(totalSend);
-        
-        if (totalSend > -1) {
-            System.out.println("|" + padLeft(strNumSent, 19)
-                    + " |" + padLeft(groupVal, 19)
-                    + " |" + padLeft(strTotalSend, 19) + " |");            
-        } else {
-            System.out.println("|" + padLeft(strNumSent, 19)
-                    + " |" + padLeft(groupVal, 19) + " |");                        
-        }
-        
-    }    
+//    private void printlineGroup(long numSent, String groupVal, long totalSend) {
+//
+//        String strNumSent = Long.toString(numSent);
+//        String strTotalSend = Long.toString(totalSend);
+//        
+//        if (totalSend > -1) {
+//            System.out.println("|" + padLeft(strNumSent, 19)
+//                    + " |" + padLeft(groupVal, 19)
+//                    + " |" + padLeft(strTotalSend, 19) + " |");            
+//        } else {
+//            System.out.println("|" + padLeft(strNumSent, 19)
+//                    + " |" + padLeft(groupVal, 19) + " |");                        
+//        }
+//        
+//    }    
 
     private void printline(long numSent, Double currentRate, Double overallRate, String groupVal) {
 

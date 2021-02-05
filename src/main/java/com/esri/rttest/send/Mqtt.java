@@ -252,7 +252,7 @@ public class Mqtt extends Send {
             System.out.println();
             
 
-            Mqtt t = new Mqtt(host, topic, file, desiredRatePerSec, numToSend, username, password, reuseFile, clientId, qos, groupField, groupRateSec);
+            new Mqtt(host, topic, file, desiredRatePerSec, numToSend, username, password, reuseFile, clientId, qos, groupField, groupRateSec);
 
         }
     }

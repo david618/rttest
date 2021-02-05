@@ -25,15 +25,8 @@
 package com.esri.rttest.mon;
 
 import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.math3.stat.regression.SimpleRegression;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
@@ -44,7 +37,6 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
  */
 public class WebSocketSink extends Monitor {
 
-    private static final Logger LOG = LogManager.getLogger(WebSocketSink.class);
 
     @Override
     public Sample getSample() {
@@ -76,21 +68,22 @@ public class WebSocketSink extends Monitor {
      * Moved out of constructor; called after countEnded to resume next count
      */
     private void startClient() {
-        SslContextFactory sslContextFactory = new SslContextFactory();
+        SslContextFactory sslContextFactory = new SslContextFactory.Client();
         sslContextFactory.setTrustAll(true);
 
         WebSocketClient client = new WebSocketClient(sslContextFactory);
+        client.setMaxIdleTimeout(900000); // 15 mins
         try {
             client.start();
 
             URI echoUri = new URI(destUri);
-            ClientUpgradeRequest request = new ClientUpgradeRequest();
+            ClientUpgradeRequest request = new ClientUpgradeRequest();            
             client.connect(socket, echoUri, request);
             //System.out.printf("Connecting to : %s%n", echoUri);
 
             // wait for closed socket connection.
-            socket.awaitClose();
-            //socket.awaitClose(5, TimeUnit.DAYS);
+            //socket.awaitClose();
+            socket.awaitClose(20, TimeUnit.MINUTES);
 
         } catch (Exception t) {
             t.printStackTrace();

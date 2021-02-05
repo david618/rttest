@@ -67,7 +67,8 @@ public class MqttSink implements MqttCallback {
         }
     }
 
-    TrustManager[] myTrustManagerArray = new TrustManager[]{new TrustEveryoneManager()};    
+    TrustManager[] myTrustManagerArray = new TrustManager[]{new TrustEveryoneManager()};
+	private MqttClient sampleClient;    
     
     public MqttSink(String host, String topic, String username, String password, boolean printMessages) {
         this.printMessages = printMessages;
@@ -78,7 +79,7 @@ public class MqttSink implements MqttCallback {
         cnt = 0L;
         
         try {
-            MqttClient sampleClient = new MqttClient(host, clientId, null);
+            sampleClient = new MqttClient(host, clientId, null);
             MqttConnectOptions connOpts = new MqttConnectOptions();
             connOpts.setCleanSession(true);
             System.out.println("Connecting to broker: " + host);

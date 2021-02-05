@@ -70,6 +70,8 @@ public class Postgresql extends Send {
 
     private void printCreate(String tablename, String fileJsonLines, String geomFieldName, String oidFieldName) {
 
+    	BufferedReader br = null;
+    	
         try {
 
             /**
@@ -81,7 +83,7 @@ public class Postgresql extends Send {
              */
             FileReader fr = new FileReader(fileJsonLines);
 
-            BufferedReader br = new BufferedReader(fr);
+            br = new BufferedReader(fr);
 
             String line = br.readLine();
 
@@ -126,6 +128,14 @@ public class Postgresql extends Send {
 
         } catch (IOException | JSONException e) {
             LOG.error("ERROR", e);
+        } finally {
+        	if (br != null) {
+        		try {
+        			br.close();
+        		} catch (Exception e) {
+        			
+        		}
+        	}
         }
 
     }

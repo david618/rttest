@@ -26,15 +26,11 @@ package com.esri.rttest;
 
 import java.net.InetAddress;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Record;
-import org.xbill.DNS.TextParseException;
 import org.xbill.DNS.Type;
 
 /**
@@ -42,8 +38,6 @@ import org.xbill.DNS.Type;
  * @author david
  */
 public class IPPorts {
-
-    private static final Logger LOG = LogManager.getLogger(IPPorts.class);
 
     ArrayList<IPPort> ipPorts;
     String protocol;

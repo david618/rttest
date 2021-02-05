@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -38,11 +39,10 @@ public class KafkaTopicMon extends Monitor {
             consumer.seekToEnd(Collections.emptySet());
             Map<TopicPartition, Long> endPartitions = partitions.stream()
                     .collect(Collectors.toMap(Function.identity(), consumer::position));
-            Iterator itTP = endPartitions.entrySet().iterator();
+            Iterator<Entry<TopicPartition, Long>> itTP = endPartitions.entrySet().iterator();
             cnt = 0;
             while (itTP.hasNext()) {
-                Map.Entry tp = (Map.Entry) itTP.next();
-                cnt += (long) tp.getValue();
+                cnt += (long) itTP.next().getValue();
             }
 
         } catch (Exception e) {

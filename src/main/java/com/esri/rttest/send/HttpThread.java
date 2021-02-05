@@ -18,7 +18,6 @@
  */
 package com.esri.rttest.send;
 
-import java.io.IOException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -51,9 +50,9 @@ public class HttpThread extends Thread {
         return running;
     }
 
-    private final String url;
+    //private final String url;
     // Tell the server I'm Firefox
-    private final String USER_AGENT = "Mozilla/5.0";
+    //private final String USER_AGENT = "Mozilla/5.0";
 
     private CloseableHttpClient httpClient;
 
@@ -79,7 +78,7 @@ public class HttpThread extends Thread {
 
     HttpThread(LinkedBlockingQueue<String> lbq, String url, String contentType) throws Exception {
         this.lbq = lbq;
-        this.url = url;
+        //this.url = url;
 
 
         sslContext = SSLContext.getInstance("SSL");

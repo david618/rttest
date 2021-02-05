@@ -30,9 +30,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
-import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -78,6 +75,7 @@ public class TcpSink extends Monitor {
     Boolean autoTerminate;
     Boolean displayMessages;
     ArrayList<TcpSinkServer> listTcpSinkServers = new ArrayList<>();
+	private ServerSocket ss;
 
     
     public TcpSink(Integer port, Integer sampleEveryNSecs, Integer numSampleEqualBeforeExit, Boolean autoTerminate, Boolean displayMessages) {
@@ -92,7 +90,7 @@ public class TcpSink extends Monitor {
         this.displayMessages = displayMessages;
 
         try {
-            ServerSocket ss = new ServerSocket(port);
+            ss = new ServerSocket(port);
 
             System.out.println("After starting this; create or restart the sending service.");
             System.out.println("Once connected you see a 'Thread Started' message for each connection.");
@@ -155,7 +153,7 @@ public class TcpSink extends Monitor {
                 displayMessages = Boolean.parseBoolean(args[4]);
             }
 
-            TcpSink t = new TcpSink(port, sampleEveryNSecs, numSampleEqualBeforeExit, autoTerminate, displayMessages);
+            new TcpSink(port, sampleEveryNSecs, numSampleEqualBeforeExit, autoTerminate, displayMessages);
 
 
         }

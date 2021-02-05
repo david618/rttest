@@ -5,9 +5,7 @@ package com.esri.rttest.mon;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 public class HttpSinkHandler implements HttpHandler {
 
@@ -25,7 +23,7 @@ public class HttpSinkHandler implements HttpHandler {
     public void handle(HttpExchange httpExchange) throws IOException {
         String uriPath = httpExchange.getRequestURI().toString();
 
-        String contentType = httpExchange.getRequestHeaders().getFirst("Content-type");
+        //String contentType = httpExchange.getRequestHeaders().getFirst("Content-type");
 
 
         if (uriPath.equalsIgnoreCase("/")) {

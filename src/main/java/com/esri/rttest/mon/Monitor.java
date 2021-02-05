@@ -19,16 +19,12 @@
 package com.esri.rttest.mon;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Timer;
 import java.util.TimerTask;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
-import org.apache.http.Header;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
@@ -92,9 +88,9 @@ abstract class Monitor {
             return startCount;
         }
 
-        private String padRight(String s, int n) {
-            return String.format("%-" + n + "s", s);
-        }
+//        private String padRight(String s, int n) {
+//            return String.format("%-" + n + "s", s);
+//        }
 
         private String padLeft(String s, int n) {
             return String.format("%" + n + "s", s);
@@ -331,10 +327,9 @@ abstract class Monitor {
             BufferedReader rd = new BufferedReader(
                     new InputStreamReader(response.getEntity().getContent()));
 
-            Header contentType = response.getEntity().getContentType();
-            String ct = contentType.getValue().split(";")[0];
-
-            int responseCode = response.getStatusLine().getStatusCode();
+            //Header contentType = response.getEntity().getContentType();
+            //String ct = contentType.getValue().split(";")[0];
+            //int responseCode = response.getStatusLine().getStatusCode();
 
             String line;
             StringBuilder result = new StringBuilder();

@@ -31,15 +31,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import com.esri.rttest.IPPort;
 import com.esri.rttest.IPPorts;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 /**
  *
  * @author david
  */
 public class Http extends Send {
 
-    private static final Logger LOG = LogManager.getLogger(Http.class);
 
     @Override
     public long sendBatch(ArrayList<String> lines) {
@@ -82,13 +79,13 @@ public class Http extends Send {
             thread.terminate();
         }
 
-        long cnts = 0;
-        long cntErr = 0;
+//        long cnts = 0;
+//        long cntErr = 0;
         long et = System.currentTimeMillis();
 
         for (HttpThread thread : threads) {
-            cnts += thread.getCnt();
-            cntErr += thread.getCntErr();
+//            cnts += thread.getCnt();
+//            cntErr += thread.getCntErr();
             if (thread.getLastUpdate() > et) et = thread.getLastUpdate();
         }
     }
@@ -133,11 +130,11 @@ public class Http extends Send {
 
     }
 
-    private static final String IPADDRESS_PATTERN
-            = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
+//    private static final String IPADDRESS_PATTERN
+//            = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+//            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+//            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
+//            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
 
     LinkedBlockingQueue<String> lbq = new LinkedBlockingQueue<>();
 
@@ -180,7 +177,7 @@ public class Http extends Send {
                 reuseFile = Boolean.parseBoolean(args[6]);
             }
 
-            Http t = new Http(url, file, desiredRatePerSec, numToSend, contentType, numThreads, reuseFile);
+            new Http(url, file, desiredRatePerSec, numToSend, contentType, numThreads, reuseFile);
 
         }
 

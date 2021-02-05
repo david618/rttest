@@ -23,8 +23,6 @@ package com.esri.rttest.send;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.*;
 
@@ -36,7 +34,6 @@ import java.util.*;
  * @author david
  */
 public class Kafka extends Send {
-    private static final Logger LOG = LogManager.getLogger(Kafka.class);
 
 
     @Override
@@ -126,7 +123,7 @@ public class Kafka extends Send {
                 reuseFile = Boolean.parseBoolean(args[5]);
             }
 
-            Kafka t = new Kafka(brokers,topic, file, desiredRatePerSec, numToSend, reuseFile);
+            new Kafka(brokers,topic, file, desiredRatePerSec, numToSend, reuseFile);
 
         }
 

@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -482,10 +481,10 @@ public class MarathonInfo {
             rd = new BufferedReader(
                     new InputStreamReader(response.getEntity().getContent()));
 
-            Header contentType = response.getEntity().getContentType();
-            String ct = contentType.getValue().split(";")[0];
-
-            int responseCode = response.getStatusLine().getStatusCode();
+//            Header contentType = response.getEntity().getContentType();
+//            String ct = contentType.getValue().split(";")[0];
+//
+//            int responseCode = response.getStatusLine().getStatusCode();
 
             result = new StringBuffer();
             while ((line = rd.readLine()) != null) {

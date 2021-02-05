@@ -4,7 +4,6 @@ import com.sun.net.httpserver.HttpServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 
 public class HttpSink extends  Monitor {
@@ -40,7 +39,7 @@ public class HttpSink extends  Monitor {
         this.sampleRateSec = sampleRateSec;
         this.numSampleEqualBeforeExit = numSampleEqualBeforeExit;
 
-        this.displayMessages = displayMessages;
+        //this.displayMessages = displayMessages;
 
         try {
 
@@ -103,7 +102,7 @@ public class HttpSink extends  Monitor {
                 displayMessages = Boolean.parseBoolean(args[3]);
             }
 
-            HttpSink t = new HttpSink(port, sampleRateSec, numSampleEqualBeforeExit, displayMessages);
+            new HttpSink(port, sampleRateSec, numSampleEqualBeforeExit, displayMessages);
 
 
         }
