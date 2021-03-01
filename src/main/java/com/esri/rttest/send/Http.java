@@ -153,6 +153,8 @@ public class Http extends Send {
             System.err.println("desiredRatePerSec: Desired Rate. The tool will try to send at this rate if possible");
             System.err.println("numToSend: Number of lines to send");
             System.err.println("resueFile: true or false; if true the file is reused as needed to if numToSend is greater than number of lines in the file");
+            System.err.println("username or token: Defaults to empty string.  If token is provided leave password blank.");
+            System.err.println("password: Default to empty string.");
             System.err.println("");
         } else {
 
