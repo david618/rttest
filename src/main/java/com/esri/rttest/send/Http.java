@@ -146,7 +146,7 @@ public class Http extends Send {
 
         int numargs = args.length;
         if (numargs < 4 ) {
-            System.err.print("Usage: Http [url] [file] [desiredRatePerSec] [numToSend] (contentType=text/plain) (numThreads=1) (reuseFile=true) (username=\"\") (password=\"\")\n");
+            System.err.print("Usage: Http [url] [file] [desiredRatePerSec] [numToSend] (contentType=text/plain) (numThreads=1) (reuseFile=true) (username or token=\"\") (password=\"\")\n");
             System.err.println("");
             System.err.println("url: URL to Post Messages to");
             System.err.println("file: file with lines of text to send to Elasticsearch; if folder than all files in the folder are sent and reuseFile is set to false.");
@@ -183,8 +183,8 @@ public class Http extends Send {
             }
 
             String password = "";
-            if (numargs > 7) {
-                password = args[7];
+            if (numargs > 8) {
+                password = args[8];
             }
 
             new Http(url, file, desiredRatePerSec, numToSend, contentType, numThreads, reuseFile, username, password);

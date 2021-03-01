@@ -124,6 +124,12 @@ public class HttpThread extends Thread {
         httpPost = new HttpPost(url);
         httpPost.setHeader("Content-type", contentType);
 
+        if ( password == "" && username != "" ) {
+            // Assume username is a Token
+            System.out.println("HERE");
+            httpPost.setHeader("Authorization", "Bearer " + username);
+        }
+
         running = true;
 
         cntErr = 0;
