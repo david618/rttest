@@ -27,9 +27,13 @@ import javax.net.ssl.X509TrustManager;
 
 import org.apache.http.NoHttpResponseException;
 import org.apache.http.HttpResponse;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.logging.log4j.LogManager;
@@ -76,12 +80,17 @@ public class HttpThread extends Thread {
         return lastUpdate;
     }
 
-    HttpThread(LinkedBlockingQueue<String> lbq, String url, String contentType) throws Exception {
+    HttpThread(LinkedBlockingQueue<String> lbq, String url, String contentType, String username, String password) throws Exception {
         this.lbq = lbq;
         //this.url = url;
 
 
         sslContext = SSLContext.getInstance("SSL");
+
+        CredentialsProvider provider = new BasicCredentialsProvider();
+        UsernamePasswordCredentials credentials
+                = new UsernamePasswordCredentials(username, password);
+        provider.setCredentials(AuthScope.ANY, credentials);
 
 
         sslContext.init(null, new TrustManager[]{new X509TrustManager() {
@@ -107,6 +116,7 @@ public class HttpThread extends Thread {
 
         httpClient = HttpClients
                 .custom()
+                .setDefaultCredentialsProvider(provider)
                 .setSSLContext(sslContext)
                 .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
                 .build();

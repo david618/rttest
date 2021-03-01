@@ -92,7 +92,7 @@ public class Http extends Send {
 
 
 
-    public Http(String url, String filename, Integer desiredRatePerSec, Long numToSend, String contentType, int numThreads, boolean reuseFile) {
+    public Http(String url, String filename, Integer desiredRatePerSec, Long numToSend, String contentType, int numThreads, boolean reuseFile, String username, String password) {
 
         this.url = url;
 
@@ -116,7 +116,7 @@ public class Http extends Send {
                 IPPort ipport = ipPorts.get(i % ipPorts.size());
                 String thdURL = ipp.getProtocol() + "://" + ipport.getIp() + ":" + ipport.getPort() + ipp.getPath();
                 System.out.println(thdURL);
-                threads[i] = new HttpThread(lbq, thdURL, contentType);
+                threads[i] = new HttpThread(lbq, thdURL, contentType, username, password);
 
                 threads[i].start();
             }
@@ -146,7 +146,7 @@ public class Http extends Send {
 
         int numargs = args.length;
         if (numargs < 4 ) {
-            System.err.print("Usage: Http [url] [file] [desiredRatePerSec] [numToSend] (contentType=text/plain) (numThreads=1) (reuseFile=true) \n");
+            System.err.print("Usage: Http [url] [file] [desiredRatePerSec] [numToSend] (contentType=text/plain) (numThreads=1) (reuseFile=true) (username=\"\") (password=\"\")\n");
             System.err.println("");
             System.err.println("url: URL to Post Messages to");
             System.err.println("file: file with lines of text to send to Elasticsearch; if folder than all files in the folder are sent and reuseFile is set to false.");
@@ -177,7 +177,17 @@ public class Http extends Send {
                 reuseFile = Boolean.parseBoolean(args[6]);
             }
 
-            new Http(url, file, desiredRatePerSec, numToSend, contentType, numThreads, reuseFile);
+            String username = "";
+            if (numargs > 7) {
+                username = args[7];
+            }
+
+            String password = "";
+            if (numargs > 7) {
+                password = args[7];
+            }
+
+            new Http(url, file, desiredRatePerSec, numToSend, contentType, numThreads, reuseFile, username, password);
 
         }
 
