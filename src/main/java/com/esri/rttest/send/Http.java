@@ -92,7 +92,7 @@ public class Http extends Send {
 
 
 
-    public Http(String url, String filename, Integer desiredRatePerSec, Long numToSend, String contentType, int numThreads, boolean reuseFile, String username, String password) {
+    public Http(String url, String filename, Integer desiredRatePerSec, Long numToSend, String contentType, int numThreads, boolean reuseFile, String username, String password, String xOriginalUrlHeader) {
 
         this.url = url;
 
@@ -117,7 +117,7 @@ public class Http extends Send {
                 //String thdURL = ipp.getProtocol() + "://" + ipport.getIp() + ":" + ipport.getPort() + ipp.getPath();
                 //System.out.println(thdURL);
                 //threads[i] = new HttpThread(lbq, thdURL, contentType, username, password);
-                threads[i] = new HttpThread(lbq, this.url, contentType, username, password);
+                threads[i] = new HttpThread(lbq, this.url, contentType, username, password, xOriginalUrlHeader);
 
                 threads[i].start();
             }
@@ -190,7 +190,13 @@ public class Http extends Send {
                 password = args[8];
             }
 
-            new Http(url, file, desiredRatePerSec, numToSend, contentType, numThreads, reuseFile, username, password);
+            String xOriginalUrlHeader = "";
+            if (numargs > 9) {
+                xOriginalUrlHeader = args[9];
+            }
+
+
+            new Http(url, file, desiredRatePerSec, numToSend, contentType, numThreads, reuseFile, username, password, xOriginalUrlHeader);
 
         }
 

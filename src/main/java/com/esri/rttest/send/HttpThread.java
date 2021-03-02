@@ -81,7 +81,7 @@ public class HttpThread extends Thread {
         return lastUpdate;
     }
 
-    HttpThread(LinkedBlockingQueue<String> lbq, String url, String contentType, String username, String password) throws Exception {
+    HttpThread(LinkedBlockingQueue<String> lbq, String url, String contentType, String username, String password, String xOriginalUrlHeader) throws Exception {
         this.lbq = lbq;
         //this.url = url;
 
@@ -125,6 +125,14 @@ public class HttpThread extends Thread {
 
         httpPost = new HttpPost(url);
         httpPost.setHeader("Content-type", contentType);
+        if ( xOriginalUrlHeader != "" ) {
+            httpPost.setHeader("x-original-url", xOriginalUrlHeader);
+            System.out.println(xOriginalUrlHeader);
+        }
+
+        System.out.println("url: " + url);
+        System.out.println("Username: " + username);
+        System.out.println("Password: " + password);
 
         if ( password == "" && username != "" ) {
             // Assume username is a Token
