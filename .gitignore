@@ -23,3 +23,5 @@ nbactions.xml
 planes00*
 jmeter.log
 /src/main/java/com/esri/rttest/send/TestMqtt.java
+csv_data.txt
+verizon_sample.json

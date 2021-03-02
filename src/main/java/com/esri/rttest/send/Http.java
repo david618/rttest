@@ -103,8 +103,8 @@ public class Http extends Send {
         this.reuseFile = reuseFile;
 
         // Turn url into ip(s)
-        IPPorts ipp = new IPPorts(url);
-        ArrayList<IPPort> ipPorts = ipp.getIPPorts();
+        //IPPorts ipp = new IPPorts(url);
+        //ArrayList<IPPort> ipPorts = ipp.getIPPorts();
 
         // Create the HttpThread
         threads = new HttpThread[numThreads];
@@ -113,10 +113,11 @@ public class Http extends Send {
             for (int i = 0; i < threads.length; i++) {
 
                 // Rotating through ip's create threads requested
-                IPPort ipport = ipPorts.get(i % ipPorts.size());
-                String thdURL = ipp.getProtocol() + "://" + ipport.getIp() + ":" + ipport.getPort() + ipp.getPath();
-                System.out.println(thdURL);
-                threads[i] = new HttpThread(lbq, thdURL, contentType, username, password);
+                //IPPort ipport = ipPorts.get(i % ipPorts.size());
+                //String thdURL = ipp.getProtocol() + "://" + ipport.getIp() + ":" + ipport.getPort() + ipp.getPath();
+                //System.out.println(thdURL);
+                //threads[i] = new HttpThread(lbq, thdURL, contentType, username, password);
+                threads[i] = new HttpThread(lbq, this.url, contentType, username, password);
 
                 threads[i].start();
             }

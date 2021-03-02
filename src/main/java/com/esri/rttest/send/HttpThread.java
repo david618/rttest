@@ -20,6 +20,7 @@ package com.esri.rttest.send;
 
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.concurrent.LinkedBlockingQueue;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -38,6 +39,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import sun.nio.cs.UTF_8;
 
 /**
  * @author david
@@ -84,6 +86,7 @@ public class HttpThread extends Thread {
         this.lbq = lbq;
         //this.url = url;
 
+        System.out.println(username + " : " + password);
 
         sslContext = SSLContext.getInstance("SSL");
 
@@ -128,6 +131,11 @@ public class HttpThread extends Thread {
             // Assume username is a Token
             System.out.println("HERE");
             httpPost.setHeader("Authorization", "Bearer " + username);
+        } else if ( password != "" && username != "" )  {
+            String userpass = new String(username + ":" + password);
+            String encoding = Base64.getEncoder().encodeToString(userpass.getBytes());
+            httpPost.setHeader("Authorization", "Basic " + encoding);
+
         }
 
         running = true;
@@ -157,6 +165,7 @@ public class HttpThread extends Thread {
 
                 if (resp.getStatusLine().getStatusCode() > 299 || resp.getStatusLine().getStatusCode() < 200) {
                     cntErr += 1;
+                    System.out.println(resp.getStatusLine().getStatusCode());
                 }
 
                 httpPost.releaseConnection();
