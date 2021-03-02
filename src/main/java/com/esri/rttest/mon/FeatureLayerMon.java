@@ -11,13 +11,15 @@ public class FeatureLayerMon extends  Monitor {
 
     String featureLayerURL;
     boolean sendStdout;
+    String token;
 
-    public FeatureLayerMon(String featureLayerURL, int sampleRateSec, int numSampleEqualBeforeExit) {
+    public FeatureLayerMon(String featureLayerURL, int sampleRateSec, int numSampleEqualBeforeExit, String token) {
         this.featureLayerURL = featureLayerURL;
 
         this.sampleRateSec = sampleRateSec;
         this.numSampleEqualBeforeExit = numSampleEqualBeforeExit;
 
+        this.token = token;
 
     }
 
@@ -38,6 +40,11 @@ public class FeatureLayerMon extends  Monitor {
         try {
 
             String url = featureLayerURL + "/query?where=1%3D1&returnCountOnly=true&f=json";
+            if ( this.token != "") {
+                url = url + "&token=" + this.token;
+                //System.out.println(url);
+            }
+            //System.out.println(url);
             json = httpQuery(url, "", "");
 
 
@@ -92,7 +99,13 @@ public class FeatureLayerMon extends  Monitor {
                 }
             }
 
-            FeatureLayerMon t = new FeatureLayerMon(url, sampleRateSec, numSampleEqualBeforeExit);
+            String token = "";
+            if (numargs > 3) {
+                token = args[3];
+            }
+            //System.out.println("token: " + token);
+
+            FeatureLayerMon t = new FeatureLayerMon(url, sampleRateSec, numSampleEqualBeforeExit, token);
             t.run();
         }
 
