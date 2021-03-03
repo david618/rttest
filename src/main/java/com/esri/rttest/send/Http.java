@@ -158,7 +158,7 @@ public class Http extends Send {
 
         int numargs = args.length;
         if (numargs < 4 ) {
-            System.err.print("Usage: Http [url] [file] [desiredRatePerSec] [numToSend] (contentType=text/plain) (numThreads=1) (reuseFile=true) (username or token=\"\") (password=\"\")\n");
+            System.err.println("Usage: Http [url] [file] [desiredRatePerSec] [numToSend] (contentType=text/plain) (numThreads=1) (reuseFile=true) (username or token=\"\") (password=\"\") (xOriginalUrlHeader=\"\")");
             System.err.println("");
             System.err.println("url: URL to Post Messages to");
             System.err.println("file: file with lines of text to send to Elasticsearch; if folder than all files in the folder are sent and reuseFile is set to false.");
@@ -167,6 +167,7 @@ public class Http extends Send {
             System.err.println("resueFile: true or false; if true the file is reused as needed to if numToSend is greater than number of lines in the file");
             System.err.println("username or token: Defaults to empty string.  If token is provided leave password blank.");
             System.err.println("password: Default to empty string.");
+            System.err.println("xOriginalUrlHeader: sets header x-original-url to value if specified.");
             System.err.println("");
         } else {
 
