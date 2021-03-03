@@ -128,6 +128,17 @@ public class Http extends Send {
 
         sendFiles();
 
+        try {
+            for (int i = 0; i < threads.length; i++) {
+
+                threads[i].terminate();
+            }
+
+        } catch (Exception e ) {
+            e.printStackTrace();
+        }
+
+        System.exit(0);
 
     }
 

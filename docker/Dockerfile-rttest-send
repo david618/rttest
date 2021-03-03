@@ -8,5 +8,6 @@ COPY target/rttest.jar /opt/rttest/target/rttest.jar
 COPY planes.csv /opt/rttest/planes.csv
 COPY planes.json /opt/rttest/planes.json
 COPY planes.tab /opt/rttest/planes.tab
+COPY verizon_sample.json /opt/rttest/verizon_sample.json
 
 WORKDIR /opt/rttest
