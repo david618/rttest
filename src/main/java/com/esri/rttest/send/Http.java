@@ -28,9 +28,8 @@ package com.esri.rttest.send;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.apache.commons.cli.*;
 
-import com.esri.rttest.IPPort;
-import com.esri.rttest.IPPorts;
 /**
  *
  * @author david
@@ -47,7 +46,7 @@ public class Http extends Send {
             try {
                 lbq.put(line);
                 cnt += 1;
-            } catch (Exception e) {
+            } catch (Exception ignored) {
 
             }
 
@@ -90,9 +89,11 @@ public class Http extends Send {
         }
     }
 
+    public Http() {
+    }
 
 
-    public Http(String url, String filename, Integer desiredRatePerSec, Long numToSend, String contentType, int numThreads, boolean reuseFile, String username, String password, String xOriginalUrlHeader) {
+    public void run(String url, String filename, Integer desiredRatePerSec, Long numToSend, String contentType, int numThreads, boolean reuseFile, String username, String password, String xOriginalUrlHeader) {
 
         this.url = url;
 
@@ -129,10 +130,7 @@ public class Http extends Send {
         sendFiles();
 
         try {
-            for (int i = 0; i < threads.length; i++) {
-
-                threads[i].terminate();
-            }
+            for (HttpThread thread : threads) thread.terminate();
 
         } catch (Exception e ) {
             e.printStackTrace();
@@ -142,76 +140,208 @@ public class Http extends Send {
 
     }
 
-//    private static final String IPADDRESS_PATTERN
-//            = "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-//            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-//            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\."
-//            + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
-
     LinkedBlockingQueue<String> lbq = new LinkedBlockingQueue<>();
-
 
     String url;
     HttpThread[] threads;
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args)  {
+        Http app = new Http();
+        String appName = app.getClass().getSimpleName();
 
-        int numargs = args.length;
-        if (numargs < 4 ) {
-            System.err.println("Usage: Http [url] [file] [desiredRatePerSec] [numToSend] (contentType=text/plain) (numThreads=1) (reuseFile=true) (username or token=\"\") (password=\"\") (xOriginalUrlHeader=\"\")");
-            System.err.println("");
-            System.err.println("url: URL to Post Messages to");
-            System.err.println("file: file with lines of text to send to Elasticsearch; if folder than all files in the folder are sent and reuseFile is set to false.");
-            System.err.println("desiredRatePerSec: Desired Rate. The tool will try to send at this rate if possible");
-            System.err.println("numToSend: Number of lines to send");
-            System.err.println("resueFile: true or false; if true the file is reused as needed to if numToSend is greater than number of lines in the file");
-            System.err.println("username or token: Defaults to empty string.  If token is provided leave password blank.");
-            System.err.println("password: Default to empty string.");
-            System.err.println("xOriginalUrlHeader: sets header x-original-url to value if specified.");
-            System.err.println("");
-        } else {
+        Options options = new Options();
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.setWidth(160);
+        formatter.setLeftPadding(1);
 
-            String url = args[0];
-            String file = args[1];
-            Integer desiredRatePerSec = Integer.parseInt(args[2]);
-            Long numToSend = Long.parseLong(args[3]);
+        Option helpOp = Option.builder()
+                .longOpt("help")
+                .desc("display help and exit")
+                .build();
+
+        Option urlOp = Option.builder("l")
+                .longOpt("url")
+                .required()
+                .hasArg()
+                .desc("[Required] Post Messages to this URL")
+                .build();
+
+        Option fileOp = Option.builder("f")
+                .longOpt("file")
+                .required()
+                .hasArg()
+                .desc("[Required] File with lines of text to send; if a folder is specified all files in the folder are sent one at a time alphabetically")
+                .build();
+
+        Option rateOp = Option.builder("r")
+                .longOpt("rate")
+                .required()
+                .hasArg()
+                .desc("[Required] Desired Rate. The tool will try to send at this rate if possible")
+                .build();
+
+        Option numToSendOp = Option.builder("n")
+                .longOpt("number-to-send")
+                .required()
+                .hasArg()
+                .desc("[Required] Number of lines to send")
+                .build();
+
+        Option contentTypeOp = Option.builder("c")
+                .longOpt("content-type")
+                .hasArg()
+                .desc("Set header content type; defaults to text/plain")
+                .build();
+
+        Option numThreadsOp = Option.builder("t")
+                .longOpt("num-threads")
+                .hasArg()
+                .desc("Number of threads to use for sending; default 1")
+                .build();
+
+        Option onetimeOp = Option.builder("o")
+                .longOpt("one-time")
+                .desc("Send lines only one time. Stop when all lines have been sent.")
+                .build();
+
+        Option usernameOp = Option.builder("u")
+                .longOpt("username")
+                .hasArg()
+                .desc("Mqtt Server Username; default no username")
+                .build();
+
+        Option passwordOp = Option.builder("p")
+                .longOpt("password")
+                .hasArg()
+                .desc("Mqtt Server Password; default no password")
+                .build();
+
+        Option optionXOrigin = Option.builder("x")
+                .longOpt("x-origin")
+                .hasArg()
+                .desc("Add header for x-original-url")
+                .build();
+
+        options.addOption(helpOp);
+        options.addOption(urlOp);
+        options.addOption(fileOp);
+        options.addOption(rateOp);
+        options.addOption(numToSendOp);
+        options.addOption(contentTypeOp);
+        options.addOption(numThreadsOp);
+        options.addOption(onetimeOp);
+        options.addOption(usernameOp);
+        options.addOption(passwordOp);
+        options.addOption(optionXOrigin);
 
 
-            String contentType = "text/plain";
-            if (numargs > 4) {
-                contentType = args[4];
-            }
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = null;
+        try {
+            cmd = parser.parse(options, args);
 
-            int numThreads = 1;
-            if (numargs > 5) {
-                numThreads = Integer.parseInt(args[5]);
-            }
-
-            boolean reuseFile = true;
-            if (numargs > 6) {
-                reuseFile = Boolean.parseBoolean(args[6]);
-            }
-
-            String username = "";
-            if (numargs > 7) {
-                username = args[7];
-            }
-
-            String password = "";
-            if (numargs > 8) {
-                password = args[8];
-            }
-
-            String xOriginalUrlHeader = "";
-            if (numargs > 9) {
-                xOriginalUrlHeader = args[9];
-            }
-
-
-            new Http(url, file, desiredRatePerSec, numToSend, contentType, numThreads, reuseFile, username, password, xOriginalUrlHeader);
-
+        } catch (ParseException e) {
+            System.err.println(e.getMessage());
+            System.err.println();
+            formatter.printHelp(appName, options);
+            System.exit(1);
         }
 
+        if (cmd.hasOption("--help")) {
+            System.out.println("Send lines from a file to an Http Server");
+            System.out.println();
+            formatter.printHelp(appName, options);
+            System.exit(0);
+        }
 
+        String url = null;
+        if (cmd.hasOption("l")) {
+            url = cmd.getOptionValue("l");
+        }
+        System.out.println("url: " + url);
+
+        String file = null;
+        if(cmd.hasOption("f")) {
+            file = cmd.getOptionValue("f");
+        }
+        System.out.println("file: " + file);
+
+        Integer desiredRatePerSec = null;
+        if(cmd.hasOption("r")) {
+            try {
+                desiredRatePerSec = Integer.parseInt(cmd.getOptionValue("r"));
+            } catch (NumberFormatException e ) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid value for rate (r).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("desiredRatePerSec: " + desiredRatePerSec);
+
+        Long numToSend = null;
+        if(cmd.hasOption("n")) {
+            try {
+                numToSend = Long.parseLong(cmd.getOptionValue("n"));
+            } catch (NumberFormatException e) {
+                System.out.println();
+                System.out.println("Invalid value for num-to-send (n). Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("numToSend: " + numToSend);
+
+        String contentType = "text/plain";
+        if(cmd.hasOption("c")) {
+            contentType = cmd.getOptionValue("c");
+        }
+        System.out.println("contentType: " + contentType);
+
+        int numThreads = 1;
+        if(cmd.hasOption("t")) {
+            try {
+                String tmpStr = cmd.getOptionValue("t");
+                numThreads = Integer.parseInt(tmpStr);
+            } catch (NumberFormatException e) {
+                System.out.println();
+                System.out.println("Invalid value for num-threads (t). Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("numThreads: " + numThreads);
+
+
+        boolean reuseFile = true;
+        if(cmd.hasOption("o")) {
+            reuseFile = false;
+        }
+        System.out.println("reuseFile : " + reuseFile);
+
+        String username = "";
+        if(cmd.hasOption("u")) {
+            username = cmd.getOptionValue("u");
+        }
+        System.out.println("username: " + username);
+
+
+        String password = "";
+        if(cmd.hasOption("p")) {
+            password = cmd.getOptionValue("p");
+        }
+        System.out.println("password: " + password);
+
+        String xOriginalUrlHeader = "";
+        if(cmd.hasOption("p")) {
+            xOriginalUrlHeader = cmd.getOptionValue("x");
+        }
+        System.out.println("xOriginalUrlHeader: " + xOriginalUrlHeader);
+
+        app.run(url, file, desiredRatePerSec, numToSend, contentType, numThreads, reuseFile, username, password, xOriginalUrlHeader);
     }
 }

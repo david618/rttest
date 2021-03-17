@@ -15,8 +15,7 @@
  *
  * Contributors:
  *     David Jennings
- */
-/**
+ *
  * Listens on on Web Socket for messages.
  * Updated; based on https://www.eclipse.org/jetty/documentation/9.4.x/jetty-websocket-client-api.html
  *
@@ -27,6 +26,7 @@ package com.esri.rttest.mon;
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.cli.*;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
@@ -41,8 +41,8 @@ public class WebSocketSink extends Monitor {
     @Override
     public Sample getSample() {
 
-        long cnt = -1L;
-        long ts = 0L;
+        long cnt;
+        long ts;
 
         cnt = socket.getCnt();
         ts = System.currentTimeMillis();
@@ -59,10 +59,7 @@ public class WebSocketSink extends Monitor {
 
     WebSocketSinkMsg socket;
 
-
-    final int MAX_MESSAGE_SIZE = 1000000;
     String destUri;
-
 
     /**
      * Moved out of constructor; called after countEnded to resume next count
@@ -97,6 +94,7 @@ public class WebSocketSink extends Monitor {
     }
 
 
+    public WebSocketSink() {}
 
     public WebSocketSink(String url, Integer sampleRateSec, Integer numSampleEqualBeforeExit, boolean printMessages) {
 
@@ -120,43 +118,112 @@ public class WebSocketSink extends Monitor {
 
     public static void main(String[] args) {
 
-        int numargs = args.length;
+        WebSocketSink app = new WebSocketSink();
+        String appName = app.getClass().getSimpleName();
 
-        if (numargs < 1) {
-            System.err.println("Usage: WebSocketSink [ws-url] (sampleRateSec=10) (numSampleEqualBeforeExit=1)]");
-            //System.err.println("Usage: WebSocketSink [ws-url] (sampleRateSec=10) (numSampleEqualBeforeExit=1) (printMmessages=false)]");
-            System.err.println("NOTE: For GeoEvent Stream Service append /subscribe to the Web Socket URL.");
-            System.err.println("Example: WebSocketSink ws://websats.westus2.cloudapp.azure.com/websats/SatStream/subscribe");
-            System.err.println("");
-            System.err.println("ws-url: Web Socket URL to consume");
-            System.err.println("sampleRateSecs: How many seconds to wait between samples.");
-            System.err.println("numSampleEqualBeforeExit: Summarize and reset after this many samples where count does not change.");
-            //System.err.println("display-messages: true or false; If true messages are displayed counts ignored. Useful for low rates and validating messages.");
-            System.err.println("");
-        } else {
+        Options options = new Options();
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.setWidth(160);
+        formatter.setLeftPadding(1);
 
-            String websockerurl = args[0];
+        Option helpOp = Option.builder()
+                .longOpt("help")
+                .desc("display help and exit")
+                .build();
 
-            Integer sampleRateSec = 10;
-            if (numargs > 1) {
-                sampleRateSec = Integer.parseInt(args[1]);
-            }
+        Option urlOp = Option.builder("l")
+                .longOpt("websocket-url")
+                .required()
+                .hasArg()
+                .desc("[Required] Websocket URL (e.g. ws://websats.westus2.cloudapp.azure.com/websats/SatStream/subscribe)")
+                .build();
 
-            Integer numSampleEqualBeforeExit = 1;
-            if (numargs > 2) {
-                numSampleEqualBeforeExit = Integer.parseInt(args[2]);
-            }
+        Option sampleRateSecOp = Option.builder("r")
+                .longOpt("sample-rate-sec")
+                .hasArg()
+                .desc("Sample Rate Seconds; defaults to 10")
+                .build();
 
-            Boolean printMessages = false;
-            if (numargs > 3) {
-                printMessages = Boolean.parseBoolean(args[3]);
+        Option resetCountOp = Option.builder("n")
+                .longOpt("num-samples-no-change")
+                .hasArg()
+                .desc("Reset after number of this number of samples of no change in count; defaults to 1")
+                .build();
 
-            }
+        Option printMessagesOp = Option.builder("o")
+                .longOpt("print-messages")
+                .desc("Print Messages to stdout")
+                .build();
 
-            WebSocketSink webSocketSink = new WebSocketSink(websockerurl, sampleRateSec, numSampleEqualBeforeExit, printMessages);
-            webSocketSink.run();
+        options.addOption(helpOp);
+        options.addOption(urlOp);
+        options.addOption(sampleRateSecOp);
+        options.addOption(resetCountOp);
+        options.addOption(printMessagesOp);
 
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = null;
+        try {
+            cmd = parser.parse(options, args);
+
+        } catch (ParseException e) {
+            System.err.println(e.getMessage());
+            System.err.println();
+            formatter.printHelp(appName, options);
+            System.exit(1);
         }
+
+        if (cmd.hasOption("--help")) {
+            System.out.println("Send lines from a file to an Elastic Server");
+            System.out.println();
+            formatter.printHelp(appName, options);
+            System.exit(0);
+        }
+
+        String websockerurl = null;
+        if (cmd.hasOption("l")) {
+            websockerurl = cmd.getOptionValue("l");
+        }
+        System.out.println("websockerurl: " + websockerurl);
+
+        int sampleRateSec = 10;
+        if (cmd.hasOption("r")) {
+            try {
+                sampleRateSec = Integer.parseInt(cmd.getOptionValue("r"));
+            } catch (NumberFormatException e) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid sample-rate-sec (r).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("sampleRateSec: " + sampleRateSec);
+
+        int numSampleEqualBeforeExit = 1;
+        if (cmd.hasOption("n")) {
+            try {
+                numSampleEqualBeforeExit = Integer.parseInt(cmd.getOptionValue("n"));
+            } catch (NumberFormatException e) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid num-samples-no-change (s).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("numSampleEqualBeforeExit: " + numSampleEqualBeforeExit);
+
+        boolean printMessages = false;
+        if(cmd.hasOption("o")) {
+            printMessages = true;
+        }
+        System.out.println("printMessages : " + printMessages);
+
+        app = new WebSocketSink(websockerurl, sampleRateSec, numSampleEqualBeforeExit, printMessages);
+        app.run();
     }
 
 }

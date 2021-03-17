@@ -15,8 +15,7 @@
  *
  * Contributors:
  *     David Jennings
- */
-/**
+ *
  * Listens on TCP Port for messages.
  * Counts Messages based on value of sampleEveryMessages adds a point to the linear regresssion
  * After collecting three samples it will output the rate.
@@ -30,6 +29,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+
+import org.apache.commons.cli.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -45,7 +46,7 @@ public class TcpSink extends Monitor {
     public Sample getSample() {
 
         long cnt = -1L;
-        long ts = 0L;
+        long ts;
 
         for (TcpSinkServer tcpSinkServer : listTcpSinkServers) {
             cnt += tcpSinkServer.getCnt();
@@ -56,8 +57,6 @@ public class TcpSink extends Monitor {
 
         return new Sample(cnt, ts);
     }
-
-
 
     @Override
     public void countEnded() {
@@ -70,12 +69,13 @@ public class TcpSink extends Monitor {
         }
     }
 
+    public TcpSink() {}
 
     Integer port;
     Boolean autoTerminate;
     Boolean displayMessages;
     ArrayList<TcpSinkServer> listTcpSinkServers = new ArrayList<>();
-	private ServerSocket ss;
+	ServerSocket ss;
 
     
     public TcpSink(Integer port, Integer sampleEveryNSecs, Integer numSampleEqualBeforeExit, Boolean autoTerminate, Boolean displayMessages) {
@@ -115,48 +115,134 @@ public class TcpSink extends Monitor {
 
     public static void main(String[] args) {
 
-        int numargs = args.length;
+        TcpSink app = new TcpSink();
+        String appName = app.getClass().getSimpleName();
 
-        if (numargs < 1 || numargs > 5) {
-            System.err.println("Usage: TcpSink <portToListenOn> (sampleRateSec=5) (numSampleEqualBeforeExit=1) (autoTerminate=true)");
-            //System.err.println("Usage: TcpSink <portToListenOn> (sampleRateSec=5) (numSampleEqualBeforeExit=1) (autoTerminate=true) (displayMesages=false)");
-            System.err.println("");
-            System.err.println("portToListenOn: The port to listen on");
-            System.err.println("sampleRateSecs: How many seconds to wait between samples.");
-            System.err.println("numSampleEqualBeforeExit: Summarize and reset after this many samples where count does not change.");
-            System.err.println("auto-terminate: true or false; If true when count stops increasing the socket is closed; for GeoEvent use false.");
-            //System.err.println("display-messages: true or false; If true messages are displayed counts ignored. Useful for low rates and validating messages.");
-            System.err.println("");
-            
-        } else {
+        Options options = new Options();
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.setWidth(160);
+        formatter.setLeftPadding(1);
 
-            int port = Integer.parseInt(args[0]);
+        Option helpOp = Option.builder()
+                .longOpt("help")
+                .desc("display help and exit")
+                .build();
 
-            int sampleEveryNSecs = 10;
-            if (numargs > 1) {
-                sampleEveryNSecs = Integer.parseInt(args[1]);
-            }
+        Option brokersOp = Option.builder("p")
+                .longOpt("port")
+                .required()
+                .hasArg()
+                .desc("[Required] The port to listen on)")
+                .build();
 
-            int numSampleEqualBeforeExit = 1;
-            if (numargs > 2) {
-                numSampleEqualBeforeExit = Integer.parseInt(args[2]);
-            }
+        Option sampleRateSecOp = Option.builder("r")
+                .longOpt("sample-rate-sec")
+                .hasArg()
+                .desc("Sample Rate Seconds; defaults to 10")
+                .build();
 
+        Option resetCountOp = Option.builder("n")
+                .longOpt("num-samples-no-change")
+                .hasArg()
+                .desc("Reset after number of this number of samples of no change in count; defaults to 1")
+                .build();
 
-            boolean autoTerminate = true;
-            if (numargs > 3) {
-                autoTerminate = Boolean.parseBoolean(args[3]);
-            }
+        Option printMessagesOp = Option.builder("o")
+                .longOpt("print-messages")
+                .desc("Print Messages to stdout")
+                .build();
 
-            boolean displayMessages = false;
-            if (numargs > 4) {
-                displayMessages = Boolean.parseBoolean(args[4]);
-            }
+        Option autoTerminateOp = Option.builder("a")
+                .longOpt("auto-terminate")
+                .desc("If count stops increasing the socket is closed; for GeoEvent use false.")
+                .build();
 
-            new TcpSink(port, sampleEveryNSecs, numSampleEqualBeforeExit, autoTerminate, displayMessages);
+        options.addOption(helpOp);
+        options.addOption(brokersOp);
+        options.addOption(sampleRateSecOp);
+        options.addOption(resetCountOp);
+        options.addOption(printMessagesOp);
+        options.addOption(autoTerminateOp);
 
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = null;
+        try {
+            cmd = parser.parse(options, args);
 
+        } catch (ParseException e) {
+            System.err.println(e.getMessage());
+            System.err.println();
+            formatter.printHelp(appName, options);
+            System.exit(1);
         }
+
+        if (cmd.hasOption("--help")) {
+            System.out.println("Send lines from a file to an Http Server");
+            System.out.println();
+            formatter.printHelp(appName, options);
+            System.exit(0);
+        }
+
+        Integer port = null;
+        if (cmd.hasOption("p")) {
+            try {
+                port = Integer.parseInt(cmd.getOptionValue("p"));
+            } catch (NumberFormatException e ) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid port (p).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("port: " + port);
+
+        int sampleRateSec = 10;
+        if(cmd.hasOption("r")) {
+            try {
+                sampleRateSec = Integer.parseInt(cmd.getOptionValue("r"));
+            } catch (NumberFormatException e ) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid sample-rate-sec (r).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("sampleRateSec: " + sampleRateSec);
+
+        int numSampleEqualBeforeExit = 1;
+        if(cmd.hasOption("n")) {
+            try {
+                numSampleEqualBeforeExit = Integer.parseInt(cmd.getOptionValue("n"));
+            } catch (NumberFormatException e ) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid num-samples-no-change (s).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("numSampleEqualBeforeExit: " + numSampleEqualBeforeExit);
+
+        boolean printMessages = false;
+        if(cmd.hasOption("o")) {
+            printMessages = true;
+        }
+        System.out.println("printMessages : " + printMessages);
+
+        boolean autoTerminate = false;
+        if(cmd.hasOption("o")) {
+            autoTerminate = true;
+        }
+        System.out.println("autoTerminate : " + autoTerminate);
+
+
+        app =  new TcpSink(port, sampleRateSec, numSampleEqualBeforeExit, autoTerminate, printMessages);
+        app.run();
 
     }
 

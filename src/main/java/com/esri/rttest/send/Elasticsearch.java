@@ -15,22 +15,6 @@
  *
  * Contributors:
  *     David Jennings
- */
-/**
- * Test Class
- *
- * Try using HTTP Post /bulk api
- * vip: data.elastic.l4lb.thisdcos.directory:9200 http
- * vip: data.elastic.l4lb.thisdcos.directory:9300 transport
- *
- * Having issues with DCOS Elastic framework and Transport Client
- * The Transport Client works fine with Elasticsearch 5 installed outside of DCOS.
- *
- * David Jennings
- *
- * 13 Nov 2017
- * NOTE: Based on testing using sparktest; I suspect if I hyper-threaded this like I did for tcp I could get faster rates.
- * In a Round-robin fashion send requests to each of the elasticsearch nodes.
  *
  */
 package com.esri.rttest.send;
@@ -39,6 +23,7 @@ package com.esri.rttest.send;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.apache.commons.cli.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpPost;
@@ -63,11 +48,11 @@ public class Elasticsearch extends Send {
 
         long cnt = 0;
 
-        // Assemley Lines into Post Body
+        // Assemble Lines into Post Body
         StringBuilder lineToSend = new StringBuilder();
         while (linesIterator.hasNext()) {
             lineToSend.append("{\"index\": {}}\n");
-            lineToSend.append(linesIterator.next() + "\n");
+            lineToSend.append(linesIterator.next()).append("\n");
             cnt += 1;
         }
 
@@ -87,17 +72,19 @@ public class Elasticsearch extends Send {
 
     }
 
+    public Elasticsearch() {}
+
     //private final String USER_AGENT = "Mozilla/5.0";
     private HttpClient httpClient;
     private HttpPost httpPost;
 
-    private String strURL;  // http://data.sats-sat03.l4lb.thisdcos.directory:9200/index/type
+    String strURL;
 
     /**
      *
-     * @param indexUrl
+     * @param indexUrl Elastic Index
      */
-    public Elasticsearch(String indexUrl, String filename, Integer desiredRatePerSec, Long numToSend, boolean reuseFile) {
+    public void run(String indexUrl, String filename, Integer desiredRatePerSec, Long numToSend, boolean reuseFile) {
 
         try {
 
@@ -140,34 +127,149 @@ public class Elasticsearch extends Send {
 
 
     public static void main(String[] args) {
+        Elasticsearch app = new Elasticsearch();
+        String appName = app.getClass().getSimpleName();
 
-        int numargs = args.length;
-        if (numargs < 4 ) {
-            System.err.print("Usage: Elasticsearch [indexURL] [file] [desiredRatePerSec] [numToSend] (reuseFile=true) \n");
-            System.err.println("");
-            System.err.println("indexURL: Elasticsearch Index URL");
-            System.err.println("file: file with lines of text to send to Elasticsearch; if folder than all files in the folder are sent and reuseFile is set to false.");
-            System.err.println("desiredRatePerSec: Desired Rate. The tool will try to send at this rate if possible");
-            System.err.println("numToSend: Number of lines to send");
-            System.err.println("resueFile: true or false; if true the file is reused as needed to if numToSend is greater than number of lines in the file");
-            System.err.println("");
+        Options options = new Options();
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.setWidth(160);
+        formatter.setLeftPadding(1);
 
-        } else {
+        Option helpOp = Option.builder()
+                .longOpt("help")
+                .desc("display help and exit")
+                .build();
 
-            String indexUrl = args[0];
-            String file = args[1];
-            Integer desiredRatePerSec = Integer.parseInt(args[2]);
-            Long numToSend = Long.parseLong(args[3]);
+        Option urlOp = Option.builder("l")
+                .longOpt("url")
+                .required()
+                .hasArg()
+                .desc("[Required] Elasticsearch Index URL")
+                .build();
 
-            boolean reuseFile = true;
-            if (numargs > 4) {
-                reuseFile = Boolean.parseBoolean(args[4]);
-            }
+        Option fileOp = Option.builder("f")
+                .longOpt("file")
+                .required()
+                .hasArg()
+                .desc("[Required] File with lines of text to send; if a folder is specified all files in the folder are sent one at a time alphabetically")
+                .build();
 
-            new Elasticsearch(indexUrl, file, desiredRatePerSec, numToSend, reuseFile);
+        Option rateOp = Option.builder("r")
+                .longOpt("rate")
+                .required()
+                .hasArg()
+                .desc("[Required] Desired Rate. The tool will try to send at this rate if possible")
+                .build();
 
+        Option numToSendOp = Option.builder("n")
+                .longOpt("number-to-send")
+                .required()
+                .hasArg()
+                .desc("[Required] Number of lines to send")
+                .build();
+
+        Option onetimeOp = Option.builder("o")
+                .longOpt("one-time")
+                .desc("Send lines only one time. Stop when all lines have been sent.")
+                .build();
+
+        options.addOption(helpOp);
+        options.addOption(urlOp);
+        options.addOption(fileOp);
+        options.addOption(rateOp);
+        options.addOption(numToSendOp);
+        options.addOption(onetimeOp);
+
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = null;
+        try {
+            cmd = parser.parse(options, args);
+
+        } catch (ParseException e) {
+            System.err.println(e.getMessage());
+            System.err.println();
+            formatter.printHelp(appName, options);
+            System.exit(1);
         }
 
+        if (cmd.hasOption("--help")) {
+            System.out.println("Send lines from a file to an Http Server");
+            System.out.println();
+            formatter.printHelp(appName, options);
+            System.exit(0);
+        }
+
+        String indexUrl = null;
+        if (cmd.hasOption("l")) {
+            indexUrl = cmd.getOptionValue("l");
+        }
+        System.out.println("indexUrl: " + indexUrl);
+
+        String file = null;
+        if(cmd.hasOption("f")) {
+            file = cmd.getOptionValue("f");
+        }
+        System.out.println("file: " + file);
+
+        Integer desiredRatePerSec = null;
+        if(cmd.hasOption("r")) {
+            try {
+                desiredRatePerSec = Integer.parseInt(cmd.getOptionValue("r"));
+            } catch (NumberFormatException e ) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid value for rate (r).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("desiredRatePerSec: " + desiredRatePerSec);
+
+        Long numToSend = null;
+        if(cmd.hasOption("n")) {
+            try {
+                numToSend = Long.parseLong(cmd.getOptionValue("n"));
+            } catch (NumberFormatException e) {
+                System.out.println();
+                System.out.println("Invalid value for num-to-send (n). Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("numToSend: " + numToSend);
+
+        String contentType = "text/plain";
+        if(cmd.hasOption("c")) {
+            contentType = cmd.getOptionValue("c");
+        }
+        System.out.println("contentType: " + contentType);
+
+        int numThreads = 1;
+        if(cmd.hasOption("t")) {
+            try {
+                String tmpStr = cmd.getOptionValue("t");
+                numThreads = Integer.parseInt(tmpStr);
+            } catch (NumberFormatException e) {
+                System.out.println();
+                System.out.println("Invalid value for num-threads (t). Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("numThreads: " + numThreads);
+
+
+        boolean reuseFile = true;
+        if(cmd.hasOption("o")) {
+            reuseFile = false;
+        }
+        System.out.println("reuseFile : " + reuseFile);
+
+
+        app.run(indexUrl, file, desiredRatePerSec, numToSend, reuseFile);
 
     }
 
