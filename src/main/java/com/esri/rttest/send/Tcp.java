@@ -256,28 +256,6 @@ public class Tcp extends Send {
         }
         System.out.println("numToSend: " + numToSend);
 
-        String contentType = "text/plain";
-        if(cmd.hasOption("c")) {
-            contentType = cmd.getOptionValue("c");
-        }
-        System.out.println("contentType: " + contentType);
-
-        int numThreads = 1;
-        if(cmd.hasOption("t")) {
-            try {
-                String tmpStr = cmd.getOptionValue("t");
-                numThreads = Integer.parseInt(tmpStr);
-            } catch (NumberFormatException e) {
-                System.out.println();
-                System.out.println("Invalid value for num-threads (t). Must be an Integer");
-                System.out.println();
-                formatter.printHelp(appName, options);
-                System.exit(1);
-            }
-        }
-        System.out.println("numThreads: " + numThreads);
-
-
         boolean reuseFile = true;
         if(cmd.hasOption("o")) {
             reuseFile = false;

@@ -227,52 +227,11 @@ public class Kafka extends Send {
         }
         System.out.println("numToSend: " + numToSend);
 
-        String contentType = "text/plain";
-        if(cmd.hasOption("c")) {
-            contentType = cmd.getOptionValue("c");
-        }
-        System.out.println("contentType: " + contentType);
-
-        int numThreads = 1;
-        if(cmd.hasOption("t")) {
-            try {
-                String tmpStr = cmd.getOptionValue("t");
-                numThreads = Integer.parseInt(tmpStr);
-            } catch (NumberFormatException e) {
-                System.out.println();
-                System.out.println("Invalid value for num-threads (t). Must be an Integer");
-                System.out.println();
-                formatter.printHelp(appName, options);
-                System.exit(1);
-            }
-        }
-        System.out.println("numThreads: " + numThreads);
-
-
         boolean reuseFile = true;
         if(cmd.hasOption("o")) {
             reuseFile = false;
         }
         System.out.println("reuseFile : " + reuseFile);
-
-        String username = "";
-        if(cmd.hasOption("u")) {
-            username = cmd.getOptionValue("u");
-        }
-        System.out.println("username: " + username);
-
-
-        String password = "";
-        if(cmd.hasOption("p")) {
-            password = cmd.getOptionValue("p");
-        }
-        System.out.println("password: " + password);
-
-        String xOriginalUrlHeader = "";
-        if(cmd.hasOption("p")) {
-            xOriginalUrlHeader = cmd.getOptionValue("x");
-        }
-        System.out.println("xOriginalUrlHeader: " + xOriginalUrlHeader);
 
         app.run(broker,topic, file, desiredRatePerSec, numToSend, reuseFile);
 

@@ -240,12 +240,6 @@ public class Elasticsearch extends Send {
         }
         System.out.println("numToSend: " + numToSend);
 
-        String contentType = "text/plain";
-        if(cmd.hasOption("c")) {
-            contentType = cmd.getOptionValue("c");
-        }
-        System.out.println("contentType: " + contentType);
-
         int numThreads = 1;
         if(cmd.hasOption("t")) {
             try {
