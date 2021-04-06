@@ -49,7 +49,7 @@ public class HttpThread extends Thread {
 
 
     LinkedBlockingQueue<String> lbq;
-    private boolean running = true;
+    private boolean running;
 
     public boolean isRunning() {
         return running;
@@ -85,7 +85,7 @@ public class HttpThread extends Thread {
         this.lbq = lbq;
         //this.url = url;
 
-        System.out.println(username + " : " + password);
+        //System.out.println(username + " : " + password);
 
         sslContext = SSLContext.getInstance("SSL");
 
@@ -125,21 +125,21 @@ public class HttpThread extends Thread {
 
         httpPost = new HttpPost(url);
         httpPost.setHeader("Content-type", contentType);
-        if ( xOriginalUrlHeader != "" ) {
+        if ( xOriginalUrlHeader.isEmpty() ) {
             httpPost.setHeader("x-original-url", xOriginalUrlHeader);
-            System.out.println(xOriginalUrlHeader);
+            //System.out.println(xOriginalUrlHeader);
         }
 
-        System.out.println("url: " + url);
-        System.out.println("Username: " + username);
-        System.out.println("Password: " + password);
+        //System.out.println("url: " + url);
+        //System.out.println("Username: " + username);
+        //System.out.println("Password: " + password);
 
-        if ( password == "" && username != "" ) {
+        if ( password.isEmpty() && !username.isEmpty() ) {
             // Assume username is a Token
             System.out.println("HERE");
             httpPost.setHeader("Authorization", "Bearer " + username);
-        } else if ( password != "" && username != "" )  {
-            String userpass = new String(username + ":" + password);
+        } else if ( !password.isEmpty() && !username.isEmpty() )  {
+            String userpass = username + ":" + password;
             String encoding = Base64.getEncoder().encodeToString(userpass.getBytes());
             httpPost.setHeader("Authorization", "Basic " + encoding);
 
@@ -159,9 +159,6 @@ public class HttpThread extends Thread {
         try {
             while (running) {
                 String line = lbq.take();
-                if (line == null) {
-                    break;
-                }
                 StringEntity postingString = new StringEntity(line);
 
 

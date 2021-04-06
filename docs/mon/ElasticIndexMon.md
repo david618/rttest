@@ -1,67 +1,60 @@
 ### com.esri.rttest.mon.ElasticIndexMon
 
-- Monitors a Elasticsearch Index count and measures and reports rate of change in count.  
-- When the tool starts it gets the current count and starts sampling count every sampleRateSec seconds (defaults to 5 seconds).
-- When count changes the tool starts collecting sample points. 
-- After collecting three points the output will use linear regression to estimate the rate of change.
-- After count stops changing the final line will give the count received and the best fit linear approximation of the rate.  The last sample is excluded from the final rate calculation.
-- After reporting the final count and rate the tool will continue monitoring for count changes.  Use **Ctrl-C** to stop.
+Monitors a Elasticsearch Index count and measures and reports rate of change in count.  
 
-<pre>
-java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon
-Usage: ElasticIndexMon (ElasticsearchServerPort) (Index/Type) [sampleRateSec=5] [username=""] [password==""] 
-</pre>
+Use **Ctrl-C** to stop.
 
-Example:
+#### Help
 
-<pre>
-java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon 172.17.2.5:9200 satellites/satellites 60
+Bash command: monElastic
 
-- Elasticsearch running on 172.17.2.5 on default port of 9200
-- The index name is satellites and type name is satellites (satellites/satellites)
-- If the system doesn't require a password you can use dash
-- Sample every 60 seconds
-</pre>
+```
+./monElastic
+Missing required option: l
 
-Example Output:
-<pre>
-1,1518057198604,4252762
-2,1518057258692,5190695
-3,1518057318586,5366873,9289
-4,1518057378587,7404803,16059
-5,1518057438602,7581889,14790
-6,1518057498623,9640049,17215
-7,1518057558585,10017645,16912
-Removing: 1518057558585,10017645
-7462604 , 17215.24, 2.1803
-</pre>
+usage: ElasticIndexMon
+    --help                          display help and exit
+ -l,--elastic-index-url <arg>       [Required] Elastic Index URL (e.g. http://es:9200/planes)
+ -n,--num-samples-no-change <arg>   Reset after number of this number of samples of no change in count; defaults to 1
+ -p,--password <arg>                Mqtt Server Password; default no password
+ -r,--sample-rate-sec <arg>         Sample Rate Seconds; defaults to 10
+ -u,--username <arg>                Mqtt Server Username; default no username
+```
 
-- Sample Lines: Sample Number,System Time in Milliseconds,Count,(Rate /s)
-- Final Line: Total Count Change, Rate, Rate Std Deviation 
+#### Example
 
-### DC/OS
+```
+./monElastic -l http://datastore-elasticsearch-client.a4iot-cqvgkj9zrnkn9bcu-services:9200/planes -n 1 -r 10
+url: http://datastore-elasticsearch-client.a4iot-cqvgkj9zrnkn9bcu-services:9200/planes
+sampleRateSec: 10
+numSampleEqualBeforeExit: 1
+username:
+password:
+Start Count: 1280
+Watching for changes in count...  Use Ctrl-C to Exit.
 
-For DC/OS if you deployed Elastic name "sats-ds01" then you can access via an endpoint like: `data.sats-ds01.l4lb.thisdcos.directory`
+|Query Number|Sample Number|Epoch (ms)    |Time (s) |Count             |Linear Reg. Rate  |Rate From Previous|Rate From First   |
+|------------|-------------|--------------|---------|------------------|------------------|------------------|------------------|
+|          1 |           1 |1617739120901 |       0 |            1,000 |                  |                  |                  |
+|          2 |           2 |1617739130903 |      10 |            2,000 |              100 |              100 |              100 |
+|          3 |           3 |1617739141013 |      20 |            3,000 |               99 |               99 |               99 |
+|          4 |           4 |1617739150900 |      29 |            4,000 |              100 |              101 |              100 |
+|          5 |           5 |1617739160901 |      40 |            4,900 |               98 |               90 |               98 |
+|          6 |           6 |1617739170916 |      50 |            6,000 |               99 |              110 |              100 |
+|          7 |           7 |1617739180917 |      60 |            7,000 |              100 |              100 |              100 |
+|          8 |           8 |1617739190902 |      70 |            8,000 |              100 |              100 |              100 |
+|          9 |           9 |1617739200906 |      80 |            8,900 |               99 |               90 |               99 |
+|         10 |          10 |1617739210905 |      90 |           10,000 |              100 |              110 |              100 |
 
-If you used the default username/password.
+For last 10  seconds the count has not increased...
+Removing sample: 100|10000
+Total Count: 10,000 | Linear Regression Rate:  99 | Linear Regression Standard Error: 0.00 | Average Rate: 99
 
-<pre>
-curl -u elastic:changeme data.sats-ds01.l4lb.thisdcos.directory:9200
-curl -u elastic:changeme data.sats-ds01.l4lb.thisdcos.directory:9200/_aliases?pretty
-</pre>
+Start Count: 11280
+Watching for changes in count...  Use Ctrl-C to Exit.
 
-Example Command:
-<pre>
-java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon data.sats-ds01.l4lb.thisdcos.directory:9200 planes-bat/planes-bat 60 elastic changeme 
-</pre>
-
-**Note:** You may need to use larger sampleRateSec; to prevent false endings for slow loading data. This often happens if the index refresh is disabled for bulk loading.
-
-You will get false readings if the count goes down during loading.  For example the index is deleted before it is loaded. 
+|Query Number|Sample Number|Epoch (ms)    |Time (s) |Count             |Linear Reg. Rate  |Rate From Previous|Rate From First   |
+|------------|-------------|--------------|---------|------------------|------------------|------------------|------------------|
 
 
-### GeoEvent
-
-**NOTE:** For GeoEvent you can get the username/password for the spatiotemportal datastore using Datastore tool "listadmins". 
-
-
+```

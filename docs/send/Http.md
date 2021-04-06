@@ -1,61 +1,57 @@
 ### com.esri.rttest.send.Http
 
-Post lines from a file to URL. 
+Post lines from a file to Http Server. 
 
-Changes
-- Added indication of error (error count) to output
-- Added additional optional parameter to support threads 
-- Added support to lookup ip and ports and send directly to Marathon App instances 
-- Added DNS lookup support; If DNS has multiple IP's; threads are assigned round-robin to the IP's
+#### Help
+```
+./sendHttp
+Missing required options: l, f, r, n
 
-<pre>
-java -cp target/rttest.jar com.esri.rttest.send.Http  
-Usage: Http (url) (file) (rate) (numrecords) [numthreads=1]
-</pre>
+usage: Http
+ -c,--content-type <arg>     Set header content type; defaults to text/plain
+ -f,--file <arg>             [Required] File with lines of text to send; if a folder is specified all files in the folder are sent one at a time alphabetically
+    --help                   display help and exit
+ -l,--url <arg>              [Required] Post Messages to this URL
+ -n,--number-to-send <arg>   [Required] Number of lines to send
+ -o,--one-time               Send lines only one time. Stop when all lines have been sent.
+ -p,--password <arg>         Mqtt Server Password; default no password
+ -r,--rate <arg>             [Required] Desired Rate. The tool will try to send at this rate if possible
+ -t,--num-threads <arg>      Number of threads to use for sending; default 1
+ -u,--username <arg>         Mqtt Server Username; default no username
+ -x,--x-origin <arg>         Add header for x-original-url
+```
 
-Parameters
-- url: The url you want to send the ports to. Server name can be Marathon app name.
-  - If server is specified as app[marathon-app-name]; Http looks up ip:port for each instance
-  - Each thread is assigned an ip:port in a round-robin fashion
-- file: The name of the file to read lines from 
-- rate: Desired rate. App will try to dynamically adjust to achieve this rate
-- numrecords: Number of lines to post. Once file is exhausted it will automatically start from top of file again
-- numthreads: Optional parameter defaults to 1.
+#### Example
 
-Example
-<pre>
-java -cp target/rttest.jar com.esri.rttest.send.Http  http<i></i>://app[sits/rcv-txt-rest-planes]/rtgis/receiver/planes/txt  planes00001.1M 50000 1000000 64
-</pre>
 
-This command
-- Looks up the ip:port for each instance of sits/rcv-txt-rest-planes Marthon app.
-- Creates 64 threads; then assigns an ip and port each thread (e.g. http:<i></i>//172.17.2.6:3455//rtgis/receiver/planes/txt) in round-robin fashion. Thread 1 gets ip:port 1, Thread 2 gets ip:port2, and so on. If the number of threads is greater than number of ip:ports the ip:port assignment resumes at 1.
-- The lines from the file planes00001.1M are added to a shared blocked queue at the rate specified
-- The threads read lines from the queue and send them to the url they were assigned
+```
+$ ./sendHttp -l http://localhost:8000 -f planes.csv -r 10 -n 1000
+url: http://localhost:8000
+file: planes.csv
+desiredRatePerSec: 10
+numToSend: 1000
+contentType: text/plain
+numThreads: 1
+reuseFile : true
+username:
+password:
+xOriginalUrlHeader:
+Start Send
+Use Ctrl-C to Abort.
 
-Example Output
-
-<pre>
-172.17.2.9:26264
-172.17.2.8:28203
-172.17.2.4:11865
-172.17.2.6:2152
-172.17.2.7:1718
-172.17.2.5:12370
-15620,0,3042
-31925,0,3150
-48303,0,3191
+|Number Sent         |Current Rate Per Sec|Overall Rate Per Sec|
+|--------------------|--------------------|--------------------|
+|                 10 |                 10 |                 10 |
+|                 20 |                 10 |                 10 |
+|                 30 |                 10 |                 10 |
+|                 40 |                 10 |                 10 |
+|                 50 |                 10 |                 10 |
+|                 60 |                 10 |                 10 |
+|                 70 |                 10 |                 10 |
 ...
-969367,0,3339
-987061,0,3343
-1000000,0,3330
-Queue Empty
-1000000,0,3330
-</pre>
-
-The command outputs
-- The IP:PORT's found for this Marathon App.
-- Current Count Sent, Number of Errors (Should be zero), and rate achieved every 5 seconds.
-- The rate send is often less than rate requested; because of back pressure from the endpoint
-
-Number of Errors is the number of responses that were not HTTP 200. This happens if the URL is invalid or the end point is having some problem.
+|                970 |                 10 |                 10 |
+|                980 |                 10 |                 10 |
+|                990 |                 10 |                 10 |
+|               1000 |                 10 |                 10 |
+Done
+```

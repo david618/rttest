@@ -15,14 +15,10 @@
  *
  * Contributors:
  *     David Jennings
- */
-
- /*
-Sends lines of Json to a PostgreSQL database created Point Geometries.  PostgreSQL must have PostGIS installed. 
-You must create the table manually before running command to load data.  If you specify just the first four parameters SQL for create will be provided.
-
-This code has not been setup fro sending at a specified rate yet.  For PostgreSQL ruunning on local VM; rates near 3,000/s are possible.
-
+ *
+ * Sends lines of Json to a PostgreSQL database created Point Geometries.  PostgreSQL must have PostGIS installed.
+ * You must create the table manually before running command to load data.  If you specify just the first four parameters SQL for create will be provided.
+ * This code has not been setup fro sending at a specified rate yet.  For PostgreSQL ruunning on local VM; rates near 3,000/s are possible.
  */
 package com.esri.rttest.send;
 
@@ -36,6 +32,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
+
+import org.apache.commons.cli.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
@@ -74,13 +72,13 @@ public class Postgresql extends Send {
     	
         try {
 
-            /**
-             * CREATE TABLE ecenter ( oid integer, clat double precision, clon
-             * double precision, num integer );
-             *
-             * SELECT AddGeometryColumn('', 'ecenter','geom',4326,'POINT',2);
-             *
-             */
+            //
+            // CREATE TABLE ecenter ( oid integer, clat double precision, clon
+            // double precision, num integer );
+            //
+            // SELECT AddGeometryColumn('', 'ecenter','geom',4326,'POINT',2);
+            //
+            //
             FileReader fr = new FileReader(fileJsonLines);
 
             br = new BufferedReader(fr);
@@ -89,11 +87,11 @@ public class Postgresql extends Send {
 
             JSONObject json;
 
-            String sql;
+            StringBuilder sql = new StringBuilder();
 
             if (line != null) {
 
-                sql = "CREATE TABLE " + tablename + " (" + oidFieldName + " serial4,";
+                sql.append("CREATE TABLE ").append(tablename).append(" (").append(oidFieldName).append(" serial4,");
 
                 // Create the Schema
                 json = new JSONObject(line);
@@ -106,23 +104,24 @@ public class Postgresql extends Send {
                     Object val = json.get(k);
 
                     if (val instanceof Integer) {
-                        sql += k + " integer,";
+                        sql.append(k).append(" integer,");
                     } else if (val instanceof Long) {
-                        sql += k + " bigint,";
+                        sql.append(k).append(" bigint,");
                     } else if (val instanceof Double) {
-                        sql += k + " double precision,";
+                        sql.append(k).append(" double precision,");
                     } else if (val instanceof String) {
-                        sql += k + " varchar(" + MAXSTRLEN + "),";
+                        sql.append(k).append(" varchar(" + MAXSTRLEN + "),");
                     }
 
                 }
 
-                sql = sql.substring(0, sql.length() - 1) + ");";
 
-                System.out.println(sql);
+                String sqlStr = sql.toString().substring(0, sql.length() - 1) + ");";
 
-                sql = "SELECT AddGeometryColumn('','" + tablename + "','" + geomFieldName + "',4326,'POINT',2);";
-                System.out.println(sql);
+                System.out.println(sqlStr);
+
+                sqlStr = "SELECT AddGeometryColumn('','" + tablename + "','" + geomFieldName + "',4326,'POINT',2);";
+                System.out.println(sqlStr);
 
             }
 
@@ -133,7 +132,7 @@ public class Postgresql extends Send {
         		try {
         			br.close();
         		} catch (Exception e) {
-        			
+        			// ok to ignore
         		}
         	}
         }
@@ -158,14 +157,14 @@ public class Postgresql extends Send {
             try (BufferedReader br = new BufferedReader(fr)) {
                 String line = br.readLine();
                 
-                String sqlPrefix = "";
+                StringBuilder sqlPrefix = new StringBuilder();
                 JSONObject json = null;
                 
                 HashMap<String, Integer> jsonMap = new HashMap<>();
                 
                 if (line != null) {
                     
-                    sqlPrefix = "INSERT INTO " + tablename + " (" + oidFieldName + ",";
+                    sqlPrefix.append("INSERT INTO ").append(tablename).append(" (").append(oidFieldName).append(",");
                     
                     // Create the Schema
                     json = new JSONObject(line);
@@ -187,39 +186,35 @@ public class Postgresql extends Send {
                             jsonMap.put(k, STR);
                         }
                         //System.out.println();
-                        sqlPrefix += k + ",";
+                        sqlPrefix.append(k).append(",");
                         
                     }
-                    
-                    //oid,a,b,clat,clon,rot,num,geom
-                    //sqlPrefix = sqlPrefix.substring(0,sqlPrefix.length() - 1) + ") VALUES (";
-                    sqlPrefix += geomFieldName + ") VALUES (DEFAULT,";
+
+                    sqlPrefix.append(geomFieldName).append(") VALUES (DEFAULT,");
                     
                 }
 
                 int num = 0;
                 
                 while (line != null) {
-                    //System.out.println(line);
-                    // Create sql line
-                    String sql;
+                    StringBuilder sql = new StringBuilder();
                     
-                    sql = sqlPrefix;
+                    sql.append(sqlPrefix.toString());
                     
                     for (String key : jsonMap.keySet()) {
                         
                         switch (jsonMap.get(key)) {
                             case INT:
-                                sql += json.getInt(key) + ",";
+                                sql.append(json.getInt(key)).append(",");
                                 break;
                             case LNG:
-                                sql += json.getLong(key) + ",";
+                                sql.append(json.getLong(key)).append(",");
                                 break;
                             case DBL:
-                                sql += json.getDouble(key) + ",";
+                                sql.append(json.getDouble(key)).append(",");
                                 break;
                             case STR:
-                                sql += "'" + json.getString(key).replace("'", "''") + "',";
+                                sql.append("'").append(json.getString(key).replace("'", "''")).append("',");
                                 break;
                             default:
                                 break;
@@ -229,11 +224,11 @@ public class Postgresql extends Send {
                     
                     //ST_GeomFromText('POINT(-71.060316 48.432044)', 4326)
                     //sql = sql.substring(0,sql.length() - 1) + ");";
-                    sql += "ST_GeomFromText('POINT(" + json.getDouble(lonFieldName) + " " + json.getDouble(latFieldName) + ")', 4326)" + ");";
+                    sql.append("ST_GeomFromText('POINT(").append(json.getDouble(lonFieldName)).append(" ").append(json.getDouble(latFieldName)).append(")', 4326)").append(");");
                     //System.out.println(sql);
                     
                     stmt = c.createStatement();
-                    stmt.executeUpdate(sql);
+                    stmt.executeUpdate(sql.toString());
                     
                     num += 1;
                     
@@ -262,66 +257,250 @@ public class Postgresql extends Send {
     }
 
     public static void main(String[] args) {
-        Postgresql t = new Postgresql();
-
-//        String tableName = "planes3";
-//        String filename = "flights.json";
-//        String geomFieldName = "geom";
-//        String oidFieldName = "oid";
-//
-//        String serverConn = "pg1:5432/db1";
-//        String username = "user1";
-//        String password = "user1";
-//        String lonFieldName = "lon";
-//        String latFieldName = "lat";
-//        //t.printCreate(tableName, filename, geomFieldName, oidFieldName);
-//        t.run(tableName, filename, geomFieldName, oidFieldName, serverConn, username, password, lonFieldName, latFieldName);
-        String tableName;
-        String filename;
-        String geomFieldName;
-        String oidFieldName;
-
-        String serverConn;
-        String username;
-        String password;
-        String lonFieldName;
-        String latFieldName;
-
-        int numargs = args.length;
-
-        if (numargs != 4 && numargs != 9) {
-            System.err.println("**** WARNING:  This tool is in development; still does not output rates ***");
-            System.err.println("");
-            System.err.println("Usage Print Create Table: Postgresql [tableName] [fileName] [geomFieldName] [oidFieldName]");
-            System.err.println("or");
-            System.err.println("Usage Load Data: Postgresql [tableName] [fileName] [geomFieldName] [oidFieldName] [serverConn] [username] [password] [lonFieldName] [latFieldName]");
-            System.err.println("");
-            System.err.println("Example: java -cp target/rttest.jar com.esri.rttest.send.Postgresql planes planes.json geom gid 192.168.57.2:5432/gis1 gis PASSWORD lon lat");
-            System.err.println("");
-            System.err.println("Loads lines from file planes.json to table planes. The table planes has oidFieldName of gid and geomFieldName of geom.  The serverConn is the IP:PORT/database.");
-            System.err.println("  You'll need to specify the username and password that can insert into the table.  The lonFieldName (lon) and latFieldname (lat) from the json that will be used to create points.");
-            System.err.println("");
 
 
-        } else {
-            tableName = args[0];
-            filename = args[1];
-            geomFieldName = args[2];
-            oidFieldName = args[3];
+        Postgresql app = new Postgresql();
+        String appName = app.getClass().getSimpleName();
 
-            if (numargs == 4) {
+        Options options = new Options();
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.setWidth(160);
+        formatter.setLeftPadding(1);
 
-                t.printCreate(tableName, filename, geomFieldName, oidFieldName);
-            } else {
-                serverConn = args[4];
-                username = args[5];
-                password = args[6];
-                lonFieldName = args[7];
-                latFieldName = args[8];
+        Option helpOp = Option.builder()
+                .longOpt("help")
+                .desc("display help and exit")
+                .build();
 
-                t.run(tableName, filename, geomFieldName, oidFieldName, serverConn, username, password, lonFieldName, latFieldName);
+        Option tableNameOp = Option.builder("t")
+                .longOpt("table-name")
+                .required()
+                .hasArg()
+                .desc("[Required] Postgres Table Name")
+                .build();
+
+        Option serverConOp = Option.builder("h")
+                .longOpt("server-connect")
+                .hasArg()
+                .desc("[Required] Postgres Connect (e.g. postgresserver:5432/db1 ")
+                .build();
+
+        Option fileOp = Option.builder("f")
+                .longOpt("file")
+                .required()
+                .hasArg()
+                .desc("[Required] File with lines of text to send; if a folder is specified all files in the folder are sent one at a time alphabetically")
+                .build();
+
+        Option rateOp = Option.builder("r")
+                .longOpt("rate")
+                .hasArg()
+                .desc("[Required] Desired Rate. The tool will try to send at this rate if possible")
+                .build();
+
+        Option numToSendOp = Option.builder("n")
+                .longOpt("number-to-send")
+                .hasArg()
+                .desc("[Required] Number of lines to send")
+                .build();
+
+
+        Option onetimeOp = Option.builder("o")
+                .longOpt("one-time")
+                .desc("Send lines only one time. Stop when all lines have been sent.")
+                .build();
+
+        Option usernameOp = Option.builder("u")
+                .longOpt("username")
+                .hasArg()
+                .desc("Postgres Server Username; default no username")
+                .build();
+
+        Option passwordOp = Option.builder("p")
+                .longOpt("password")
+                .hasArg()
+                .desc("Postgres Server Password; default no password")
+                .build();
+
+        Option geomFieldOp = Option.builder("g")
+                .longOpt("geom-field")
+                .required()
+                .hasArg()
+                .desc("Geometry Field Name")
+                .build();
+
+        Option oidOp = Option.builder("i")
+                .longOpt("oid-fieldname")
+                .required()
+                .hasArg()
+                .desc("Geometry oid Field Name")
+                .build();
+
+        Option lonOp = Option.builder("x")
+                .longOpt("lon")
+                .hasArg()
+                .desc("lon field in json input")
+                .build();
+
+        Option latOp = Option.builder("y")
+                .longOpt("lat")
+                .hasArg()
+                .desc("lat field in json input")
+                .build();
+
+        options.addOption(helpOp);
+        options.addOption(tableNameOp);
+        options.addOption(serverConOp);
+        options.addOption(fileOp);
+        options.addOption(rateOp);
+        options.addOption(numToSendOp);
+        options.addOption(onetimeOp);
+        options.addOption(usernameOp);
+        options.addOption(passwordOp);
+        options.addOption(geomFieldOp);
+        options.addOption(oidOp);
+        options.addOption(lonOp);
+        options.addOption(latOp);
+
+
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = null;
+        try {
+            cmd = parser.parse(options, args);
+
+        } catch (ParseException e) {
+            System.err.println(e.getMessage());
+            System.err.println();
+            formatter.printHelp(appName, options);
+            System.exit(1);
+        }
+
+        if (cmd.hasOption("--help")) {
+            System.out.println("Send lines from a file to an Http Server");
+            System.out.println();
+            formatter.printHelp(appName, options);
+            System.exit(0);
+        }
+
+        String tableName = null;
+        if (cmd.hasOption("t")) {
+            tableName = cmd.getOptionValue("t");
+        }
+        System.out.println("tableName: " + tableName);
+
+        String serverConn = null;
+        if (cmd.hasOption("t")) {
+            serverConn = cmd.getOptionValue("t");
+        }
+        System.out.println("serverConn: " + serverConn);
+
+        String filename = null;
+        if(cmd.hasOption("f")) {
+            filename = cmd.getOptionValue("f");
+        }
+        System.out.println("filename: " + filename);
+
+        Integer desiredRatePerSec = null;
+        if(cmd.hasOption("r")) {
+            try {
+                desiredRatePerSec = Integer.parseInt(cmd.getOptionValue("r"));
+            } catch (NumberFormatException e ) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid value for rate (r).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
             }
         }
+        System.out.println("desiredRatePerSec: " + desiredRatePerSec);
+
+        Long numToSend = null;
+        if(cmd.hasOption("n")) {
+            try {
+                numToSend = Long.parseLong(cmd.getOptionValue("n"));
+            } catch (NumberFormatException e) {
+                System.out.println();
+                System.out.println("Invalid value for num-to-send (n). Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("numToSend: " + numToSend);
+
+        boolean reuseFile = true;
+        if(cmd.hasOption("o")) {
+            reuseFile = false;
+        }
+        System.out.println("reuseFile : " + reuseFile);
+
+        String username = "";
+        if(cmd.hasOption("u")) {
+            username = cmd.getOptionValue("u");
+        }
+        System.out.println("username: " + username);
+
+        String password = "";
+        if(cmd.hasOption("p")) {
+            password = cmd.getOptionValue("p");
+        }
+        System.out.println("password: " + password);
+
+        String geomFieldName = null;
+        if(cmd.hasOption("g")) {
+            geomFieldName = cmd.getOptionValue("g");
+        }
+        System.out.println("geomFieldName: " + geomFieldName);
+
+        String oidFieldName = null;
+        if(cmd.hasOption("i")) {
+            oidFieldName = cmd.getOptionValue("i");
+        }
+        System.out.println("oidFieldName: " + oidFieldName);
+
+        String lonFieldName = null;
+        if(cmd.hasOption("x")) {
+            lonFieldName = cmd.getOptionValue("x");
+        }
+        System.out.println("lonFieldName: " + lonFieldName);
+
+        String latFieldName = null;
+        if(cmd.hasOption("y")) {
+            latFieldName = cmd.getOptionValue("y");
+        }
+        System.out.println("latFieldName: " + latFieldName);
+
+        if (serverConn == null) {
+            app.printCreate(tableName, filename, geomFieldName, oidFieldName);
+        } else {
+            boolean missingParam = false;
+            if (username == null) {
+                missingParam = true;
+                System.out.println("You must Postgres Username");
+            }
+            if (password == null) {
+                missingParam = true;
+                System.out.println("You must Postgres Password");
+            }
+            if (lonFieldName == null) {
+                missingParam = true;
+                System.out.println("You must a Longitude Field Name");
+            }
+            if (latFieldName == null) {
+                missingParam = true;
+                System.out.println("You must a Latitude Field Name");
+            }
+            if (missingParam) {
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+
+            app.run(tableName, filename, geomFieldName, oidFieldName, serverConn, username, password, lonFieldName, latFieldName);
+        }
+
+
 
     }
 

@@ -15,17 +15,11 @@
  *
  * Contributors:
  *     David Jennings
- */
-/**
- * Monitors an Elasticsearch Index/Type.
- * Periodically does a count and when count is changing collects samples.
- * After three samples are made outputs rates based on linear regression.
- * After counts stop changing outputs the final rate and last estimated rate.
  *
- * Creator: David Jennings
  */
 package com.esri.rttest.mon;
 
+import org.apache.commons.cli.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
@@ -46,38 +40,39 @@ public class ElasticIndexMon extends Monitor {
 
     @Override
     public Sample getSample() {
-        long cnt = -1L;
-        long ts = 0L;
+        long cnt ;
+        long ts;
 
-            LOG.info("Checking Count");
+        LOG.info("Checking Count");
 
-            String url = elasticSearchUrl + "/_count";
+        String url = elasticSearchUrl + "/_count";
 
-            try {
+        try {
 
-                //System.out.println(url);
-                JSONObject json = httpQuery(url, user, userpw);
+            //System.out.println(url);
+            JSONObject json = httpQuery(url, username, password);
 
-                cnt = json.getInt("count");
+            cnt = json.getInt("count");
 
-            } catch (JSONException e) {
-                cnt = -1;
-                System.out.println("Index may not exist");
-            }
-
-            ts = System.currentTimeMillis();
-
-            return new Sample(cnt, ts);
-
+        } catch (JSONException e) {
+            cnt = -1;
+            System.out.println("Index may not exist");
         }
 
+        ts = System.currentTimeMillis();
 
+        return new Sample(cnt, ts);
+
+    }
+
+
+    public ElasticIndexMon() {}
 
     String elasticSearchUrl;
-    String user;
-    String userpw;
+    String username;
+    String password;
 
-    public ElasticIndexMon(String elasticSearchUrl, int sampleRateSec, int numSampleEqualBeforeExit, String user, String userpw) {
+    public ElasticIndexMon(String elasticSearchUrl, int sampleRateSec, int numSampleEqualBeforeExit, String username, String password) {
 
 
         this.elasticSearchUrl = elasticSearchUrl;
@@ -85,65 +80,134 @@ public class ElasticIndexMon extends Monitor {
         this.sampleRateSec = sampleRateSec;
         this.numSampleEqualBeforeExit = numSampleEqualBeforeExit;
 
-        this.user = user;
-        this.userpw = userpw;
+        this.username = username;
+        this.password = password;
     }
-
 
 
     public static void main(String[] args) {
 
-        String elasticSearchUrl = "";
-        String username = "";   // default to empty string
-        String password = "";  // default to empty string
-        int sampleRateSec = 10; // default to 10 seconds.
-        int numSampleEqualBeforeExit = 1;
+        ElasticIndexMon app = new ElasticIndexMon();
+        String appName = app.getClass().getSimpleName();
 
-        LOG.info("Entering application.");
-        int numargs = args.length;
-        if (numargs < 1) {
-            System.err.println("Usage: ElasticIndexMon [elasticsearchUrl] (sampleRateSec=10) (numSampleEqualBeforeExit=1) (username=\"\") (password=\"\")");
-            System.err.println("Example: ElasticIndexMon http://es:9200/planes 20 elasic changeme");
-            System.err.println("");
-            System.err.println("elasticsearchUrl: Elasticsearch Index URL");
-            System.err.println("sampleRateSecs: How many seconds to wait between samples.");
-            System.err.println("numSampleEqualBeforeExit: Summarize and reset after this many samples where count does not change.");
-            System.err.println("username: Elasticsearch username");
-            System.err.println("password: Elasticsearch password");
-            System.err.println("");
-        } else {
-            elasticSearchUrl = args[0];
+        Options options = new Options();
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.setWidth(160);
+        formatter.setLeftPadding(1);
 
-            if (numargs > 1) {
-                sampleRateSec = Integer.parseInt(args[1]);
-                if (sampleRateSec < 1) {
-                    System.err.println("SampleRateSec must be greater than 0");
-                    System.exit(1);
-                }
-            }
+        Option helpOp = Option.builder()
+                .longOpt("help")
+                .desc("display help and exit")
+                .build();
 
-            if (numargs > 2) {
-                numSampleEqualBeforeExit = Integer.parseInt(args[2]);
-                if (numSampleEqualBeforeExit < 1) {
-                    System.err.println("numSampleEqualBeforeExit must be greater than 1");
-                    System.exit(2);
-                }
+        Option urlOp = Option.builder("l")
+                .longOpt("elastic-index-url")
+                .required()
+                .hasArg()
+                .desc("[Required] Elastic Index URL (e.g. http://es:9200/planes)")
+                .build();
 
-            }
+        Option sampleRateSecOp = Option.builder("r")
+                .longOpt("sample-rate-sec")
+                .hasArg()
+                .desc("Sample Rate Seconds; defaults to 10")
+                .build();
 
-            if (numargs > 3) {
-                username = args[3];
-            }
+        Option resetCountOp = Option.builder("n")
+                .longOpt("num-samples-no-change")
+                .hasArg()
+                .desc("Reset after number of this number of samples of no change in count; defaults to 1")
+                .build();
 
-            if (numargs > 4) {
-                password = args[4];
-            }
+        Option usernameOp = Option.builder("u")
+                .longOpt("username")
+                .hasArg()
+                .desc("Mqtt Server Username; default no username")
+                .build();
 
-            ElasticIndexMon t = new ElasticIndexMon(elasticSearchUrl, sampleRateSec, numSampleEqualBeforeExit, username, password);
-            t.run();
+        Option passwordOp = Option.builder("p")
+                .longOpt("password")
+                .hasArg()
+                .desc("Mqtt Server Password; default no password")
+                .build();
 
+        options.addOption(helpOp);
+        options.addOption(urlOp);
+        options.addOption(sampleRateSecOp);
+        options.addOption(resetCountOp);
+        options.addOption(usernameOp);
+        options.addOption(passwordOp);
+
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = null;
+        try {
+            cmd = parser.parse(options, args);
+
+        } catch (ParseException e) {
+            System.err.println(e.getMessage());
+            System.err.println();
+            formatter.printHelp(appName, options);
+            System.exit(1);
         }
 
+        if (cmd.hasOption("--help")) {
+            System.out.println("Send lines from a file to an Elastic Server");
+            System.out.println();
+            formatter.printHelp(appName, options);
+            System.exit(0);
+        }
+
+        String url = null;
+        if (cmd.hasOption("l")) {
+            url = cmd.getOptionValue("l");
+        }
+        System.out.println("url: " + url);
+
+        int sampleRateSec = 10;
+        if (cmd.hasOption("r")) {
+            try {
+                sampleRateSec = Integer.parseInt(cmd.getOptionValue("r"));
+            } catch (NumberFormatException e) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid sample-rate-sec (r).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("sampleRateSec: " + sampleRateSec);
+
+        int numSampleEqualBeforeExit = 1;
+        if (cmd.hasOption("n")) {
+            try {
+                numSampleEqualBeforeExit = Integer.parseInt(cmd.getOptionValue("n"));
+            } catch (NumberFormatException e) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid num-samples-no-change (s).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("numSampleEqualBeforeExit: " + numSampleEqualBeforeExit);
+
+        String username = "";
+        if (cmd.hasOption("u")) {
+            username = cmd.getOptionValue("u");
+        }
+        System.out.println("username: " + username);
+
+
+        String password = "";
+        if (cmd.hasOption("p")) {
+            password = cmd.getOptionValue("p");
+        }
+        System.out.println("password: " + password);
+
+        app = new ElasticIndexMon(url, sampleRateSec, numSampleEqualBeforeExit, username, password);
+        app.run();
     }
 }
 

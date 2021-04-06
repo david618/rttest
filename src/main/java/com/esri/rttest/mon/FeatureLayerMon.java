@@ -1,5 +1,6 @@
 package com.esri.rttest.mon;
 
+import org.apache.commons.cli.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
@@ -10,8 +11,9 @@ public class FeatureLayerMon extends  Monitor {
 
 
     String featureLayerURL;
-    boolean sendStdout;
     String token;
+
+    public FeatureLayerMon() {}
 
     public FeatureLayerMon(String featureLayerURL, int sampleRateSec, int numSampleEqualBeforeExit, String token) {
         this.featureLayerURL = featureLayerURL;
@@ -33,14 +35,14 @@ public class FeatureLayerMon extends  Monitor {
 
         LOG.info("Checking Count");
 
-        long cnt = -1L;
-        long ts = 0L;
+        long cnt;
+        long ts;
         JSONObject json = new JSONObject();
 
         try {
 
             String url = featureLayerURL + "/query?where=1%3D1&returnCountOnly=true&f=json";
-            if ( this.token != "") {
+            if ( !this.token.isEmpty()) {
                 url = url + "&token=" + this.token;
                 //System.out.println(url);
             }
@@ -68,46 +70,113 @@ public class FeatureLayerMon extends  Monitor {
 
     public static void main(String[] args) {
 
+        FeatureLayerMon app = new FeatureLayerMon();
+        String appName = app.getClass().getSimpleName();
 
+        Options options = new Options();
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.setWidth(160);
+        formatter.setLeftPadding(1);
 
-        String url = "";
-        int sampleRateSec = 5; // default to 5 seconds.
-        int numSampleEqualBeforeExit = 1;
+        Option helpOp = Option.builder()
+                .longOpt("help")
+                .desc("display help and exit")
+                .build();
 
+        Option urlOp = Option.builder("l")
+                .longOpt("feature-layer-url")
+                .required()
+                .hasArg()
+                .desc("[Required] Feature Layer URL")
+                .build();
 
-        LOG.info("Entering application.");
-        int numargs = args.length;
-        if (numargs < 1) {
-            System.err.print("Usage: FeatureLayerMon [featureLayerUrl] (sampleRateSec=10) (numSampleEqualBeforeExit=1)\n");
-            System.err.println("Example: FeatureLayerMon http://p1/arcgis/rest/services/planes/FeatureServer/0 10");
-            System.err.println("");
-            System.err.println("featureLayerUrl: URL to Feature Layer");
-            System.err.println("sampleRateSec: Will gather a sample every N seconds for linear regression and estimation of rate.");
-            System.err.println("numSampleEqualBeforeExit: Number of samples that are equal before exit");
-            System.err.println("");
+        Option sampleRateSecOp = Option.builder("r")
+                .longOpt("sample-rate-sec")
+                .hasArg()
+                .desc("Sample Rate Seconds; defaults to 10")
+                .build();
 
-        } else {
-            url = args[0];
-            if (numargs > 1) {
-                sampleRateSec = Integer.parseInt(args[1]);
-            }
-            if (numargs > 2) {
-                numSampleEqualBeforeExit = Integer.parseInt(args[2]);
-                if (numSampleEqualBeforeExit < 1) {
-                    System.err.println("numSampleEqualBeforeExit must be greater than 1");
-                    System.exit(2);
-                }
-            }
+        Option resetCountOp = Option.builder("n")
+                .longOpt("num-samples-no-change")
+                .hasArg()
+                .desc("Reset after number of this number of samples of no change in count; defaults to 1")
+                .build();
 
-            String token = "";
-            if (numargs > 3) {
-                token = args[3];
-            }
-            //System.out.println("token: " + token);
+        Option tokenOp = Option.builder("t")
+                .longOpt("token")
+                .hasArg()
+                .desc("Esri Token; defaults to empty string")
+                .build();
 
-            FeatureLayerMon t = new FeatureLayerMon(url, sampleRateSec, numSampleEqualBeforeExit, token);
-            t.run();
+        options.addOption(helpOp);
+        options.addOption(urlOp);
+        options.addOption(sampleRateSecOp);
+        options.addOption(resetCountOp);
+        options.addOption(tokenOp);
+
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = null;
+        try {
+            cmd = parser.parse(options, args);
+
+        } catch (ParseException e) {
+            System.err.println(e.getMessage());
+            System.err.println();
+            formatter.printHelp(appName, options);
+            System.exit(1);
         }
+
+        if (cmd.hasOption("--help")) {
+            System.out.println("Send lines from a file to an Http Server");
+            System.out.println();
+            formatter.printHelp(appName, options);
+            System.exit(0);
+        }
+
+        String url = null;
+        if (cmd.hasOption("l")) {
+            url = cmd.getOptionValue("l");
+        }
+        System.out.println("url: " + url);
+
+        int sampleRateSec = 10;
+        if(cmd.hasOption("r")) {
+            try {
+                sampleRateSec = Integer.parseInt(cmd.getOptionValue("r"));
+            } catch (NumberFormatException e ) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid sample-rate-sec (r).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("sampleRateSec: " + sampleRateSec);
+
+        int numSampleEqualBeforeExit = 1;
+        if(cmd.hasOption("n")) {
+            try {
+                numSampleEqualBeforeExit = Integer.parseInt(cmd.getOptionValue("n"));
+            } catch (NumberFormatException e ) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid num-samples-no-change (s).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("numSampleEqualBeforeExit: " + numSampleEqualBeforeExit);
+
+        String token = "";
+        if(cmd.hasOption("t")) {
+            token = cmd.getOptionValue("t");
+        }
+        System.out.println("token: " + token);
+
+        app =  new FeatureLayerMon(url, sampleRateSec, numSampleEqualBeforeExit, token);
+        app.run();
 
     }
 

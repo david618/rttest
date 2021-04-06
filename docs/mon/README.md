@@ -1,57 +1,55 @@
 ### Mon (Montiors)
 
-Two varieties of monitors counters and sinks.
+#### Overview
 
-- Counters: Periodically get a count from a source (e.g. Count From FeatureLayerMon)
+- When the tool starts it gets the current count and starts sampling count every sampleRateSec seconds (defaults to 5 seconds).
+- When count changes the tool starts collecting sample points. 
+- Starting with Second Sample rates are output.
+- After count stops changing the final line will give the count received and the best fit linear approximation of the rate.  The last sample is excluded from the final rate calculation.
+- After reporting the final count and rate the tool will continue monitoring for count changes.  
+
+Two varieties of monitors and sinks.
+
+- Monitors: Periodically get a count from a source (e.g. Count From FeatureLayerMon)
 - Sinks: Listens (e.g. TCP Port) and counts messages received on that port
 
 These both output results in a Github formatted table.
 
-For example
+#### Example
 
 ```
-java -cp target/rttest.jar com.esri.rttest.mon.TcpSink 8000
-After starting this; create or restart the sending service.
-Once connected you see a 'Thread Started' message for each connection.
-Start Count: 9
+./monElastic -l http://datastore-elasticsearch-client.a4iot-cqvgkj9zrnkn9bcu-services:9200/planes -n 1 -r 10
+url: http://datastore-elasticsearch-client.a4iot-cqvgkj9zrnkn9bcu-services:9200/planes
+sampleRateSec: 10
+numSampleEqualBeforeExit: 1
+username:
+password:
+Start Count: 1280
 Watching for changes in count...  Use Ctrl-C to Exit.
 
 |Query Number|Sample Number|Epoch (ms)    |Time (s) |Count             |Linear Reg. Rate  |Rate From Previous|Rate From First   |
 |------------|-------------|--------------|---------|------------------|------------------|------------------|------------------|
-|          1 |           1 |1563310709188 |       0 |              100 |                  |                  |                  |
-|          2 |           2 |1563310719192 |      10 |              200 |               10 |               10 |               10 |
-|          3 |           3 |1563310729195 |      20 |              300 |               10 |               10 |               10 |
-|          4 |           4 |1563310739199 |      30 |              410 |               10 |               11 |               10 |
-|          5 |           5 |1563310749202 |      40 |              510 |               10 |               10 |               10 |
-|          6 |           6 |1563310759206 |      50 |              610 |               10 |               10 |               10 |
-|          7 |           7 |1563310769210 |      60 |              710 |               10 |               10 |               10 |
-|          8 |           8 |1563310779214 |      70 |              810 |               10 |               10 |               10 |
-|          9 |           9 |1563310789219 |      80 |              910 |               10 |               10 |               10 |
-|         10 |          10 |1563310799222 |      90 |              990 |               10 |                8 |               10 |
+|          1 |           1 |1617739120901 |       0 |            1,000 |                  |                  |                  |
+|          2 |           2 |1617739130903 |      10 |            2,000 |              100 |              100 |              100 |
+|          3 |           3 |1617739141013 |      20 |            3,000 |               99 |               99 |               99 |
+|          4 |           4 |1617739150900 |      29 |            4,000 |              100 |              101 |              100 |
+|          5 |           5 |1617739160901 |      40 |            4,900 |               98 |               90 |               98 |
+|          6 |           6 |1617739170916 |      50 |            6,000 |               99 |              110 |              100 |
+|          7 |           7 |1617739180917 |      60 |            7,000 |              100 |              100 |              100 |
+|          8 |           8 |1617739190902 |      70 |            8,000 |              100 |              100 |              100 |
+|          9 |           9 |1617739200906 |      80 |            8,900 |               99 |               90 |               99 |
+|         10 |          10 |1617739210905 |      90 |           10,000 |              100 |              110 |              100 |
 
 For last 10  seconds the count has not increased...
-Removing sample: 100|990
-Total Count: 990 | Linear Regression Rate:  10 | Linear Regression Standard Error: 0.00 | Average Rate: 10
+Removing sample: 100|10000
+Total Count: 10,000 | Linear Regression Rate:  99 | Linear Regression Standard Error: 0.00 | Average Rate: 99
 
-Start Count: 999
-```
-
-You can copy just the table and it will look like this in GitHub.
-
-
+Start Count: 11280
+Watching for changes in count...  Use Ctrl-C to Exit.
 
 |Query Number|Sample Number|Epoch (ms)    |Time (s) |Count             |Linear Reg. Rate  |Rate From Previous|Rate From First   |
 |------------|-------------|--------------|---------|------------------|------------------|------------------|------------------|
-|          1 |           1 |1563310709188 |       0 |              100 |                  |                  |                  |
-|          2 |           2 |1563310719192 |      10 |              200 |               10 |               10 |               10 |
-|          3 |           3 |1563310729195 |      20 |              300 |               10 |               10 |               10 |
-|          4 |           4 |1563310739199 |      30 |              410 |               10 |               11 |               10 |
-|          5 |           5 |1563310749202 |      40 |              510 |               10 |               10 |               10 |
-|          6 |           6 |1563310759206 |      50 |              610 |               10 |               10 |               10 |
-|          7 |           7 |1563310769210 |      60 |              710 |               10 |               10 |               10 |
-|          8 |           8 |1563310779214 |      70 |              810 |               10 |               10 |               10 |
-|          9 |           9 |1563310789219 |      80 |              910 |               10 |               10 |               10 |
-|         10 |          10 |1563310799222 |      90 |              990 |               10 |                8 |               10 |
+```
 
 #### Fields
 

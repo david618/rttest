@@ -1,5 +1,6 @@
 package com.esri.rttest.mon;
 
+import org.apache.commons.cli.*;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TimeoutException;
@@ -28,8 +29,8 @@ public class KafkaTopicMon extends Monitor {
     @Override
     public Sample getSample() {
 
-        long cnt = -1L;
-        long ts = 0L;
+        long cnt;
+        long ts;
 
         try {
             List<TopicPartition> partitions = consumer.partitionsFor(topic).stream()
@@ -42,7 +43,7 @@ public class KafkaTopicMon extends Monitor {
             Iterator<Entry<TopicPartition, Long>> itTP = endPartitions.entrySet().iterator();
             cnt = 0;
             while (itTP.hasNext()) {
-                cnt += (long) itTP.next().getValue();
+                cnt += itTP.next().getValue();
             }
 
         } catch (Exception e) {
@@ -55,6 +56,7 @@ public class KafkaTopicMon extends Monitor {
 
     }
 
+    public KafkaTopicMon() {}
 
     KafkaConsumer<String, String> consumer;
     String brokers;
@@ -88,10 +90,8 @@ public class KafkaTopicMon extends Monitor {
 
             boolean topicFound = false;
 
-            Iterator<String> tps = consumer.listTopics().keySet().iterator();
-            while (tps.hasNext()) {
+            for (String tp : consumer.listTopics().keySet()) {
 
-                String tp = tps.next();
                 LOG.info(tp);
                 if (this.topic.equals(tp)) {
                     topicFound = true;
@@ -118,42 +118,116 @@ public class KafkaTopicMon extends Monitor {
 
     public static void main(String[] args) {
 
-        String broker = "";
-        String topic = "";
-        int sampleRateSec = 10;
-        int numSampleEqualBeforeExit = 1;
+        KafkaTopicMon app = new KafkaTopicMon();
+        String appName = app.getClass().getSimpleName();
 
-        LOG.info("Entering application.");
-        int numargs = args.length;
-        if (numargs < 2 ) {
-            System.err.println("Usage: KakfaTopicMon [brokers] [topic] (sampleRateSec=10) (numSampleEqualBeforeExit=1)");
-            System.err.println("Example Command: KafkaTopicMon broker:9092 planes 30");
-            System.err.println("");
-            System.err.println("brokers: Server name or ip of broker(s)");
-            System.err.println("topic: Kafka Topic");
-            System.err.println("sampleRateSecs: How many seconds to wait between samples.");
-            System.err.println("numSampleEqualBeforeExit: Summarize and reset after this many samples where count does not change.");
-            System.err.println("");
-        } else {
-            broker = args[0];
-            topic = args[1];
-            if (numargs > 2) {
-                sampleRateSec = Integer.parseInt(args[2]);
-                if (sampleRateSec < 1) {
-                    System.err.println("SampleRateSec must be greater than 0");
-                    System.exit(1);
-                }            }
-            if (numargs > 3) {
-                numSampleEqualBeforeExit = Integer.parseInt(args[3]);
-                if (numSampleEqualBeforeExit < 1) {
-                    System.err.println("numSampleEqualBeforeExit must be greater than 1");
-                    System.exit(2);
-                }
-            }
+        Options options = new Options();
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.setWidth(160);
+        formatter.setLeftPadding(1);
 
-            KafkaTopicMon ktm = new KafkaTopicMon(broker, topic, sampleRateSec, numSampleEqualBeforeExit);
-            ktm.run();
+        Option helpOp = Option.builder()
+                .longOpt("help")
+                .desc("display help and exit")
+                .build();
+
+        Option brokersOp = Option.builder("b")
+                .longOpt("brokers")
+                .required()
+                .hasArg()
+                .desc("[Required] Brokers (e.g. broker:9092)")
+                .build();
+
+        Option topicOp = Option.builder("t")
+                .longOpt("topic")
+                .required()
+                .hasArg()
+                .desc("[Required] Kafka Topic ")
+                .build();
+
+        Option sampleRateSecOp = Option.builder("r")
+                .longOpt("sample-rate-sec")
+                .hasArg()
+                .desc("Sample Rate Seconds; defaults to 10")
+                .build();
+
+        Option resetCountOp = Option.builder("n")
+                .longOpt("num-samples-no-change")
+                .hasArg()
+                .desc("Reset after number of this number of samples of no change in count; defaults to 1")
+                .build();
+
+
+        options.addOption(helpOp);
+        options.addOption(brokersOp);
+        options.addOption(topicOp);
+        options.addOption(sampleRateSecOp);
+        options.addOption(resetCountOp);
+
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = null;
+        try {
+            cmd = parser.parse(options, args);
+
+        } catch (ParseException e) {
+            System.err.println(e.getMessage());
+            System.err.println();
+            formatter.printHelp(appName, options);
+            System.exit(1);
         }
+
+        if (cmd.hasOption("--help")) {
+            System.out.println("Send lines from a file to an Http Server");
+            System.out.println();
+            formatter.printHelp(appName, options);
+            System.exit(0);
+        }
+
+        String broker = null;
+        if (cmd.hasOption("b")) {
+            broker = cmd.getOptionValue("b");
+        }
+        System.out.println("broker: " + broker);
+
+        String topic = null;
+        if (cmd.hasOption("t")) {
+            topic = cmd.getOptionValue("t");
+        }
+        System.out.println("topic: " + topic);
+
+        int sampleRateSec = 10;
+        if(cmd.hasOption("r")) {
+            try {
+                sampleRateSec = Integer.parseInt(cmd.getOptionValue("r"));
+            } catch (NumberFormatException e ) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid sample-rate-sec (r).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("sampleRateSec: " + sampleRateSec);
+
+        int numSampleEqualBeforeExit = 1;
+        if(cmd.hasOption("n")) {
+            try {
+                numSampleEqualBeforeExit = Integer.parseInt(cmd.getOptionValue("n"));
+            } catch (NumberFormatException e ) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid num-samples-no-change (s).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("numSampleEqualBeforeExit: " + numSampleEqualBeforeExit);
+
+
+        app =  new KafkaTopicMon(broker, topic, sampleRateSec, numSampleEqualBeforeExit);
+        app.run();
 
     }
 

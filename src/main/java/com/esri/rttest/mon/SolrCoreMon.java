@@ -15,8 +15,7 @@
  *
  * Contributors:
  *     David Jennings
- */
-/**
+ *
  * Monitors a Solr Index.
  * Periodically does a count and when count is changing collects samples.
  * After three samples are made outputs rates based on linear regression.
@@ -26,6 +25,7 @@
  */
 package com.esri.rttest.mon;
 
+import org.apache.commons.cli.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
@@ -45,8 +45,8 @@ public class SolrCoreMon extends Monitor {
 
         LOG.info("Checking Count");
 
-        long cnt = -1L;
-        long ts = 0L;
+        long cnt ;
+        long ts;
 
         try {
             String url = solrSearchUrl + "/select?q=*:*&wt=json&rows=0";
@@ -64,59 +64,145 @@ public class SolrCoreMon extends Monitor {
         return new Sample(cnt, ts);
     }
 
-    String solrSearchUrl;
-    String user;
-    String userpw;
-    int sampleRateSec;
-    boolean sendStdout;
+    public SolrCoreMon() {}
 
-    public SolrCoreMon(String solrSearchUrl, int sampleRateSec, String user, String userpw) {
+    String solrSearchUrl;
+    String username;
+    String password;
+    int sampleRateSec;
+
+    public SolrCoreMon(String solrSearchUrl, int sampleRateSec, String username, String password) {
 
         this.solrSearchUrl = solrSearchUrl;
         this.sampleRateSec = sampleRateSec;
-        this.user = user;
-        this.userpw = userpw;
+        this.username = username;
+        this.password = password;
     }
 
 
     public static void main(String[] args) {
 
-        String solrSearchUrl = "";
-        String username = "";   // default to empty string
-        String password = "";  // default to empty string
-        int sampleRateSec = 5; // default to 5 seconds.  
+        SolrCoreMon app = new SolrCoreMon();
+        String appName = app.getClass().getSimpleName();
 
-        LOG.info("Entering application.");
-        int numargs = args.length;
-        if (numargs < 1) {
-            System.err.print("Usage: SolrCoreMon [SolrSearchURL] (sampleRateSec=5) ((username=\"\") (password=\"\"))  \n");
-            System.err.println("Example: SolrCoreMon http://server:8983/solr/planes 20");
-            System.err.println("");
-            System.err.println("SolrSearchURL: Solr Search URL");
-            System.err.println("sampleRateSecs: How many seconds to wait between samples.");
-            System.err.println("numSampleEqualBeforeExit: Summarize and reset after this many samples where count does not change.");
-            System.err.println("username: Solr username");
-            System.err.println("password: Solr password");
-            System.err.println("");
-        } else {
-            solrSearchUrl = args[0];
+        Options options = new Options();
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.setWidth(160);
+        formatter.setLeftPadding(1);
 
-            if (numargs > 1) {
-                sampleRateSec = Integer.parseInt(args[1]);
-            }
+        Option helpOp = Option.builder()
+                .longOpt("help")
+                .desc("display help and exit")
+                .build();
 
-            if (numargs > 2 ) {
-                username = args[2];
-            }
+        Option urlOp = Option.builder("l")
+                .longOpt("solr-core-url")
+                .required()
+                .hasArg()
+                .desc("[Required] Solr Core URL (e.g. http://solr:8933/solr/planes)")
+                .build();
 
-            if (numargs > 3 ) {
-                password = args[3];
-            }
+        Option sampleRateSecOp = Option.builder("r")
+                .longOpt("sample-rate-sec")
+                .hasArg()
+                .desc("Sample Rate Seconds; defaults to 10")
+                .build();
 
-            SolrCoreMon t = new SolrCoreMon(solrSearchUrl, sampleRateSec, username, password);
-            t.run();
+        Option resetCountOp = Option.builder("n")
+                .longOpt("num-samples-no-change")
+                .hasArg()
+                .desc("Reset after number of this number of samples of no change in count; defaults to 1")
+                .build();
 
+        Option usernameOp = Option.builder("u")
+                .longOpt("username")
+                .hasArg()
+                .desc("Mqtt Server Username; default no username")
+                .build();
+
+        Option passwordOp = Option.builder("p")
+                .longOpt("password")
+                .hasArg()
+                .desc("Mqtt Server Password; default no password")
+                .build();
+
+        options.addOption(helpOp);
+        options.addOption(urlOp);
+        options.addOption(sampleRateSecOp);
+        options.addOption(resetCountOp);
+        options.addOption(usernameOp);
+        options.addOption(passwordOp);
+
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = null;
+        try {
+            cmd = parser.parse(options, args);
+
+        } catch (ParseException e) {
+            System.err.println(e.getMessage());
+            System.err.println();
+            formatter.printHelp(appName, options);
+            System.exit(1);
         }
+
+        if (cmd.hasOption("--help")) {
+            System.out.println("Send lines from a file to an Elastic Server");
+            System.out.println();
+            formatter.printHelp(appName, options);
+            System.exit(0);
+        }
+
+        String solrSearchUrl = null;
+        if (cmd.hasOption("l")) {
+            solrSearchUrl = cmd.getOptionValue("l");
+        }
+        System.out.println("url: " + solrSearchUrl);
+
+        int sampleRateSec = 10;
+        if (cmd.hasOption("r")) {
+            try {
+                sampleRateSec = Integer.parseInt(cmd.getOptionValue("r"));
+            } catch (NumberFormatException e) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid sample-rate-sec (r).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("sampleRateSec: " + sampleRateSec);
+
+        int numSampleEqualBeforeExit = 1;
+        if (cmd.hasOption("n")) {
+            try {
+                numSampleEqualBeforeExit = Integer.parseInt(cmd.getOptionValue("n"));
+            } catch (NumberFormatException e) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid num-samples-no-change (s).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("numSampleEqualBeforeExit: " + numSampleEqualBeforeExit);
+
+        String username = "";
+        if (cmd.hasOption("u")) {
+            username = cmd.getOptionValue("u");
+        }
+        System.out.println("username: " + username);
+
+
+        String password = "";
+        if (cmd.hasOption("p")) {
+            password = cmd.getOptionValue("p");
+        }
+        System.out.println("password: " + password);
+
+        app = new SolrCoreMon(solrSearchUrl, sampleRateSec, username, password);
+        app.run();
 
     }
 }

@@ -10,9 +10,11 @@ import java.io.IOException;
 public class HttpSinkHandler implements HttpHandler {
 
     long cnt = 0L;
+    boolean printMessages;
 
-    public HttpSinkHandler() {
+    public HttpSinkHandler(boolean printMessages) {
         cnt = 0L;
+        this.printMessages = printMessages;
     }
 
     public long getCnt() {
@@ -31,6 +33,16 @@ public class HttpSinkHandler implements HttpHandler {
 
             if (httpExchange.getRequestMethod().equalsIgnoreCase("POST")) {
                 cnt += 1;
+
+                if (printMessages) {
+                    byte[] requestBytes = new byte[100];
+                    int numBytes = httpExchange.getRequestBody().read(requestBytes, 0, 100);
+                    String more = "";
+                    if (numBytes == -1) {
+                        more = "...";
+                    }
+                    System.out.println(requestBytes.toString() + more);
+                }
 
             }
 

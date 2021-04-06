@@ -1,5 +1,6 @@
 package com.esri.rttest.mon;
 
+import org.apache.commons.cli.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -12,153 +13,253 @@ import java.util.Properties;
 
 
 public class TimescaleSqlMon extends Monitor {
-  private static final Logger LOG = LogManager.getLogger(TimescaleSqlMon.class);
+    private static final Logger LOG = LogManager.getLogger(TimescaleSqlMon.class);
 
-  @Override
-  public void countEnded() {
+    @Override
+    public void countEnded() {
 
-  }
+    }
 
-  @Override
-  public Sample getSample() {
-    long cnt = -1L;
-    long ts = 0L;
+    @Override
+    public Sample getSample() {
+        long cnt = -1L;
+        long ts;
 
-    try {
-      if (connection == null || connection.isClosed()) {
-        //String url = "jdbc:postgresql://$kTimescaleHost:5432/$schema";
-        Properties properties = new Properties();
-        properties.put("user", "realtime");
-        properties.put("password", "esri.test");
-        connection = DriverManager.getConnection(connectionUrl, properties);
-      }
-
-
-      Statement statement = connection.createStatement();
-      if (hyperTablePrefix == null || "".equalsIgnoreCase(hyperTablePrefix)) {
-        //identify sub-tables of hypertable
-        ResultSet chunks = statement.executeQuery("SELECT show_chunks('" + schema + "." + tableName + "')");
-
-        if (chunks.next()) {
-          //chunk table name format: _hyper_[tableid]_[chunkid]_chunk
-          String fullTableName = chunks.getString(1);
-          String chunkTableName = fullTableName.split("\\.")[1];
-          String[] parts = chunkTableName.split("_");
-          StringBuilder prefix = new StringBuilder();
-          prefix.append("_");
-          for (int i = 0; i < parts.length - 2; i++) {
-            if (!"".equalsIgnoreCase(parts[i])) {
-              prefix.append(parts[i]);
-              prefix.append("_");
+        try {
+            if (connection == null || connection.isClosed()) {
+                //String url = "jdbc:postgresql://$kTimescaleHost:5432/$schema";
+                Properties properties = new Properties();
+                properties.put("user", "realtime");
+                properties.put("password", "esri.test");
+                connection = DriverManager.getConnection(connectionUrl, properties);
             }
-          }
-          hyperTablePrefix = prefix.toString();
 
+
+            Statement statement = connection.createStatement();
+            if (hyperTablePrefix == null || "".equalsIgnoreCase(hyperTablePrefix)) {
+                //identify sub-tables of hypertable
+                ResultSet chunks = statement.executeQuery("SELECT show_chunks('" + schema + "." + tableName + "')");
+
+                if (chunks.next()) {
+                    //chunk table name format: _hyper_[tableid]_[chunkid]_chunk
+                    String fullTableName = chunks.getString(1);
+                    String chunkTableName = fullTableName.split("\\.")[1];
+                    String[] parts = chunkTableName.split("_");
+                    StringBuilder prefix = new StringBuilder();
+                    prefix.append("_");
+                    for (int i = 0; i < parts.length - 2; i++) {
+                        if (!"".equalsIgnoreCase(parts[i])) {
+                            prefix.append(parts[i]);
+                            prefix.append("_");
+                        }
+                    }
+                    hyperTablePrefix = prefix.toString();
+
+                }
+                chunks.close();
+            }
+
+            ResultSet hyperTableCount = statement.executeQuery("SELECT sum(n_tup_ins) from pg_stat_user_tables where" +
+                    " relname like '" + hyperTablePrefix + "%';");
+
+            if (hyperTableCount.next()) {
+                cnt = hyperTableCount.getLong(1);
+            }
+            hyperTableCount.close();
+            statement.close();
+
+            ts = System.currentTimeMillis();
+
+            return new Sample(cnt, ts);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-        chunks.close();
-      }
 
-      ResultSet hyperTableCount = statement.executeQuery("SELECT sum(n_tup_ins) from pg_stat_user_tables where" +
-              " relname like '" + hyperTablePrefix + "%';");
+        ts = System.currentTimeMillis();
 
-      if (hyperTableCount.next()) {
-        cnt = hyperTableCount.getLong(1);
-      }
-      hyperTableCount.close();
-      statement.close();
+        return new Sample(cnt, ts);
+    }
 
-      ts = System.currentTimeMillis();
 
-      return new Sample(cnt, ts);
+    public TimescaleSqlMon() {
+    }
 
-    } catch (SQLException e) {
+    String connectionUrl;
+    String username;
+    String password;
+    String schema;
+    String tableName;
+    String hyperTablePrefix;
+    Connection connection;
+
+    public TimescaleSqlMon(String connectionUrl, String schema, String tableName, int sampleRateSec, int numSampleEqualBeforeExit, String username, String password) {
+
+        this.connectionUrl = connectionUrl;
+        this.username = username;
+        this.password = password;
+        this.schema = schema;
+        this.tableName = tableName;
+
+        this.sampleRateSec = sampleRateSec;
+        this.numSampleEqualBeforeExit = numSampleEqualBeforeExit;
 
     }
 
-    ts = System.currentTimeMillis();
+    public static void main(String[] args) {
 
-    return new Sample(cnt, ts);
-  }
+        TimescaleSqlMon app = new TimescaleSqlMon();
+        String appName = app.getClass().getSimpleName();
 
+        Options options = new Options();
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.setWidth(160);
+        formatter.setLeftPadding(1);
 
+        Option helpOp = Option.builder()
+                .longOpt("help")
+                .desc("display help and exit")
+                .build();
 
-  String connectionUrl;
-  String user;
-  String userpw;
-  String schema;
-  String tableName;
-  String hyperTablePrefix;
-  Connection connection;
+        Option urlOp = Option.builder("l")
+                .longOpt("timescale-url")
+                .required()
+                .hasArg()
+                .desc("[Required] Timescale DB URL (e.g. jdbc:postgresql://HostName:5432/dbName)")
+                .build();
 
-  public TimescaleSqlMon(String connectionUrl, String schema, String tableName, int sampleRateSec, int numSampleEqualBeforeExit, String user, String userpw) {
-
-    this.connectionUrl = connectionUrl;
-    this.user = user;
-    this.userpw = userpw;
-    this.schema  = schema;
-    this.tableName = tableName;
-
-    this.sampleRateSec = sampleRateSec;
-    this.numSampleEqualBeforeExit = numSampleEqualBeforeExit;
-
-  }
-
-  public static void main(String[] args) {
-
-    String connectionUrl = "";
-    String schema = "";
-    String tableName = "";
-    int sampleRateSec = 10; // default to 10 seconds.
-    int numSampleEqualBeforeExit = 1;
-
-    String username = "";   // default to empty string
-    String password = "";  // default to empty string
+        Option schemaOp = Option.builder("s")
+                .longOpt("schema")
+                .required()
+                .hasArg()
+                .desc("[Required] Timescale schema (e.g. realtime)")
+                .build();
 
 
-    LOG.info("Entering application.");
-    int numargs = args.length;
-    if (numargs < 3) {
-      System.err.print("Usage: TimescaleSqlMon [connectionUrl] [schema] [tableName] (sampleRateSec=10)  (numSampleEqualBeforeExit=1) (username=\"\") (password=\"\")  \n");
-      System.err.println("Example: TimescaleSqlMon jdbc:postgresql://HostName:5432/dbName realtime safegraph 20 user pass");
-      System.err.println("");
-      System.err.println("connectionUrl: Database connection string.");
-      System.err.println("schema: Database schema");
-      System.err.println("tableName: Database table name");
-      System.err.println("sampleRateSecs: How many seconds to wait between samples.");
-      System.err.println("numSampleEqualBeforeExit: Summarize and reset after this many samples where count does not change.");
-      System.err.println("username: Database username");
-      System.err.println("password: Database password");
-      System.err.println("");
+        Option tableOp = Option.builder("t")
+                .longOpt("table")
+                .required()
+                .hasArg()
+                .desc("[Required] Timescale table (e.g. safegraph)")
+                .build();
 
-    } else {
-      connectionUrl = args[0];
-      schema = args[1];
-      tableName = args[2];
 
-      if (numargs > 3) {
-        sampleRateSec = Integer.parseInt(args[3]);
-      }
+        Option sampleRateSecOp = Option.builder("r")
+                .longOpt("sample-rate-sec")
+                .hasArg()
+                .desc("Sample Rate Seconds; defaults to 10")
+                .build();
 
-      if (numargs > 4) {
-        numSampleEqualBeforeExit = Integer.parseInt(args[4]);
-        if (numSampleEqualBeforeExit < 1) {
-          System.err.println("numSampleEqualBeforeExit must be greater than 1");
-          System.exit(2);
+        Option resetCountOp = Option.builder("n")
+                .longOpt("num-samples-no-change")
+                .hasArg()
+                .desc("Reset after number of this number of samples of no change in count; defaults to 1")
+                .build();
+
+        Option usernameOp = Option.builder("u")
+                .longOpt("username")
+                .hasArg()
+                .desc("Mqtt Server Username; default no username")
+                .build();
+
+        Option passwordOp = Option.builder("p")
+                .longOpt("password")
+                .hasArg()
+                .desc("Mqtt Server Password; default no password")
+                .build();
+
+        options.addOption(helpOp);
+        options.addOption(urlOp);
+        options.addOption(schemaOp);
+        options.addOption(tableOp);
+        options.addOption(sampleRateSecOp);
+        options.addOption(resetCountOp);
+        options.addOption(usernameOp);
+        options.addOption(passwordOp);
+
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = null;
+        try {
+            cmd = parser.parse(options, args);
+
+        } catch (ParseException e) {
+            System.err.println(e.getMessage());
+            System.err.println();
+            formatter.printHelp(appName, options);
+            System.exit(1);
         }
-      }
 
-      if (numargs > 5) {
-        username = args[5];
-      }
+        if (cmd.hasOption("--help")) {
+            System.out.println("Send lines from a file to an Elastic Server");
+            System.out.println();
+            formatter.printHelp(appName, options);
+            System.exit(0);
+        }
 
-      if (numargs > 6) {
-        password = args[6];
-      }
+        String connectionUrl = null;
+        if (cmd.hasOption("l")) {
+            connectionUrl = cmd.getOptionValue("l");
+        }
+        System.out.println("connectionUrl: " + connectionUrl);
 
-      TimescaleSqlMon t = new TimescaleSqlMon(connectionUrl, schema, tableName, sampleRateSec, numSampleEqualBeforeExit, username, password);
-      t.run();
+        String schema = null;
+        if (cmd.hasOption("s")) {
+            schema = cmd.getOptionValue("s");
+        }
+        System.out.println("schema: " + schema);
 
+        String tableName = null;
+        if (cmd.hasOption("t")) {
+            tableName = cmd.getOptionValue("t");
+        }
+        System.out.println("tableName: " + tableName);
+
+        int sampleRateSec = 10;
+        if (cmd.hasOption("r")) {
+            try {
+                sampleRateSec = Integer.parseInt(cmd.getOptionValue("r"));
+            } catch (NumberFormatException e) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid sample-rate-sec (r).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("sampleRateSec: " + sampleRateSec);
+
+        int numSampleEqualBeforeExit = 1;
+        if (cmd.hasOption("n")) {
+            try {
+                numSampleEqualBeforeExit = Integer.parseInt(cmd.getOptionValue("n"));
+            } catch (NumberFormatException e) {
+                // Rate Must be Integer
+                System.out.println();
+                System.out.println("Invalid num-samples-no-change (s).  Must be an Integer");
+                System.out.println();
+                formatter.printHelp(appName, options);
+                System.exit(1);
+            }
+        }
+        System.out.println("numSampleEqualBeforeExit: " + numSampleEqualBeforeExit);
+
+        String username = "";
+        if (cmd.hasOption("u")) {
+            username = cmd.getOptionValue("u");
+        }
+        System.out.println("username: " + username);
+
+
+        String password = "";
+        if (cmd.hasOption("p")) {
+            password = cmd.getOptionValue("p");
+        }
+        System.out.println("password: " + password);
+
+        app = new TimescaleSqlMon(connectionUrl, schema, tableName, sampleRateSec, numSampleEqualBeforeExit, username, password);
+        app.run();
     }
 
-  }
 }
+

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+java -cp target/rttest.jar com.esri.rttest.mon.WebSocketSink $*
+
