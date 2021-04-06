@@ -1,6 +1,6 @@
 # rttest
 
-Real Time Test (rttest) provides tools for sending lines (producers), receiving data (sinks), and monitoring data stores (monitors). 
+Real Time Test (rttest) provides tools for sending lines (send), receiving data (sink), and monitoring data (mon). 
 
 
 ## Installation
@@ -27,8 +27,7 @@ sudo apt-get install maven
 Install Java.   Try ``java -version``.  If nothing installed you can install using brew. 
 
 ```
- brew tap AdoptOpenJDK/openjdk
- brew cask install jdk-12.0.1.jdk 
+ brew install openjdk@11 
 ```
 
 Install git and maven
@@ -39,18 +38,23 @@ brew install maven
 ```
 
 #### Windows 
-- Install [Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) 
-  -- Java SE Development Kit Windows x64.  
-  -- Accept Defaults for installs.
-  -- Open Windows Advanced System Settings; Environemnt Variables
-  -- Create a new System Variable; Variable name: JAVA_HOME, Variable value: C:\Program Files\Java\jdk1.8.0_121.  
-  -- NOTE: The last number should match the version of Java you installed. You can use Explorer and navigate to the folder. then cut and paste the value.
+
+##### Windows Subsystem for Linux (Easiest)
+  - https://docs.microsoft.com/en-us/windows/wsl/install-win10 
+  - Manual Install Steps are easy and work fine
+  - Use Ubuntu.  This already had git installed; all you need is maven (Which will install Java)
+
+
+##### Install tools on Windows
+
+- Install [Java](https://adoptopenjdk.net/) 
 - Install [Git](https://git-scm.com/download/win) Download 64-bit Git for Windows Setup. Defaults for all installation dialogs. 
-  -- You can use defaults during install
+  - You can use defaults during install
 - Install [Maven](https://maven.apache.org/download.cgi)
-  -- Download the Binary zip archive and unzip (I usually put it in C:\) 
-  -- Open Windows Advanced System Settings; Environemnt Variables
-  -- Edit the Path variable and append Maven to the path. Append a semicolon followed by path to Maven bin folder (e.g. ;C:\apache-maven-3.5.0\bin).  Cut and paste is helpful.
+  - Download the Binary zip archive and unzip (I usually put it in C:\) 
+  - Open Windows Advanced System Settings; Environemnt Variables
+  - Edit the Path variable and append Maven to the path. Append a semicolon followed by path to Maven bin folder (e.g. ;C:\apache-maven-3.5.0\bin).  Cut and paste is helpful.
+
 
 ### Build rttest
 
@@ -102,28 +106,29 @@ Outputs a list of the tools and description of each tool.
 
 The individual tools are ran using.
 
-```
-java -cp target/rttest.jar com.esri.rttest.mon.Elasticsearch
-```
-
 For example:
 
 ```
 java -cp target/rttest.jar com.esri.rttest.mon.ElasticsearchMon
 ```
 
-If a tool is ran without arguments it will output a list of arguments.
-
-For example:
+If you run a tool without any paratemers help is displayed. 
 
 ```
 java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon
-Usage: ElasticIndexMon [ElasticsearchUrl] (sampleRateSec=10) (numSampleEqualBeforeExit=1) (username) (password)
-Example: java -cp target/rttest.jar com.esri.rttest.mon.ElasticIndexMon http://coordinator.sats-ds01.l4lb.thisdcos.directory:9200/planes/planes 20 elasic changeme
+Missing required option: l
+
+usage: ElasticIndexMon
+    --help                          display help and exit
+ -l,--elastic-index-url <arg>       [Required] Elastic Index URL (e.g. http://es:9200/planes)
+ -n,--num-samples-no-change <arg>   Reset after number of this number of samples of no change in count; defaults to 1
+ -p,--password <arg>                Mqtt Server Password; default no password
+ -r,--sample-rate-sec <arg>         Sample Rate Seconds; defaults to 10
+ -u,--username <arg>                Mqtt Server Username; default no username
 ```
 
 
-The tools are in two major groups Monitor (mon) and Senders (send). 
+The tools are in two major groups Monitor (mon) and Senders (send).  The mon group also includes a few (sink) tools.  
 
 For more details
 
@@ -132,9 +137,10 @@ These tools montior counts or listen for messages and report rates.
 - [ElasticIndexMon](docs/mon/ElasticIndexMon.md) : Monitor count and rate for Elasticsearch Index.
 - [FeatureLayerMon](docs/mon/FeatureLayerMon.md) : Monitor count and rate for Feature Layer.
 - [KafkaTopicMon](docs/mon/KafkaTopicMon.md) : Monitor count and rate for Kafka Topic.
-- [SolrIndexMon](docs/mon/SolrIndexMon.md) : Monitor count and rate for Solr Index.
+
+## Sinks (mon)
+- [HttpSink](docs/mon/HttpSink.md) : Receive lines post over Http; report count and rate.
 - [TcpSink](docs/mon/TcpSink.md) : Receive lines on a TCP port; report count and rate.
-- [TimescaleSqlMon](docs/mon/TimescaleSqlMon.md) : Monitor count and rate for Timescale DB Hypertable.
 - [WebSocketSink](docs/mon/WebSocketSink.md) : Consume lines from WebSocket; report count and rate.
 
 ## Senders (send)
