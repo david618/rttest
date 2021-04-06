@@ -1,55 +1,48 @@
-### com.esri.rttest.mon.FeatureLayerMon2
+### com.esri.rttest.mon.FeatureLayerMon
 
-After Started
-- Gets a count for the Feature-Layer
-- When count changes a sample is collected
-- After three samples a best fit rate is also displayed
-- After count stops increasing; last sample removed and final count and best fit rate are displayed
-- The app continues to watch for count changes.  Use **Ctrl-C** to stop.
+Monitors an Esri Feature Layer count and measures and reports rate of change in count.
 
+#### Help
 
+Bash Command: monFeatureLayer
 
-<pre>
-$ java -cp rttest-big.jar com.esri.rttest.mon.FeatureLayerMon2 
-Usage: FeatureLayerMon (Feature-Layer) [Seconds-Between-Samples=5]  
-</pre>
+```
+./monFeatureLayer
+Missing required option: l
 
-Examples:
+usage: FeatureLayerMon
+    --help                          display help and exit
+ -l,--feature-layer-url <arg>       [Required] Feature Layer URL
+ -n,--num-samples-no-change <arg>   Reset after number of this number of samples of no change in count; defaults to 1
+ -r,--sample-rate-sec <arg>         Sample Rate Seconds; defaults to 10
+ -t,--token <arg>                   Esri Token; defaults to empty string
+```
 
-<pre>
-$ java -cp Simulator.jar com.esri.rttest.mon.FeatureLayerMon2 http://dj52web.westus.cloudapp.azure.com/arcgis/rest/services/Hosted/FAA-Stream/FeatureServer/0
-</pre>
+#### Example
 
+```
+FLYR=https://us-iotdev.arcgis.com/devdeer/cqvgkj9zrnkn9bcu/maps/arcgis/rest/services/devdeer_cqvg_planes1x500_lyr/FeatureServer/0
+TOKEN=$(cat ~/.itemctl/devext_publisher.token)
+./monFeatureLayer -l ${FLYR} -n 3 -r 60 -t ${TOKEN}
+```
 
-<pre>
-java -cp target/rttest.jar com.esri.rttest.mon.FeatureLayerMon2 http://localhost/bbc0398c-d19e-493c-aefc-c382d2eb1c05/arcgis/rest/services/planes-bat/FeatureServer/0  60
-</pre>
+```
+url: https://us-iotdev.arcgis.com/devdeer/cqvgkj9zrnkn9bcu/maps/arcgis/rest/services/devdeer_cqvg_planes1x500_lyr/FeatureServer/0
+sampleRateSec: 60
+numSampleEqualBeforeExit: 3
+token: -ef8Ni_-57J1O83ERzhoBYp-8vGWuprQfwkysmm9Oi82q8rQOo5Zjt4ueBnT-0lmYwNJUjzIiAaozYES7eKCCmexiOkNX_TFvDASa7FFtxnROESV-uzvSZBVdi9hR_lpsrBRYfGFpL71Ggzmv8GvZEIUckUCUqtgr0Y3Pwm0Zqy_ewTKjjyxGW5Wayw7b1nEqv8_9wFX3cRTsHvAXpyqFC7Z_dxOK_2kd_6L0_D7kxs.
+Start Count: 10881050
+Watching for changes in count...  Use Ctrl-C to Exit.
 
-Seconds-Between-Samples is 60.
+|Query Number|Sample Number|Epoch (ms)    |Time (s) |Count             |Linear Reg. Rate  |Rate From Previous|Rate From First   |
+|------------|-------------|--------------|---------|------------------|------------------|------------------|------------------|
+|          1 |           1 |1617740721301 |       0 |           29,266 |                  |                  |                  |
+|          2 |           2 |1617740781294 |      59 |           59,139 |              498 |              498 |              498 |
+|          3 |           3 |1617740841299 |     119 |           89,117 |              499 |              500 |              499 |
+|          4 |           4 |1617740901290 |     179 |          118,732 |              497 |              494 |              497 |
+```
 
-Example Output:
+Use **Ctrl-C** to stop.
 
-<pre>
-1,1518064100919,2100979
-2,1518064221266,5601063
-3,1518064341522,8162436,25193
-4,1518064461598,10017645,21886
-Removing: 1518064461598,10017645
-10017645 , 25193.26
-</pre>
+Samples the FeatureLayer count every 60 seconds. If the count doesn't change for 3 times in a row; output summary and reset. 
 
-- Sample Rows: Sample Number, System Time Milliseconds, Current Count, (Rate)
-- Final Line: Number Samples, Rate 
-
-
-
-To turn restore refresh rate for index for planes-bat index running on DC/OS elasticsearch named sats-ds01.
-
-<pre>
-curl -u elastic:changeme -XPUT data.sats-ds01.l4lb.thisdcos.directory:9200/planes-bat/_settings -H 'Content-Type: application/json' -d'
-{
-    "index" : {
-        "refresh_interval" : "1s"
-    }
-}
-'</pre>

@@ -7,62 +7,51 @@ For example send/Elasticsearch sends lines of json from a file to Elasticsearch.
 #### Example Output
 
 ```
-java -cp target/rttest.jar com.esri.rttest.send.Tcp
-Usage: Tcp [serverPort] [file] [desiredRatePerSec] [numToSend] (reuseFile=true)
-Djennings1:rttest davi5017$ java -cp target/rttest.jar com.esri.rttest.send.Tcp localhost:8000 planes.csv 10 1000
-localhost:8000
-ip: localhost
-port:8000
-path:
-protocol:http
-WARNING: An illegal reflective access operation has occurred
-WARNING: Illegal reflective access by org.xbill.DNS.ResolverConfig (file:/Users/davi5017/github/rttest/target/lib/dnsjava-2.1.8.jar) to method sun.net.dns.ResolverConfiguration.open()
-WARNING: Please consider reporting this to the maintainers of org.xbill.DNS.ResolverConfig
-WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
-WARNING: All illegal access operations will be denied in a future release
+./sendKafka -b gateway-cp-kafka.a4iot-cqvgkj9zrnkn9bcu-services:9092 -t planes -r 250 -n 10000 -f planes.csv
+broker: gateway-cp-kafka.a4iot-cqvgkj9zrnkn9bcu-services:9092
+topic: planes
+file: planes.csv
+desiredRatePerSec: 250
+numToSend: 10000
+reuseFile : true
 Start Send
 Use Ctrl-C to Abort.
 
 |Number Sent         |Current Rate Per Sec|Overall Rate Per Sec|
 |--------------------|--------------------|--------------------|
-|                 10 |                 10 |                 10 |
-|                 20 |                 10 |                 10 |
-|                 30 |                 10 |                 10 |
-|                 40 |                 10 |                 10 |
-|                 50 |                 10 |                 10 |
-|                 60 |                 10 |                 10 |
-|                 70 |                 10 |                 10 |
-
+|                250 |                250 |                250 |
+|                500 |                250 |                250 |
+|                750 |                251 |                250 |
+|               1000 |                250 |                250 |
+|               1250 |                250 |                250 |
+|               1500 |                250 |                250 |
+|               1750 |                250 |                250 |
+...
+|               8000 |                250 |                250 |
+|               8250 |                250 |                250 |
+|               8500 |                250 |                250 |
+|               8750 |                251 |                250 |
+|               9000 |                250 |                250 |
+|               9250 |                250 |                250 |
+|               9500 |                250 |                250 |
+|               9750 |                250 |                250 |
+|              10000 |                250 |                250 |
+Done
 ```
-The output includes a Github formated table.
 
-|Number Sent         |Current Rate Per Sec|Overall Rate Per Sec|
-|--------------------|--------------------|--------------------|
-|                 10 |                 10 |                 10 |
-|                 20 |                 10 |                 10 |
-|                 30 |                 10 |                 10 |
-|                 40 |                 10 |                 10 |
-|                 50 |                 10 |                 10 |
-|                 60 |                 10 |                 10 |
-|                 70 |                 10 |                 10 |
 
-Fields
-- Number Sent: Number of messages Sent
-- Current Rate Per Sec: The rate between this sample and previous
-- Overall Rate Per Sec: The rate from this sample and beginning
 
 #### Overview
 
-Each tool takes a requestedRatePerSecond. 
+Each tool has input of desiredRate. 
 
-The tool will send that many sample in a burst; then wait for the remainder of the second before sending next batch.
+The tool will try to send (desiredRate) number of lines each second.
 
-The tool monitors the actual overall rate and adjusts the wait time to try and achieve the requested rate.
+The lines are send in a burst (as fast as hardware supports) then pauses for the reminder of that second. 
 
-Because of limitations in network bandwidth or other hardware the sender may not be able to achieve the requested rate.
+It it takes longer than a second the tool to send desiredRate of samples; the actual rate send will fall short of the desiredRate.
 
-In some cases it may be possible to get higher rates by running mulitple instances of a tool.
-
+The actual rate it reported every desiredRate samples sent. 
 
 #### Creating Senders
 
