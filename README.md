@@ -190,17 +190,22 @@ rttest-send includes addition larger planes datasets.
 For example, from project root run docker build.
 
 ```
-docker build -t david62243/rttest-mon:20190718 -f docker/Dockerfile-rttest-mon .
+docker build -t david62243/rttest-mon:20210406 -f docker/Dockerfile-rttest-mon .
 ``` 
 
-This will build image with tag: ``david62243/rttest-mon:20190718``.  The tage includes a version number. In this case 20190718 (Date Tag).
+This will build image with tag: ``david62243/rttest-mon:20210406``.  The tage includes a version number. In this case 20210406 (Date Tag).
 
 
 Then pushed the image to Docker Hub
 
 ```$xslt
 docker login
-docker push david62243/rttest-mon:20190718
+docker push david62243/rttest-mon:20210406
+```
+
+```
+docker tag david62243/rttest-send:20210406 david62243/rttest-mon:latest
+docker push david62243/rttest-mon:latest
 ```
 
 
