@@ -188,8 +188,7 @@ public class HttpSink extends  Monitor {
         }
         System.out.println("printMessages : " + printMessages);
 
-        app =  new HttpSink(port, sampleRateSec, numSampleEqualBeforeExit, printMessages);
-        app.run();
+        new HttpSink(port, sampleRateSec, numSampleEqualBeforeExit, printMessages);
 
     }
 
