@@ -66,7 +66,7 @@ public class Kafka extends Send {
     private Producer<String, String> producer;
     private String topic;
 
-    public void run(String brokers, String topic, String filename, Integer desiredRatePerSec, Long numToSend, boolean reuseFile) {
+    public void run(String brokers, String topic, String filename, Integer desiredRatePerSec, Long numToSend, boolean reuseFile, String username, String password) {
 
 
         // https://kafka.apache.org/documentation/#producerconfigs
@@ -81,7 +81,15 @@ public class Kafka extends Send {
         props.put("request.timeout.ms", "11000");
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        /* Addin Simple Partioner didn't help */
+
+        if(username != null || password != null) {
+            String jaasTemplate = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\";";
+            String jaasCfg = String.format(jaasTemplate, username, password);
+            props.put("sasl.jaas.config", jaasCfg);
+            props.put("security.protocol", "SASL_SSL");
+            props.put("sasl.mechanism", "PLAIN");
+        }
+        /* Addin Simple Partitioner didn't help */
         //props.put("partitioner.class", SimplePartitioner.class.getCanonicalName());
 
         this.producer = new KafkaProducer<>(props);
@@ -147,11 +155,23 @@ public class Kafka extends Send {
                 .desc("[Required] Number of lines to send")
                 .build();
 
-
         Option onetimeOp = Option.builder("o")
                 .longOpt("one-time")
                 .desc("Send lines only one time. Stop when all lines have been sent.")
                 .build();
+
+        Option usernameOp = Option.builder("u")
+                .longOpt("username")
+                .hasArg()
+                .desc("SASL/PLAIN username")
+                .build();
+
+        Option passwordOp = Option.builder("p")
+                .longOpt("password")
+                .hasArg()
+                .desc("SASL/PLAIN password")
+                .build();
+
 
         options.addOption(helpOp);
         options.addOption(brokersOp);
@@ -160,6 +180,8 @@ public class Kafka extends Send {
         options.addOption(rateOp);
         options.addOption(numToSendOp);
         options.addOption(onetimeOp);
+        options.addOption(usernameOp);
+        options.addOption(passwordOp);
 
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = null;
@@ -233,7 +255,17 @@ public class Kafka extends Send {
         }
         System.out.println("reuseFile : " + reuseFile);
 
-        app.run(broker,topic, file, desiredRatePerSec, numToSend, reuseFile);
+        String username = null;
+        if(cmd.hasOption("u")) {
+            username = cmd.getOptionValue("u");
+        }
+
+        String password = null;
+        if(cmd.hasOption("p")){
+            password = cmd.getOptionValue("p");
+        }
+
+        app.run(broker,topic, file, desiredRatePerSec, numToSend, reuseFile, username, password);
 
 
     }
