@@ -1,6 +1,6 @@
 # rttest
 
-Real Time Test (rttest) provides tools for sending lines (send), receiving data (sink), and monitoring data (mon). 
+Real Time Test (rttest) provides tools for sending lines (send), receiving data (sink), and monitoring data (mon).
 
 
 ## Installation
