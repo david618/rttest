@@ -1,0 +1,30 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: send-planes
+  labels:
+    app: send-planes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: send-planes
+  template:
+    metadata:
+      labels:
+        app: send-planes
+    spec:
+      containers:
+        - name: send-planes
+          image: david62243/rttest-send:230923
+          command: ["/opt/rttest/sendKafka", "-b", "kafka.velocikafka1:9092", "-t", "planes", "-f", "planes.csv", "-r", "10", "-n", "-1"]
+          #command: ["sleep", "3650d"]
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: '500m'
+              memory: 1Gi
+            requests:
+              cpu: '500m'
+              memory: 1Gi

@@ -1,0 +1,26 @@
+service:
+  type: NodePort
+  ports:
+    client: 30007
+    internal: 7093
+  nodePorts:
+    client: "30007"
+rbac:
+  create: true
+externalAccess:
+  enabled: false 
+  autoDiscovery:
+    enabled: true
+
+auth:
+  clientProtocol: sasl
+  sasl:
+    jaas:
+      clientUsers:
+        - user
+        - david
+      clientPasswords:
+        - LongPasswordHere
+        - LongPasswordHere
+
+advertisedListeners: "INTERNAL://$(MY_POD_NAME).velokafka3-headless.kafka.svc.cluster.local:7093,CLIENT://velokafka.westus2.cloudapp.azure.com:30007"

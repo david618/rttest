@@ -21,9 +21,13 @@
 package com.esri.rttest.send;
 
 import org.apache.commons.cli.*;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.config.SaslConfigs;
+import org.apache.kafka.common.config.SslConfigs;
 
 import java.util.*;
 
@@ -66,7 +70,7 @@ public class Kafka extends Send {
     private Producer<String, String> producer;
     private String topic;
 
-    public void run(String brokers, String topic, String filename, Integer desiredRatePerSec, Long numToSend, boolean reuseFile) {
+    public void run(String brokers, String topic, String filename, Integer desiredRatePerSec, Long numToSend, boolean reuseFile, String username, String password, String truststore) {
 
 
         // https://kafka.apache.org/documentation/#producerconfigs
@@ -81,6 +85,41 @@ public class Kafka extends Send {
         props.put("request.timeout.ms", "11000");
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+
+        if (truststore != "") {
+            if (username != "" && password != "") {
+                props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_SSL");
+            } else {
+                props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL");
+            }
+        } else {
+            if (username != "" && password != "") {
+                props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
+            }
+        }
+
+
+        if (truststore != "") {
+
+            String ext = FilenameUtils.getExtension(truststore);
+
+            if (ext.equalsIgnoreCase("pem")) {
+                props.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
+                props.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, truststore);
+            } else if (ext.equalsIgnoreCase("jks")) {
+                props.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "JKS");
+                props.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, truststore);
+            } else {
+                System.out.println("Unrecognized truststore format; should end with pem or jks");
+                System.exit(1);
+            }
+        }
+
+        if (username != "" && password != "") {
+            props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
+            props.put(SaslConfigs.SASL_JAAS_CONFIG, "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + username + "\" password=\"" + password + "\";");
+        }
+
         /* Addin Simple Partioner didn't help */
         //props.put("partitioner.class", SimplePartitioner.class.getCanonicalName());
 
@@ -153,6 +192,24 @@ public class Kafka extends Send {
                 .desc("Send lines only one time. Stop when all lines have been sent.")
                 .build();
 
+        Option usernameOp = Option.builder("u")
+                .longOpt("username")
+                .hasArg()
+                .desc("(Optional) Username for Kafka")
+                .build();
+
+        Option passwordOp = Option.builder("p")
+                .longOpt("password")
+                .hasArg()
+                .desc("(Optional) Password for Kafka")
+                .build();
+
+        Option truststoreOp = Option.builder("s")
+                .longOpt("file")
+                .hasArg()
+                .desc("[Required] Truststore file with either pem or jks certificates")
+                .build();
+
         options.addOption(helpOp);
         options.addOption(brokersOp);
         options.addOption(topicOp);
@@ -160,6 +217,10 @@ public class Kafka extends Send {
         options.addOption(rateOp);
         options.addOption(numToSendOp);
         options.addOption(onetimeOp);
+        options.addOption(usernameOp);
+        options.addOption(passwordOp);
+        options.addOption(truststoreOp);
+
 
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = null;
@@ -233,7 +294,26 @@ public class Kafka extends Send {
         }
         System.out.println("reuseFile : " + reuseFile);
 
-        app.run(broker,topic, file, desiredRatePerSec, numToSend, reuseFile);
+        String username = "";
+        if (cmd.hasOption("u")) {
+            username = cmd.getOptionValue("u");
+        }
+        System.out.println("username : " + username);
+
+
+        String password = "";
+        if (cmd.hasOption("p")) {
+            password = cmd.getOptionValue("p");
+        }
+        System.out.println("password : " + password);
+
+        String truststore = "";
+        if (cmd.hasOption("s")) {
+            truststore = cmd.getOptionValue("s");
+        }
+        System.out.println("truststore : " + truststore);
+
+        app.run(broker,topic, file, desiredRatePerSec, numToSend, reuseFile, username, password, truststore);
 
 
     }

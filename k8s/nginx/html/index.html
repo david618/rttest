@@ -1,0 +1,65 @@
+<html>
+<title>velokafka</title>
+<body>
+    <h1>Test Kafka's for Velocity</h1>
+    <li>These Kafka's were created using <a href="https://bitnami.com/stack/kafka/helm">bitnami/helm chart.</a></li>
+    <ul>
+        <h2>velokafka1 : plaintext no encryption no authentication</h2>
+        <ul>
+        <li>Access is limited to select IP's using the Azure Network Security Group (NSG) on the Azure Kubernetes Managed Cluster.</li>
+        <li>Broker: velokafka.westus2.cloudapp.azure.com:30009</li>
+        <li>Example Send rttest: ./sendKafka -b velokafka.westus2.cloudapp.azure.com:30009 -t quickstart-events -f planes.csv -r 10 -n -1 </li>
+        <li>Example Consume Kafka CLI:  ./bin/kafka-console-consumer.sh --bootstrap-server velokafka.westus2.cloudapp.azure.com:30009 --topic planes</li>
+        </ul>
+
+        <h2>velokafka2 : tls encryption with no authentication</h2>
+        <ul>
+        <li>Access is limited to select IP's using the Azure Network Security Group (NSG) on the Azure Kubernetes Managed Cluster.</li>
+        <li>Broker: velokafka.westus2.cloudapp.azure.com:30008</li>
+        <li>Example Send rttest: ./sendKafka -b velokafka.westus2.cloudapp.azure.com:30008 -t planes -f planes.csv -r 10 -n -1 -s /Users/davi5017/kafka_2.13-3.3.1/velokafka.pem </li>
+        <li>Example Consume Kafka CLI: ./bin/kafka-console-consumer.sh --bootstrap-server velokafka.westus2.cloudapp.azure.com:30008 --topic planes --consumer.config config-tls.properties</li>
+        </ul>
+        
+        <p>Files</p>
+        <ul>
+            <li><a href=velokafka.pem>velokafka.pem</a></li>
+            <li><a href="config-tls.properties">config-tls.properties</a></li>
+            <li><a href="velokafka.jks">velokafka.jks</a> will work just like the pem</li>
+        </ul>
+        
+        <p><b>NOTE:</b>Velocity does not work with TLS. It does not allow for custom pem file. The TLS returned by bitnami/kafka has a valid cert (created by LetsEncrypt); however, for some reason the cert returned from Kafka does not have the Cert Chain. </p>
+
+        <h2>velokafka3 : sasl no encryption with authentication</h2>
+        <ul>
+        <li>Access is <b>not</b> limited by IP. Access requires a username password.</li>
+        <li>Broker: velokafka.westus2.cloudapp.azure.com:30007</li>
+        <li>Example Send rttest: ./sendKafka -b velokafka.westus2.cloudapp.azure.com:30007 -t planes -f planes.csv -r 10 -n -1 -u david -p **REDACTED**
+        <li>Example Consume Kafka CLI: ./bin/kafka-console-consumer.sh --bootstrap-server velokafka.westus2.cloudapp.azure.com:30007 --topic planes --consumer.config config-david.properties</li>
+        </ul>
+
+        <p>Files</p>
+        <ul>
+            <li><a href="config-david.properties">config-david.properties</a></li>
+        </ul>
+
+        <h2>velokafka4 : sasl_tls encryption and authentication</h2>
+        <ul>
+        <li>Access is <b>not</b> limited by IP. Access requires a username password.</li>
+        <li>Broker: velokafka.westus2.cloudapp.azure.com:30006</li>
+        <li>Example Send rttest: ./sendKafka -b velokafka.westus2.cloudapp.azure.com:30006 -t quickstart-events -f planes.csv -r 10 -n -1 -u david -p **REDACTED** -s /Users/davi5017/kafka_2.13-3.3.1/velokafka.pem
+        <li>Example Consume Kafka CLI: ./bin/kafka-console-consumer.sh --bootstrap-server velokafka.westus2.cloudapp.azure.com:30006 --topic planes --consumer.config config-david-tls.properties</li>
+        </ul>
+
+        <p>Files</p>
+        <ul>
+            <li><a href=velokafka.pem>velokafka.pem</a></li>
+            <li><a href="config-david-tls.properties">config-david-tls.properties</a></li>
+            <li><a href="velokafka.jks">velokafka.jks</a> will work just like the pem</li>
+        </ul>
+        <p><b>NOTE:</b>Velocity does not work with TLS. It does not allow for custom pem file. The TLS returned by bitnami/kafka has a valid cert (created by LetsEncrypt); however, for some reason the cert returned from Kafka does not have the Cert Chain. </p>
+
+
+    </ul>
+
+</body>
+</html>

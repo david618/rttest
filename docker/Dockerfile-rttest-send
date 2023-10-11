@@ -1,17 +1,14 @@
 # docker build -t david62243/rttest-send:20210406 -f docker/Dockerfile-rttest-send .
-FROM centos:8.3.2011
-
-RUN yum install -y java-11-openjdk vim tmux
+FROM openjdk:11-jre-slim
 
 COPY target/lib /opt/rttest/target/lib
 COPY target/rttest.jar /opt/rttest/target/rttest.jar
 COPY planes.csv /opt/rttest/planes.csv
 COPY planes.json /opt/rttest/planes.json
 COPY planes.tab /opt/rttest/planes.tab
-COPY verizon_sample.json /opt/rttest/verizon_sample.json
+#COPY verizon_sample.json /opt/rttest/verizon_sample.json
 COPY mon* /opt/rttest/
 COPY send* /opt/rttest/
 COPY sink* /opt/rttest/
-
 
 WORKDIR /opt/rttest
