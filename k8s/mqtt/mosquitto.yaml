@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mosquitto
+  labels:
+    app: mosquitto
+spec:
+  ports:
+  - port: 1883
+    targetPort: 1883
+    nodePort: 31883
+  selector:
+    app: mosquitto
+    tier: frontend
+  type: NodePort
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mq-pv-claim
+  labels:
+    app: mosquitto
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mosquitto
+  labels:
+    app: mosquitto
+spec:
+  selector:
+    matchLabels:
+      app: mosquitto
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mosquitto
+        tier: frontend
+    spec:
+      containers:
+      - image: eclipse-mosquitto:latest
+        name: mosquitto
+        ports:
+        - containerPort: 1883
+          name: mosquitto
+        volumeMounts:
+        - name: mosquitto-persistent-storage
+          mountPath: /mosquitto/data
+        - name: mosquitto-config
+          mountPath: /mosquitto/config/mosquitto.conf
+          subPath: mosquitto.conf
+        - name: mosquitto-password
+          mountPath: /mosquitto/config/password.txt
+          subPath: password.txt
+        resources:
+          limits:
+            cpu: '200m'
+            memory: 512Mi
+          requests:
+            cpu: '200m'
+            memory: 512Mi          
+      volumes:
+        - name: mosquitto-persistent-storage
+          persistentVolumeClaim:
+            claimName: mq-pv-claim
+        - name: mosquitto-config
+          configMap:
+            name: mosquitto-config
+        - name: mosquitto-password
+          configMap:
+            name: mosquitto-password

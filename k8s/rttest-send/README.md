@@ -127,3 +127,17 @@ Consume Topic
 ```
 
 velokafka1.westus2.cloudapp.azure.com
+
+## MQTT
+
+
+
+PASSWORD=**REDACTED**
+
+```
+./sendMqtt -f planes.json -h tcp://velokafka.westus2.cloudapp.azure.com:31883 -r 10 -t planes -n -1 -u david -p ${PASSWORD}
+```
+
+```
+./monMqtt  -h tcp://velokafka.westus2.cloudapp.azure.com:31883 -t planes -u david -p ${PASSWORD} -r 10 -n 1
+```
