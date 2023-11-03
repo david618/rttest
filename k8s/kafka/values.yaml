@@ -1,6 +1,0 @@
-rbac:
-  create: true
-externalAccess:
-  enabled: true 
-  autoDiscovery:
-    enabled: true

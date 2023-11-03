@@ -1,9 +1,0 @@
-dependencies:
-- name: zookeeper
-  repository: https://marketplace.azurecr.io/helm/v1/repo
-  version: 10.2.4
-- name: common
-  repository: https://marketplace.azurecr.io/helm/v1/repo
-  version: 2.2.1
-digest: sha256:d9da7c09fd7c4cd14e2f4fd03c0f2502b28cdd2a0e9a292aabaf4a04aec34f0d
-generated: "2022-11-29T12:13:13.171722346Z"
