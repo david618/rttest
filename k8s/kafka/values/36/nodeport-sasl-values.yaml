@@ -1,0 +1,32 @@
+# helm -n kafka upgrade --install --values k8s/kafka/values/36/nodeport-sasl-values.yaml velokafka363  oci://registry-1.docker.io/bitnamicharts/kafka
+service:
+  type: NodePort
+  ports:
+    client: 30107
+  nodePorts:
+    client: "30107"
+rbac:
+  create: true
+externalAccess:
+  enabled: false 
+  autoDiscovery:
+    enabled: true
+
+controller:
+  replicaCount: 1
+
+listeners:
+  client:
+    containerPort: 30107
+    protocol: SASL_PLAINTEXT
+    name: CLIENT
+    sslClientAuth: ""
+
+  advertisedListeners: "CLIENT://velokafka.westus2.cloudapp.azure.com:30107,INTERNAL://velokafka363-controller-0.velokafka363-controller-headless.kafka.svc.cluster.local:9094" 
+
+sasl:
+  client:
+    users:
+      - user
+      - david
+    passwords: "LongPasswordHere,DiffcultToGuess"

@@ -1,0 +1,32 @@
+# helm -n kafka upgrade --install --values k8s/kafka/values/36/nodeport-tls-values.yaml velokafka362  oci://registry-1.docker.io/bitnamicharts/kafka
+service:
+  type: NodePort
+  ports:
+    client: 30108
+  nodePorts:
+    client: "30108"
+  useHostIPs: true
+rbac:
+  create: true
+externalAccess:
+  enabled: false 
+  autoDiscovery:
+    enabled: true
+
+controller:
+  replicaCount: 1
+
+listeners:
+  client:
+    containerPort: 30108
+    protocol: SSL
+    name: CLIENT
+    sslClientAuth: ""
+
+  advertisedListeners: "CLIENT://velokafka.westus2.cloudapp.azure.com:30108,INTERNAL://velokafka362-controller-0.velokafka362-controller-headless.kafka.svc.cluster.local:9094" 
+
+tls:
+  pemChainIncluded: true
+  type: pem
+  existingSecret: kafka-tls
+  sslClientAuth: "requested"

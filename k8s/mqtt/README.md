@@ -27,3 +27,18 @@ kubectl -n mqtt apply -k mqtt
 Added NSG rule to allow port 31883 to everyone.
 
 Added Route to kubernetes Load balancer to forward 31883 to 31883 on the Kubernetes nodes.
+
+
+```
+./sendMqtt -f planes.json -h tcp://velokafka.westus2.cloudapp.azure.com:31883 -r 20 -t planes -q 2 -n -1 -u david -p **REDACTED**
+```
+
+
+## Create Secret
+
+USERNAME=david
+PASSWORD=**REDACTED**
+
+kubectl -n rttest-send create secret generic mqtt \
+    --from-literal=username=${USERNAME} \
+    --from-literal=password=${PASSWORD}

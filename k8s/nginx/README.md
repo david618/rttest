@@ -1,3 +1,10 @@
+# nginx
+
+Installing nginx in the kafka namespace.  We'll configure nginx to automatically retrieve a valid SSL Certificate using CertManager/LetsEncrypt.
+
+The cert will used by kafka for TLS on some of the Kafka variants. 
+
+
 https://bitnami.com/stack/nginx/helm
 
 
@@ -9,64 +16,61 @@ kubectl create ns kafka
 helm -n kafka upgrade --install --values k8s/nginx/values.yaml web oci://registry-1.docker.io/bitnamicharts/nginx
 ```
 
-## nginx 
+## nginx ingress controller 
 
 ```
 helm -n kafka install --set controller.ingressClass.name=kafka nginx-kafka oci://ghcr.io/nginxinc/charts/nginx-ingress
 ```
 
-### Set DNS 
+## Set DNS Name
 
-Find Public IP in AWS set config
+Find Public IP in AWS Managed Cluster and set name (e.g. velokafka).  The rest of the domain will be set by the region you created the K8S cluster in.
 
+```
 velokafka.westus2.cloudapp.azure.com
+```
 
+## cert-manager 
 
-Create issuer and ingress.
+```
+helm repo add jetstack https://charts.jetstack.io
+helm repo update
+```
 
+```
+helm install \
+  cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --version v1.13.1 \
+  --set installCRDs=true
+```
+
+## Create issuer and ingress.
+
+```
 kubectl apply -f k8s/nginx/issuer.yaml 
 kubectl apply -f k8s/nginx/ingress.yaml
-
-
-
-
-
-``` 
-NAME: nginx-proxy
-LAST DEPLOYED: Fri Oct  6 20:47:15 2023
-NAMESPACE: kafka
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-CHART NAME: nginx
-CHART VERSION: 15.3.1
-APP VERSION: 1.25.2
-
-** Please be patient while the chart is being deployed **
-NGINX can be accessed through the following DNS name from within your cluster:
-
-    nginx-proxy.kafka.svc.cluster.local (port 80)
-
-To access NGINX from outside the cluster, follow the steps below:
-
-1. Get the NGINX URL by running these commands:
-
-  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-        Watch the status with: 'kubectl get svc --namespace kafka -w nginx-proxy'
-
-    export SERVICE_PORT=$(kubectl get --namespace kafka -o jsonpath="{.spec.ports[0].port}" services nginx-proxy)
-    export SERVICE_IP=$(kubectl get svc --namespace kafka nginx-proxy -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-    echo "http://${SERVICE_IP}:${SERVICE_PORT}"
 ```
 
 ## Custom index.html page
 
+### Single index.html
+
+```
 kubectl -n kafka create cm index-html --from-file=index.html
+```
 
+### Index Page and other docs
 
-Created files in folder k8s/nginx/html
+Created web files in folder k8s/nginx/html
 
+```
 kubectl -n kafka delete cm index-html 
 kubectl -n kafka create cm index-html --from-file=k8s/nginx/html
+```
+
+These are very basic index pages; but you get the idea.
+
+
 

@@ -1,0 +1,16 @@
+# helm -n kafka upgrade --install --values k8s/kafka/values/33/nodeport-values.yaml velokafka1 k8s/kafka/helm/kafka
+service:
+  type: NodePort
+  ports:
+    client: 30009
+    internal: 9093
+  nodePorts:
+    client: "30009"
+rbac:
+  create: true
+externalAccess:
+  enabled: false 
+  autoDiscovery:
+    enabled: true
+
+advertisedListeners: "INTERNAL://$(MY_POD_NAME).velokafka1-headless.kafka.svc.cluster.local:9093,CLIENT://velokafka.westus2.cloudapp.azure.com:30009"

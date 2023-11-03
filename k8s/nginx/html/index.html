@@ -1,14 +1,14 @@
 <html>
 <title>velokafka</title>
 <body>
-    <h1>Test Kafka's for Velocity</h1>
-    <li>These Kafka's were created using <a href="https://bitnami.com/stack/kafka/helm">bitnami/helm chart.</a></li>
+    <h1>Test Kafka instances for Velocity</h1>
+    <p>These Kafka instances were created using <a href="https://bitnami.com/stack/kafka/helm">bitnami/helm chart.</a></p>
     <ul>
         <h2>velokafka1 : plaintext no encryption no authentication</h2>
         <ul>
         <li>Access is limited to select IP's using the Azure Network Security Group (NSG) on the Azure Kubernetes Managed Cluster.</li>
         <li>Broker: velokafka.westus2.cloudapp.azure.com:30009</li>
-        <li>Example Send rttest: ./sendKafka -b velokafka.westus2.cloudapp.azure.com:30009 -t quickstart-events -f planes.csv -r 10 -n -1 </li>
+        <li>Example Send rttest: ./sendKafka -b velokafka.westus2.cloudapp.azure.com:30009 -t planes -f planes.csv -r 10 -n -1 </li>
         <li>Example Consume Kafka CLI:  ./bin/kafka-console-consumer.sh --bootstrap-server velokafka.westus2.cloudapp.azure.com:30009 --topic planes</li>
         </ul>
 
@@ -19,12 +19,28 @@
         <li>Example Send rttest: ./sendKafka -b velokafka.westus2.cloudapp.azure.com:30008 -t planes -f planes.csv -r 10 -n -1 -s /Users/davi5017/kafka_2.13-3.3.1/velokafka.pem </li>
         <li>Example Consume Kafka CLI: ./bin/kafka-console-consumer.sh --bootstrap-server velokafka.westus2.cloudapp.azure.com:30008 --topic planes --consumer.config config-tls.properties</li>
         </ul>
+
+        <p><b>NODE:</b> The cert is automatically updated every 90 days using LetsEncrypt.  So you'll need to periodically retrieve the latest cert.</p>
         
-        <p>Files</p>
+        <h3>Retrieve PEM Using Chrome</h3>
         <ul>
-            <li><a href=velokafka.pem>velokafka.pem</a></li>
+            <li>Navigate to https://velokafka.westus2.cloudapp.azure.com/</li>
+            <li>Click on lock to left of URL; Select "Connection is Secure"</li>
+            <li>Click on Certificate is Valid</li>
+            <li>Click on Details Page</li>
+            <li>Click on Export</li>
+            <li>Choose a file name and folder</li>
+            <li>Base64-encoded ASCII, certificate chain</li>
+        </ul>
+
+        <h3>Retrieve PEM Using openssl and bash</h3>
+        <pre>
+            echo -n | openssl s_client -debug -connect velokafka.westus2.cloudapp.azure.com:443 -tls1_3 -showcerts | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > velokafka.pem
+        </pre>
+        
+        <h3>Example Properties File</h3>
+        <ul>
             <li><a href="config-tls.properties">config-tls.properties</a></li>
-            <li><a href="velokafka.jks">velokafka.jks</a> will work just like the pem</li>
         </ul>
         
         <p><b>NOTE:</b>Velocity does not work with TLS. It does not allow for custom pem file. The TLS returned by bitnami/kafka has a valid cert (created by LetsEncrypt); however, for some reason the cert returned from Kafka does not have the Cert Chain. </p>
@@ -37,7 +53,7 @@
         <li>Example Consume Kafka CLI: ./bin/kafka-console-consumer.sh --bootstrap-server velokafka.westus2.cloudapp.azure.com:30007 --topic planes --consumer.config config-david.properties</li>
         </ul>
 
-        <p>Files</p>
+        <h3>Example Properties File</h3>
         <ul>
             <li><a href="config-david.properties">config-david.properties</a></li>
         </ul>
@@ -46,22 +62,77 @@
         <ul>
         <li>Access is <b>not</b> limited by IP. Access requires a username password.</li>
         <li>Broker: velokafka.westus2.cloudapp.azure.com:30006</li>
-        <li>Example Send rttest: ./sendKafka -b velokafka.westus2.cloudapp.azure.com:30006 -t quickstart-events -f planes.csv -r 10 -n -1 -u david -p **REDACTED** -s /Users/davi5017/kafka_2.13-3.3.1/velokafka.pem
+        <li>Example Send rttest: ./sendKafka -b velokafka.westus2.cloudapp.azure.com:30006 -t planes -f planes.csv -r 10 -n -1 -u david -p **REDACTED** -s /Users/davi5017/kafka_2.13-3.3.1/velokafka.pem</li>
         <li>Example Consume Kafka CLI: ./bin/kafka-console-consumer.sh --bootstrap-server velokafka.westus2.cloudapp.azure.com:30006 --topic planes --consumer.config config-david-tls.properties</li>
         </ul>
 
-        <p>Files</p>
+        <h3>Example Properties File</h3>
         <ul>
-            <li><a href=velokafka.pem>velokafka.pem</a></li>
             <li><a href="config-david-tls.properties">config-david-tls.properties</a></li>
-            <li><a href="velokafka.jks">velokafka.jks</a> will work just like the pem</li>
         </ul>
         <p><b>NOTE:</b>Velocity does not work with TLS. It does not allow for custom pem file. The TLS returned by bitnami/kafka has a valid cert (created by LetsEncrypt); however, for some reason the cert returned from Kafka does not have the Cert Chain. </p>
 
 
     </ul>
 
-    <h2>Building and using rttest</h2>
+
+    <ul>
+        <h2>velokafka361 : plaintext no encryption no authentication</h2>
+        <ul>
+        <li>Access is limited to select IP's using the Azure Network Security Group (NSG) on the Azure Kubernetes Managed Cluster.</li>
+        <li>Broker: velokafka.westus2.cloudapp.azure.com:30009</li>
+        <li>Example Send rttest: ./sendKafka -b velokafka.westus2.cloudapp.azure.com:30109 -t planes -f planes.csv -r 10 -n -1 </li>
+        <li>Example Consume Kafka CLI:  ./bin/kafka-console-consumer.sh --bootstrap-server velokafka.westus2.cloudapp.azure.com:30109 --topic planes --partition 0</li>
+        </ul>
+
+        <h2>velokafka362 : tls encryption with no authentication</h2>
+        <ul>
+        <li>Access is limited to select IP's using the Azure Network Security Group (NSG) on the Azure Kubernetes Managed Cluster.</li>
+        <li>Broker: velokafka.westus2.cloudapp.azure.com:30108</li>
+        <li>Example Send rttest: ./sendKafka -b velokafka.westus2.cloudapp.azure.com:30108 -t planes -f planes.csv -r 10 -n -1 -s nocert </li>
+        <li>Example Consume Kafka CLI: ./bin/kafka-console-consumer.sh --bootstrap-server velokafka.westus2.cloudapp.azure.com:30108 --topic planes --consumer.config config-tls.properties --partition=0</li>
+        </ul>
+
+        <p><b>NODE:</b> The cert is valid and the client does not need the pem.</p>
+        
+        <h3>Example Properties File</h3>
+        <ul>
+            <li><a href="config-tls.properties">config-tls.properties</a></li>
+        </ul>
+        
+        <p><b>NOTE:</b>Velocity does not work with TLS. When connecting velocity reports the data does not have a valid foramt.</p>
+
+        <h2>velokafka363 : sasl no encryption with authentication</h2>
+        <ul>
+        <li>Access is <b>not</b> limited by IP. Access requires a username password.</li>
+        <li>Broker: velokafka.westus2.cloudapp.azure.com:30107</li>
+        <li>Example Send rttest: ./sendKafka -b velokafka.westus2.cloudapp.azure.com:30107 -t planes -f planes.csv -r 10 -n -1 -u david -p **REDACTED**
+        <li>Example Consume Kafka CLI: ./bin/kafka-console-consumer.sh --bootstrap-server velokafka.westus2.cloudapp.azure.com:30107 --topic planes --consumer.config config-david.properties --partition=0</li>
+        </ul>
+
+        <h3>Example Properties File</h3>
+        <ul>
+            <li><a href="config-david.properties">config-david.properties</a></li>
+        </ul>
+
+        <h2>velokafka364 : sasl_tls encryption and authentication</h2>
+        <ul>
+        <li>Access is <b>not</b> limited by IP. Access requires a username password.</li>
+        <li>Broker: velokafka.westus2.cloudapp.azure.com:30106</li>
+        <li>Example Send rttest: ./sendKafka -b velokafka.westus2.cloudapp.azure.com:30106 -t planes -f planes.csv -r 10 -n -1 -u david -p **REDACTED** -s nocert</li>
+        <li>Example Consume Kafka CLI: ./bin/kafka-console-consumer.sh --bootstrap-server velokafka.westus2.cloudapp.azure.com:30106 --topic planes --consumer.config config-david-tls.properties --partition=0</li>
+        </ul>
+
+        <h3>Example Properties File</h3>
+        <ul>
+            <li><a href="config-david-tls.properties">config-david-tls.properties</a></li>
+        </ul>
+        <p><b>NOTE:</b>Velocity does not work with TLS. It does not allow for custom pem file. The TLS returned by bitnami/kafka has a valid cert (created by LetsEncrypt); however, for some reason the cert returned from Kafka does not have the Cert Chain. </p>
+
+
+    </ul>    
+
+    <h1>Building and using rttest</h1>
     <nl>
         <li>Clone <a href="https://github.com/david618/rttest">rttest github repo</a> </li>
         <li>Run "mvn install" Assumes you have maven installed on your computer.</li>

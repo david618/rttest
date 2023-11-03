@@ -99,7 +99,8 @@ public class Kafka extends Send {
         }
 
 
-        if (truststore != "") {
+        if (truststore != "" &&  !truststore.equals("nocert")) {
+            System.out.println(truststore);
 
             String ext = FilenameUtils.getExtension(truststore);
 

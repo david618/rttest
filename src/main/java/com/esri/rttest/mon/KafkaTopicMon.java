@@ -98,12 +98,11 @@ public class KafkaTopicMon extends Monitor {
                 }
             } else {
                 if (username != "" && password != "") {
-                    System.out.println("HERE");
                     props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
                 }
             }
 
-            if (truststore != "") {
+            if (truststore != "" &&  !truststore.equals("nocert")) {
                 //props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL");
 
                 String ext = FilenameUtils.getExtension(truststore);
@@ -121,7 +120,6 @@ public class KafkaTopicMon extends Monitor {
             }
 
             if (username != "" && password != "") {
-                System.out.println("HERE2");
                 //props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
                 props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
                 props.put(SaslConfigs.SASL_JAAS_CONFIG, "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + username + "\" password=\"" + password + "\";");

@@ -33,7 +33,7 @@ kubectl -n ${NAMESPACE} apply  -f k8s/rttest-send/deployment.yaml
 ```
 
 
-Used "AKI...UNEWN" AWS Key.  Same key we use for test services.  
+Used "AKI..." AWS Key.  Same key we use for test services.  
 
 I have a copy of the secret key in ~/.itemctl/storage_account_keys.txt
 
@@ -49,7 +49,7 @@ kubectl -n simulators exec -it send-planes100-94745c47b-4dnlj  -- bash
 apt update
 apt install awscli
 aws configure
-AKI...UNEWN
+AKI...
 **REDCATED**
 ```
 
@@ -128,16 +128,3 @@ Consume Topic
 
 velokafka1.westus2.cloudapp.azure.com
 
-## MQTT
-
-
-
-PASSWORD=**REDACTED**
-
-```
-./sendMqtt -f planes.json -h tcp://velokafka.westus2.cloudapp.azure.com:31883 -r 10 -t planes -n -1 -u david -p ${PASSWORD}
-```
-
-```
-./monMqtt  -h tcp://velokafka.westus2.cloudapp.azure.com:31883 -t planes -u david -p ${PASSWORD} -r 10 -n 1
-```

@@ -1,298 +1,389 @@
-## Bitnami Kafka
+# Kafka Server on Kubernetes
 
+Documents how Kafka was deployed on Kubernetes to support testing. 
+
+Benefits of Running on Kubernetes
+- Several Kafka's with different configurations 
+- Senders running as pods on the cluster  (see rttest-send folder)
+
+## Create Cluster
+
+https://learn.microsoft.com/en-us/cli/azure/aks?view=azure-cli-latest#az-aks-create()
+
+```
+SID="84..."
+RG=simulators
+CLUSTER=vel2023
+VMSIZE=Standard_D2s_v3
+LOCATION=westus2
+```
+
+```
+az group create --subscription ${SID} --name ${RG} --location ${LOCATION}
+```
+
+```
+az aks create \
+    --subscription ${SID} \
+    --resource-group ${RG} \
+    --name ${CLUSTER} \
+    --node-vm-size ${VMSIZE} \
+    --min-count 2 \
+    --max-count 5 \
+    --enable-cluster-autoscaler
+```
+
+```
+az aks get-credentials \
+  --subscription ${SID} \
+  --resource-group ${RG} \
+  --name ${CLUSTER} \
+  -f ${HOME}/${RG}-${CLUSTER}.kubeconfig
+```
+
+```
+export KUBECONFIG=${HOME}/${RG}-${CLUSTER}.kubeconfig
+```
+
+```
+kubectl get nodes
+NAME                                STATUS   ROLES   AGE     VERSION
+aks-nodepool1-34630476-vmss000000   Ready    agent   6m52s   v1.26.6
+aks-nodepool1-34630476-vmss000001   Ready    agent   6m34s   v1.26.6
+aks-nodepool1-34630476-vmss000002   Ready    agent   6m40s   v1.26.6
+```
+
+## Install Kafka
+
+Bitnami maintains a helm chart for installing Kafka on Kubernetes. 
 https://bitnami.com/stack/kafka/helm
 
+
+### Tale of Two Versions of Kafka
+
+Initially I installed using 
 
 ```
 helm repo add azure-marketplace https://marketplace.azurecr.io/helm/v1/repo
 ```
 
-```
-helm pull azure-marketplace/kafka
-```
+A couple of weeks after setup/install the Azure Marketplace helm repo stopped working. 
+
+When I looked at the Bitnami repo. 
 
 ```
-helm install velokafka1 azure-marketplace/kafka
+helm install my-release oci://registry-1.docker.io/bitnamicharts/kafka
 ```
 
-Mac Download Kafka tgz and unzip
+I realized the Azure helm chart "latest" version was 19.1.4 with Kafka 3.3.1.   
+
+The latest from Bitnami helm chart version 26.2.0 installing Kafka 3.6.0 
+
+The values had also changed so what I created for version 3.3 did not work with 3.6.
+
+Additionally Version 3.6 no longer includes zookeeper. 
+
+
+### Exposing Kafka to Internet with SSL Certificates 
+
+**NOTE:** Tried using LoadBalancer Service type. Each kafka would get it's own public IP and would require some additional integration (perhaps LetsEncrypt) to create a verified SSL Certificate.
+
+Using nginx and nginx-ingress controller (seed nginx folder) a valid SSL Cert is created and maintained.
+
+The Kafka's are configured using Kubernetes NodePort which allows access via the Nodes on ports from 30000-32767.  
+
+Once a kafka is deployed we can use the "kubernetes" Load Balancer to route external ports to the nodes.
+
+Additionally we'll add ingress rules to the Network Security Group (NSG) to allow access from select IP's to the external IP with DNS https://velokafka.westus2.cloudapp.azure.com/
+
+### Downloading Helm Charts
+
+To pull old helm chart I originally got from Azure Marketplace.
 
 ```
-./bin/kafka-topics.sh --bootstrap-server=20.99.165.55:9094 --list
+helm pull oci://registry-1.docker.io/bitnamicharts/kafka --version 19.1.4
 ```
 
-```
-./bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server 20.99.165.55:9094 
-```
-
-Kafka has no authentication and is not accessible outside of the cluster
-
-- Creates in default namespace
-- 1 zookeeper and 1 kafka pod
-- Each has an 8G default PVC
-
-
-## Expose Externally
-
-
-
-
-
-- Kafka is accessible on the External IP created by Load Balancer 
-- No Authentication 
-- Accessible from any IP 
-
-## Making Kafka Accessible outside Cluster
-
-Create a values file "values.yaml"; with a few changes for external access. 
+This creates a tar zip file kafka-19.1.4.tgz.  Extracted in helm folder and renamed folder to kafka33.
 
 ```
-export NAMESPACE=velocikafka1
-kubectl create namespace ${NAMESPACE}
-helm --namespace ${NAMESPACE} install --values k8s/kafka/values.yaml kafka azure-marketplace/kafka
+helm pull oci://registry-1.docker.io/bitnamicharts/kafka 
 ```
 
-```
-kubectl -n velocikafka1 get svc
-NAME                       TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)                      AGE
-kafka                      ClusterIP      10.0.128.18    <none>           9092/TCP                     28s
-kafka-0-external           LoadBalancer   10.0.166.176   20.120.185.252   9094:31478/TCP               28s
-kafka-headless             ClusterIP      None           <none>           9092/TCP,9093/TCP            28s
-kafka-zookeeper            ClusterIP      10.0.135.16    <none>           2181/TCP,2888/TCP,3888/TCP   28s
-kafka-zookeeper-headless   ClusterIP      None           <none>           2181/TCP,2888/TCP,3888/TCP   28s
-```
+This created a tar zip file kafka-26.2.0.tgz.  Extracted in helm folder and renamed folder to kafka36. 
+
+
+### Install Kafka
+
+After building the values file each Kafka was installed using a command like. 
 
 ```
-./bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server 20.120.185.252:9094 
+helm -n kafka upgrade --install --values k8s/kafka/values/33/nodeport-values.yaml velokafka1 k8s/kafka/helm/kafka
 ```
 
-```
-./bin/kafka-topics.sh --bootstrap-server=20.120.185.252:9094  --list 
-```
+- Customized to use Kubernetes Nodeport of specific value (e.g. 30009)
+- Set Listeners to point client to extra Kafka DNS name (e.g. velokafka.westus2.cloudapp.azure.com name set during nginx install )
+- Added a "Load Balancing Rule" to "kubernetes" Load Balancer in Manage Cluster Resource Group. 
+  - velokafka1 
+  - Connected the velokafka IP to kubernetes backend 
+  - Connected port 30009 on load balancer to 30009 (node port)
+  - Used health probe with same name as Frontend IP address
+  - Enabled TCP Reset 
+- Added an "Inbound Security Rule" to NSG for aks-nodegroup 
+  - Allow access to 30009 to specific IP's 
+  - For Services secured with authentication you can add a rule to open to any IP if desired 
+  - For test clusters you can used the script in the devops repo devops/scripts/test/add-nsg.sh (e.g. ./test/add-nsg.sh clustername simulators-cluster).  This script will add an NSG rule to allow access to Kafka ports
 
-By default the kafka endpoint is available to anyone on Internet.   
+## Repeated Kafka install for various configurations.
 
-### NSG
+- PLAINTEXT : no authentication , no encryption 
+- SASL: authentication, no encryption
+- TLS or SSL: no authentication, encryption 
+- SASL_TLS or SALS_SSL: authentication, encryption
 
-Modify the NSG to only allow specified IP's.  This was the approach I used for Kafka on a4iot-resources-kafka.
+**NOTE:** The helm chart changed the label TLS to SSL from 3.3 to 3.6.  
 
-From Azure Portal I removed the rule that allows Internet Access to port 9094.
+## Ports 
 
-```
-NAME=david-home
-SID="844b25fe-7752-4bbd-ba37-ad545aa62be0"
+- 30009: Kafka 3.3 PLAINTEXT
+- 30008: Kafka 3.3 TLS
+- 30007: Kafka 3.3 SASL
+- 30006: Kafka 3.3 SASL_TLS
 
-NSG=aks-agentpool-18563280-nsg
-NSG_RG=MC_simulators_vel2023_westus2
-```
+- 30109: Kafka 3.6 PLAINTEXT
+- 30108: Kafka 3.6 SSL
+- 30107: Kafka 3.6 SASL
+- 30106: Kafka 3.6 SASL_SSL
 
-```
-IP=$(curl -s ifconfig.me)
-```
+**NOTE:** The certificate returned by Kafka 3.3 (TLS and SASL_TLS) did not include the Certificate chain.  I've added instructions on how to download the certificate so the client can include that in the requests.
 
-```
-HIGHEST_NSG_PRIORITY=$(az network nsg rule list --subscription ${SID} --nsg-name ${NSG} --resource-group ${NSG_RG} --query [].priority -o tsv | sort -n | tail -n 1)
-NEXT_NSG_PRIORITY=$((${HIGHEST_NSG_PRIORITY}+1))
-```
+The certificate returned by Kafka 3.6 includes the certificate chain you can consume these services without providing the truststore. 
 
-
-```
-az network nsg rule create --name ${NAME}  \
-                           --subscription ${SID} \
-                           --nsg-name ${NSG} \
-                           --priority ${NEXT_NSG_PRIORITY} \
-                           --resource-group ${NSG_RG} \
-                           --access Allow \
-                           --description "Allow ${NAME} to 9094" \
-                           --destination-address-prefixes '*' \
-                           --destination-port-ranges 9094 \
-                           --protocol Tcp \
-                           --source-address-prefixes ${IP} \
-                           --source-port-ranges '*'
-```
+The helm install command for each install is included as a comment in the values files.
 
 
-After this I can still access Kafka from my Computer with my IP; however, I cannot access from computer with different IP. 
-
-Set the name to: velocikafka1.westus2.cloudapp.azure.com (This is done via Public IP in MC Resource Group)
-
-
-## Using SASL for Authentication
-
-Created values_sasl.yaml.  You can specify username and password in the values file. 
+## Stop/Start Kafka's
 
 ```
-export NAMESPACE=velocikafka2
-kubectl create namespace ${NAMESPACE}
-helm --namespace ${NAMESPACE} install --values k8s/kafka/values_sasl.yaml kafkasasl azure-marketplace/kafka
+kubectl -n kafka get sts
+NAME                      READY   AGE
+velokafka1                1/1     5d22h
+velokafka1-zookeeper      1/1     5d22h
+velokafka2                0/0     13d
+velokafka2-zookeeper      0/0     13d
+velokafka3                0/0     17d
+velokafka3-zookeeper      0/0     17d
+velokafka361-controller   1/1     2d4h
+velokafka362-controller   1/1     2d3h
+velokafka363-controller   1/1     28h
+velokafka364-controller   1/1     2d1h
+velokafka4                0/0     16d
+velokafka4-zookeeper      0/0     16d
 ```
 
 ```
-kubectl -n ${NAMESPACE} get svc
-NAME                           TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                      AGE
-kafkasasl                      ClusterIP      10.0.234.225   <none>          9092/TCP                     2m33s
-kafkasasl-0-external           LoadBalancer   10.0.228.93    20.69.141.225   9094:32767/TCP               2m33s
-kafkasasl-headless             ClusterIP      None           <none>          9092/TCP,9093/TCP            2m33s
-kafkasasl-zookeeper            ClusterIP      10.0.230.199   <none>          2181/TCP,2888/TCP,3888/TCP   2m33s
-kafkasasl-zookeeper-headless   ClusterIP      None           <none>          2181/TCP,2888/TCP,3888/TCP   2m33s
-```
-
-helm --namespace ${NAMESPACE} upgrade --install --values k8s/kafka/values_sasl.yaml kafkasasl azure-marketplace/kafka
-
-cat config.properties
-sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="user" password="password1";
-security.protocol=SASL_PLAINTEXT
-sasl.mechanism=PLAIN
-
-
-./bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server 20.69.141.225:9094 --command-config config.properties
-
-./bin/kafka-topics.sh --bootstrap-server=20.69.141.225:9094 --list --command-config config.properties
-quickstart-events
-
-
-./bin/kafka-console-consumer.sh --bootstrap-server=20.69.141.225:9094 --topic planes --consumer.config config.properties
-
-
-The kafkaSend code does not support SASL; etc.  A small change allowed me to send using sendKafka.
-
-david62243/rttest-send:230928
-Extra parameters:  -u username -p password 
-Defaults to SASL Plaintext. 
-
-Set the name to: velocikafka2.westus2.cloudapp.azure.com (This is done via Public IP in MC Resource Group)
-
-## TLS
-
-https://docs.bitnami.com/kubernetes/infrastructure/kafka/administration/enable-tls/
-
-Created a values file for TLS only 
-
-values_tls.yaml
-
-I opted to allow the helm chart to create a self-signed cert. 
-
-```
-export NAMESPACE=velocikafka3
-kubectl create namespace ${NAMESPACE}
-helm --namespace ${NAMESPACE} install --values k8s/kafka/values_tls.yaml kafkatls azure-marketplace/kafka
+kubectl -n kafka scale sts velokafka2 --replicas 1
+kubectl -n kafka scale sts velokafka2-zookeeper --replicas 1
 ```
 
 
-```
-kubectl -n velocikafka3  get secret kafkatls-0-tls -o jsonpath="{.data.tls\.crt}" | base64 --decode > cert.pem
-kubectl -n velocikafka3  get secret kafkatls-0-tls -o jsonpath="{.data.ca\.crt}" | base64 --decode > ca.pem
-kubectl -n velocikafka3  get secret kafkatls-0-tls -o jsonpath="{.data.tls\.key}" | base64 --decode > key.pem
-```
+## Example Client   
 
+### 30009: Kafka 3.3 PLAINTEXT velokafka1
 
-```
-cat cert.pem ca.pem > truststore.pem
-```
+The ip of the client must be allowed via the Azure NSG.
 
+#### rttest
 ```
-./bin/kafka-topics.sh --bootstrap-server=20.72.196.147:9094 --list --command-config config-tls.properties
-```
-
-At this point the client complained that the cert could not be verified. 
-
-```
-openssl s_client -debug -connect 20.72.196.147:9094 -tls1_2 -showcert-tls1_2 -showcerts
-```
-
-This showed the CN as kafkatls-0.kafkatls-headless.  I tried adding an /etc/host 
-
-
-```
-./bin/kafka-topics.sh --bootstrap-server=kafkatls-0.kafkatls-headless:9094 --list --command-config config-tls.properties
-```
-Still didn't work.
-
-Adding identification algorithm and setting it to "" tells the client to not try to validate the cert.
-
-```
-cat config-tls.properties
+./sendKafka -b velokafka.westus2.cloudapp.azure.com:30009 -t planes -f planes.csv -r 10 -n -1 
 ```
 
 ```
-security.protocol=SSL
-ssl.truststore.type=PEM
-ssl.truststore.location=truststore.pem
-ssl.endpoint.identification.algorithm=
+./monKafka -b velokafka.westus2.cloudapp.azure.com:30009 -t planes -n 1 -r 10 
+```
+
+#### kafka command line
+
+```
+./bin/kafka-console-consumer.sh --bootstrap-server=velokafka.westus2.cloudapp.azure.com:30009 --topic planes
+```
+
+#### Velocity
+
+You can use add-nsg.sh script in devops repo to add a NSG rule to allow connection from a cluster.
+
+The following adds a rule to allow the nodes on cluster dj0916a to connect to kafka ports on simulators-cluster.
+
+```
+./test/add-nsg.sh simulators-cluster dj0916a
+```
+
+
+### 30008: Kafka 3.3 TLS velokafka
+
+#### rttest
+```
+./sendKafka -b velokafka.westus2.cloudapp.azure.com:30008 -t planes -f planes.csv -r 10 -n -1 -s /Users/davi5017/kafka_2.13-3.3.1
+/velokafka.pem
 ```
 
 ```
-./bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server 20.72.196.147:9094 --command-config config-tls.properties
+./monKafka -b velokafka.westus2.cloudapp.azure.com:30008 -t planes -n 1 -r 10  -s /Users/davi5017/kafka_2.13-3.3.1/velokafka.pem
 ```
 
-Velocity does not support tls without password authentication.   I tried to use SASL and gave it a fake name; no "joy".
-
-# SASL TLS 
-
-For next attempt I did sasl and tls. 
-
-values_sasl_tls.yaml
+#### kafka command line
 
 ```
-export NAMESPACE=velocikafka4
-kubectl create namespace ${NAMESPACE}
-helm --namespace ${NAMESPACE} install --values k8s/kafka/values_sasl_tls.yaml kafkasasltls azure-marketplace/kafka
+./bin/kafka-console-consumer.sh --bootstrap-server=velokafka.westus2.cloudapp.azure.com:30008 --topic planes --consumer.config config-tls.properties
 ```
 
-52.137.89.46
+#### Velocity 
 
+Velocity will not connect. There is no way at this time to supply the pem.
+
+### 30007: Kafka 3.3 SASL velokafka3
+
+#### rttest
 ```
-./bin/kafka-topics.sh --bootstrap-server=52.137.89.46:9094 --list --command-config config-sasl-tls.properties
+./sendKafka -b velokafka.westus2.cloudapp.azure.com:30007 -t planes -f planes.csv -r 10 -n -1 -u user -p LongPasswordHere
 ```
 
 ```
-kubectl -n velocikafka4  get secret kafkasasltls-0-tls -o jsonpath="{.data.tls\.crt}" | base64 --decode > cert-sasltls.pem
-kubectl -n velocikafka4  get secret kafkasasltls-0-tls -o jsonpath="{.data.ca\.crt}" | base64 --decode > ca-sasltls.pem
+./monKafka -b velokafka.westus2.cloudapp.azure.com:30007 -t planes -n 1 -r 10 -u user -p LongPasswordHere
+```
+
+#### kafka command line
+
+```
+./bin/kafka-console-consumer.sh --bootstrap-server=velokafka.westus2.cloudapp.azure.com:30007 --topic planes --consumer.config config-david.properties
+```
+
+#### Velocity 
+
+You can connect with username and password.  An NSG rule must allow connection to port 30007.
+
+Be sure to disable SSL.
+
+
+### 30006: Kafka 3.3 SASL_TLS velokafka4
+
+
+#### rttest
+```
+./sendKafka -b velokafka.westus2.cloudapp.azure.com:30006 -t planes -f planes.csv -r 10 -n -1 -u user -p LongPasswordHer -s /Users/davi5017/kafka_2.13-3.3.1/velokafka.pem
 ```
 
 ```
-cat cert-sasltls.pem ca-sasltls.pem > truststore-sasltls.pem
+./monKafka -b velokafka.westus2.cloudapp.azure.com:30006 -t planes -n 1 -r 10 -u user -p LongPasswordHere -s /Users/davi5017/kafka_2.13-3.3.1/velokafka.pem
+```
+
+#### kafka command line
+
+```
+./bin/kafka-console-consumer.sh --bootstrap-server=velokafka.westus2.cloudapp.azure.com:30006 --topic planes --consumer.config config-david-tls.properties
+```
+
+#### Velocity
+
+Velocity will not connect.
+
+### 30109: Kafka 3.6 PLAINTEXT velokafka361
+
+
+#### rttest
+```
+./sendKafka -b velokafka.westus2.cloudapp.azure.com:30109 -t planes -f planes.csv -r 10 -n -1 
 ```
 
 ```
-./bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server 52.137.89.46:9094 --command-config config-sasl-tls.properties
-./bin/kafka-topics.sh --bootstrap-server=52.137.89.46:9094 --list --command-config config-sasl-tls.properties
+./monKafka -b velokafka.westus2.cloudapp.azure.com:30109 -t planes -n 1 -r 10 
+```
+
+#### kafka command line
+
+**NOTE:** The kafka-console tool for some reason when consuming requests --partition 0. 
+
+```
+./bin/kafka-console-consumer.sh --bootstrap-server=velokafka.westus2.cloudapp.azure.com:30109 --topic planes --partition 0
+```
+
+#### Velocity
+
+You can use add-nsg.sh script in devops repo to add a NSG rule to allow connection from a cluster.
+
+The following adds a rule to allow the nodes on cluster dj0916a to connect to kafka ports on simulators-cluster.
+
+```
+./test/add-nsg.sh simulators-cluster dj0916a
+```
+
+###  30108: Kafka 3.6 SSL velokafka362
+
+Since the cert include the chain; you can send request with nocert.
+
+#### rttest
+
+```
+./sendKafka -b velokafka.westus2.cloudapp.azure.com:30108 -t planes -f planes.csv -r 10 -n -1 -s nocert
 ```
 
 ```
-sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="david" password="password1";
-security.protocol=SASL_SSL
-sasl.mechanism=PLAIN
-ssl.truststore.type=PEM
-ssl.truststore.location=truststore-sasltls.pem
-ssl.endpoint.identification.algorithm=
+./monKafka -b velokafka.westus2.cloudapp.azure.com:30108 -t planes -n 1 -r 10  -s nocert
 ```
 
-I was able to create a topic and list the topic. 
-
-However, from velocity still got an error.
-
-Velocity reports an error "Failed to connect to feed."
-
-Looking at a4iot-cluster-service sampler logs.
+#### kafka command line
 
 ```
-[2023-10-05 02:16:36.473] [ERROR] [org.apache.kafka.clients.NetworkClient] [Consumer clientId=consumer-null-7, groupId=null] Connection to node -1 (52.137.89.46/52.137.89.46:9094) failed authentication due to: SSL handshake failed :::LF:::
-[2023-10-05 02:16:36.474] [ERROR] [controllers.SamplerFeedController] [2023-10-05T02:16:36.474267Z] [controllers.SamplerFeedController] [unknown] [] [] [cqvgkj9zrnkn9bcu] [] [velocity_shared] [user] [ITEM_MANAGER__TEST_CONNECTION_FEED_FAILED] [] Failed to connect to feed.:::LF::: :::LF:::
-[2023-10-05 02:18:01.591] [ERROR] [org.apache.kafka.clients.NetworkClient] [Consumer clientId=consumer-null-8, groupId=null] Connection to node -1 (52.137.89.46/52.137.89.46:9094) failed authentication due to: SSL handshake failed :::LF:::
-[2023-10-05 02:18:01.593] [ERROR] [controllers.SamplerFeedController] [2023-10-05T02:18:01.593202Z] [controllers.SamplerFeedController] [unknown] [] [] [cqvgkj9zrnkn9bcu] [] [velocity_shared] [user] [ITEM_MANAGER__TEST_CONNECTION_FEED_FAILED] [] Failed to connect to feed.:::LF::: :::LF:::
+./bin/kafka-console-consumer.sh --bootstrap-server=velokafka.westus2.cloudapp.azure.com:30108 --topic planes --consumer.config config-tls.properties --partition 0
 ```
 
-It appears Velocity is having the same problem I had; it's failing to identify the ssl cert.  Doesn't trust this self signed cert. 
+#### Velocity 
 
-It appears I need to figure out how to create a use a valid cert for both TLS and SASL_TLS. 
-
-I can give them names. 
+Velocity seems to connect but reports the messages as invalid format. Perhaps a bug in Velocity code.
 
 
-velocikafka3.westus2.cloudapp.azure.com
-velocikafka4.westus2.cloudapp.azure.com
+###  30107: Kafka 3.6 SASL velokafka363
 
-I just need to get a cert.  Perhaps certmanager / LetsEncrypt. 
+#### rttest
+```
+./sendKafka -b velokafka.westus2.cloudapp.azure.com:30107 -t planes -f planes.csv -r 10 -n -1 -u user -p LongPasswordHere
+```
 
-istio or nginx-controller to automate creation/update of tls cert from letsencrypt.
+```
+./monKafka -b velokafka.westus2.cloudapp.azure.com:30107 -t planes -n 1 -r 10 -u user -p LongPasswordHere
+```
+
+#### kafka command line
+
+```
+./bin/kafka-console-consumer.sh --bootstrap-server=velokafka.westus2.cloudapp.azure.com:30107 --topic planes --consumer.config config-david.properties --partition 0
+```
+
+#### Velocity 
+
+You can connect with username and password.  An NSG rule must allow connection to port 30007.
+
+Be sure to disable SSL.
+
+
+###  30106: Kafka 3.6 SASL_SSL velokafka364
+
+
+#### rttest
+```
+./sendKafka -b velokafka.westus2.cloudapp.azure.com:30106 -t planes -f planes.csv -r 10 -n -1 -u user -p LongPasswordHere -s nocert
+```
+
+```
+./monKafka -b velokafka.westus2.cloudapp.azure.com:30106 -t planes -n 1 -r 10 -u user -p LongPasswordHere -s nocert
+```
+
+#### kafka command line
+
+```
+./bin/kafka-console-consumer.sh --bootstrap-server=velokafka.westus2.cloudapp.azure.com:30106 --topic planes --consumer.config config-david-tls.properties --partition 0
+```
+
+#### Velocity
+
+Velocity seems to connect but reports the messages as invalid format. Perhaps a bug in Velocity code.

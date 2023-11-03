@@ -1,5 +1,5 @@
 # docker build -t david62243/rttest-send:20210406 -f docker/Dockerfile-rttest-send .
-FROM openjdk:11-jre-slim
+FROM openjdk:22-ea-17-slim
 
 COPY target/lib /opt/rttest/target/lib
 COPY target/rttest.jar /opt/rttest/target/rttest.jar
