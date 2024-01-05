@@ -1,0 +1,36 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rttest-send
+  labels:
+    app: rttest-send
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rttest-send
+  template:
+    metadata:
+      labels:
+        app: rttest-send
+    spec:
+      containers:
+        - name: rttest-send
+          image: david62243/rttest-send:230923
+          command: ["sleep", "3650d"]
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: '500m'
+              memory: 1Gi
+            requests:
+              cpu: '500m'
+              memory: 1Gi
+          volumeMounts:
+            - mountPath: /data
+              name: data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: rttest-send 

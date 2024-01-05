@@ -136,7 +136,6 @@ public class HttpThread extends Thread {
 
         if ( password.isEmpty() && !username.isEmpty() ) {
             // Assume username is a Token
-            System.out.println("HERE");
             httpPost.setHeader("Authorization", "Bearer " + username);
         } else if ( !password.isEmpty() && !username.isEmpty() )  {
             String userpass = username + ":" + password;

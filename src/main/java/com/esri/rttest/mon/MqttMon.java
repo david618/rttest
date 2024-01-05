@@ -85,7 +85,7 @@ public class MqttMon extends Monitor {
                 .desc("display help and exit")
                 .build();
 
-        Option brokersOp = Option.builder("h")
+        Option hostOp = Option.builder("h")
                 .longOpt("host")
                 .required()
                 .hasArg()
@@ -129,7 +129,7 @@ public class MqttMon extends Monitor {
                 .build();
 
         options.addOption(helpOp);
-        options.addOption(brokersOp);
+        options.addOption(hostOp);
         options.addOption(topicOp);
         options.addOption(sampleRateSecOp);
         options.addOption(resetCountOp);
@@ -157,10 +157,10 @@ public class MqttMon extends Monitor {
         }
 
         String host = null;
-        if (cmd.hasOption("b")) {
-            host = cmd.getOptionValue("b");
+        if (cmd.hasOption("h")) {
+            host = cmd.getOptionValue("h");
         }
-        System.out.println("broker: " + host);
+        System.out.println("host: " + host);
 
         String topic = null;
         if (cmd.hasOption("t")) {
@@ -218,7 +218,7 @@ public class MqttMon extends Monitor {
         System.out.println("printMessages : " + printMessages);
 
         app =  new MqttMon(host, topic, username, password, sampleRateSec, numSampleEqualBeforeExit, printMessages);
-        app.run();
+        //app.run();
 
         
     }

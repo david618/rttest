@@ -1,8 +1,12 @@
 package com.esri.rttest.mon;
 
 import org.apache.commons.cli.*;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.config.SaslConfigs;
+import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,7 +66,7 @@ public class KafkaTopicMon extends Monitor {
     String brokers;
     String topic;
 
-    public KafkaTopicMon(String brokers, String topic, int sampleRateSec, int numSampleEqualBeforeExit) {
+    public KafkaTopicMon(String brokers, String topic, int sampleRateSec, int numSampleEqualBeforeExit, String username, String password, String truststore) {
 
         try {
             this.brokers = brokers;
@@ -85,6 +89,41 @@ public class KafkaTopicMon extends Monitor {
             props.put("request.timeout.ms", "11000");
             props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
             props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+
+            if (truststore != "") {
+                if (username != "" && password != "") {
+                    props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_SSL");
+                } else {
+                    props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL");
+                }
+            } else {
+                if (username != "" && password != "") {
+                    props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
+                }
+            }
+
+            if (truststore != "" &&  !truststore.equals("nocert")) {
+                //props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SSL");
+
+                String ext = FilenameUtils.getExtension(truststore);
+
+                if (ext.equalsIgnoreCase("pem")) {
+                    props.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
+                    props.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, truststore);
+                } else if (ext.equalsIgnoreCase("jks")) {
+                    props.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "JKS");
+                    props.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, truststore);
+                } else {
+                    System.out.println("Unrecognized truststore format; should end with pem or jks");
+                    System.exit(1);
+                }
+            }
+
+            if (username != "" && password != "") {
+                //props.put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "SASL_PLAINTEXT");
+                props.put(SaslConfigs.SASL_MECHANISM, "PLAIN");
+                props.put(SaslConfigs.SASL_JAAS_CONFIG, "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + username + "\" password=\"" + password + "\";");
+            }
 
             consumer = new KafkaConsumer<>(props);
 
@@ -157,12 +196,32 @@ public class KafkaTopicMon extends Monitor {
                 .desc("Reset after number of this number of samples of no change in count; defaults to 1")
                 .build();
 
+        Option usernameOp = Option.builder("u")
+                .longOpt("username")
+                .hasArg()
+                .desc("(Optional) Username for Kafka")
+                .build();
+
+        Option passwordOp = Option.builder("p")
+                .longOpt("password")
+                .hasArg()
+                .desc("(Optional) Password for Kafka")
+                .build();
+
+        Option truststoreOp = Option.builder("s")
+                .longOpt("file")
+                .hasArg()
+                .desc("[Required] Truststore file with either pem or jks certificates")
+                .build();
 
         options.addOption(helpOp);
         options.addOption(brokersOp);
         options.addOption(topicOp);
         options.addOption(sampleRateSecOp);
         options.addOption(resetCountOp);
+        options.addOption(usernameOp);
+        options.addOption(passwordOp);
+        options.addOption(truststoreOp);
 
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = null;
@@ -225,8 +284,27 @@ public class KafkaTopicMon extends Monitor {
         }
         System.out.println("numSampleEqualBeforeExit: " + numSampleEqualBeforeExit);
 
+        String username = "";
+        if (cmd.hasOption("u")) {
+            username = cmd.getOptionValue("u");
+        }
+        System.out.println("username : " + username);
 
-        app =  new KafkaTopicMon(broker, topic, sampleRateSec, numSampleEqualBeforeExit);
+
+        String password = "";
+        if (cmd.hasOption("p")) {
+            password = cmd.getOptionValue("p");
+        }
+        System.out.println("password : " + password);
+
+        String truststore = "";
+        if (cmd.hasOption("s")) {
+            truststore = cmd.getOptionValue("s");
+        }
+        System.out.println("truststore : " + truststore);
+
+
+        app =  new KafkaTopicMon(broker, topic, sampleRateSec, numSampleEqualBeforeExit, username, password, truststore);
         app.run();
 
     }

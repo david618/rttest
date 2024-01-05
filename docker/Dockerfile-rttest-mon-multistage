@@ -1,0 +1,26 @@
+# docker build -t david62243/rttest-mon:231228 -f docker/Dockerfile-rttest-mon-multistage .
+
+#
+# Build stage
+#
+
+FROM maven:3.8.5-openjdk-17-slim AS build
+COPY src /home/app/src
+COPY pom.xml /home/app
+RUN mvn -f /home/app/pom.xml install
+
+#
+# Package stage
+#
+
+FROM rockylinux:9.3.20231119
+
+RUN yum install -y java-17-openjdk vim tmux
+
+COPY --from=build /home/app/target/lib /opt/rttest/target/lib
+COPY --from=build /home/app/target/rttest.jar /opt/rttest/target/rttest.jar
+COPY mon* /opt/rttest/
+COPY send* /opt/rttest/
+COPY sink* /opt/rttest/
+
+WORKDIR /opt/rttest

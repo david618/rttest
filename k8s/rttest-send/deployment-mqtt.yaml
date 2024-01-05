@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: send-mqtt
+  namespace: rttest-send
+  labels:
+    app: send-mqtt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: send-mqtt
+  template:
+    metadata:
+      labels:
+        app: send-mqtt
+    spec:
+      containers:
+        - name: send-mqtt
+          image: david62243/rttest-send:231016
+          env:
+          - name: MQTT_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: mqtt
+                key: username
+          - name: MQTT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mqtt
+                key: password
+          command: ["/bin/bash", "-c", "/opt/rttest/sendMqtt -u ${MQTT_USERNAME} -p ${MQTT_PASSWORD} -h tcp://mosquitto.mqtt:1883 -t planes -f /data/planes -r 10 -n -1"]
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: '250m'
+              memory: 1Gi
+            requests:
+              cpu: '250m'
+              memory: 1Gi
+          volumeMounts:
+            - mountPath: /data
+              name: data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: rttest-send

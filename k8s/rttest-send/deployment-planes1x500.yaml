@@ -1,0 +1,37 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: send-planes1x500
+  namespace: rttest-send
+  labels:
+    app: send-planes1x500
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: send-planes1x500
+  template:
+    metadata:
+      labels:
+        app: send-planes1x500
+    spec:
+      containers:
+        - name: send-planes1x500
+          image: david62243/rttest-send:231016
+          command: ["/opt/rttest/sendKafka", "-b", "velokafka1-headless.kafka:9093", "-t", "planes1x500", "-f", "/data/planes", "-r", "500", "-n", "-1"]
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: '250m'
+              memory: 1Gi
+            requests:
+              cpu: '250m'
+              memory: 1Gi
+          volumeMounts:
+            - mountPath: /data
+              name: data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: rttest-send
