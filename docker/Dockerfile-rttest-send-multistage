@@ -15,8 +15,8 @@ RUN mvn -f /home/app/pom.xml install
 
 FROM openjdk:22-ea-17-slim
 
-COPY ./target/lib /opt/rttest/target/lib
-COPY ./target/rttest.jar /opt/rttest/target/rttest.jar
+COPY --from=build /home/app/target/lib /opt/rttest/target/lib
+COPY --from=build /home/app/target/rttest.jar /opt/rttest/target/rttest.jar
 COPY planes.csv /opt/rttest/planes.csv
 COPY planes.json /opt/rttest/planes.json
 COPY planes.tab /opt/rttest/planes.tab
