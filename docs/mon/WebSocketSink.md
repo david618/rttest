@@ -1,4 +1,4 @@
-### com.esri.rttest.sink.WebSocketSink
+### com.esri.rttest.mon.WebSocketSink
 
 Consumes a WebSocket counting and report rate of lines received. 
 

@@ -1,4 +1,4 @@
-### com.esri.rttest.sinks.TcpSink
+### com.esri.rttest.mon.TcpSink
 
 Listens for lines on a Tcp Port; counts the lines and reports rate they are received.
 

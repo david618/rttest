@@ -1,4 +1,4 @@
-### com.esri.rttest.monitors.KafkaTopicMon
+### com.esri.rttest.mon.KafkaTopicMon
 
 Monitors a Kafka Topic count and measures and reports rate of change in count.  
 
