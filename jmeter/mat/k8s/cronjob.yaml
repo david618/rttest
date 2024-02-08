@@ -1,0 +1,62 @@
+# kubectl -n test create job --from=cronjob/mat-cronjob-dj1028a test-job
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mat-cronjob-dj1028a
+  namespace: test
+spec:
+  concurrencyPolicy: Replace 
+  failedJobsHistoryLimit: 10
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - command:
+            #- tail
+            #- -f
+            #- /etc/hostname
+            - bash
+            - run.sh
+            envFrom:
+            - configMapRef:
+                name: mat-test-config
+            env:
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: velocity-shared 
+                  key: password
+            - name: PROM_GATEWAY
+              value: "http://prometheus-prometheus-pushgateway.monitoring:9091"
+            - name: PROM_METRIC
+              value: "planes1x500_average_response_time"
+            - name: PG_HOST
+              value: pg-postgresql.test
+            - name: PG_PORT
+              value: "5432"
+            - name: PG_DB
+              value: "testresults"
+            - name: PG_TABLE
+              value: "maprequest"
+            - name: PG_USERNAME
+              value: tester
+            - name: PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: testuser-password
+                  key: password
+            image: david62243/jmeter-test:v1.0.10
+            imagePullPolicy: Always
+            name: mat-cronjob-dj1028a
+            resources:
+              limits:
+                cpu: '2'
+                memory: 4Gi
+              requests:
+                cpu: 500m
+                memory: 512Mi
+  schedule: 22,52 * * * *
+  successfulJobsHistoryLimit: 10
+  suspend: false

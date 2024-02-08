@@ -1,0 +1,39 @@
+[
+  {
+    "id": 0,
+    "name": "flatTriangle",
+    "source": {
+      "type": "mapLayer",
+      "mapLayerId": 0
+    },
+    "drawingInfo": {
+      "renderer": {
+        "type": "aggregation",
+        "style": "Grid",
+        "featureThreshold": 100,
+        "lodOffset": 0,
+        "minBinSizeInPixels": 25,
+        "fullLodGrid": false,
+        "labels": {
+          "color": [
+            0,
+            0,
+            0,
+            255
+          ],
+          "font": "Arial",
+          "size": 12,
+          "style": "PLAIN",
+          "format": "###.#KMB"
+        },
+        "fieldStatistic": null,
+        "geoHashStyle": {
+          "style": "flatTriangle",
+          "sr": "102100"
+        }
+      }
+    },
+    "minScale": 0,
+    "maxScale": 0
+  }
+]

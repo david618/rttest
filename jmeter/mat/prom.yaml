@@ -1,0 +1,14 @@
+# helm -n monitoring upgrade --install --create-namespace --values test/mat/prom.yaml prometheus helm-charts/prometheus/charts/prometheus 
+prometheus-node-exporter:
+  enabled: false
+
+alertmanager:
+  enabled: false
+
+kube-state-metrics:
+  enabled: false
+
+server:
+  extraFlags:
+    - web.enable-lifecycle
+    - web.enable-admin-api

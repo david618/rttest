@@ -1,0 +1,58 @@
+# kubectl -n test create job --from=cronjob/mat-cronjob-dj1028a test-job
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dj1028a-cqvg-planes10m-aws
+  namespace: test
+spec:
+  concurrencyPolicy: Replace 
+  failedJobsHistoryLimit: 10
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - command:
+            #- tail
+            #- -f
+            #- /etc/hostname
+            - bash
+            - run.sh
+            envFrom:
+            - configMapRef:
+                name: dj1028a-cqvg-planes10m-aws
+            env:
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: velocity-shared 
+                  key: password            
+            - name: PG_HOST
+              value: pg-postgresql.test
+            - name: PG_PORT
+              value: "5432"
+            - name: PG_DB
+              value: "testresults"
+            - name: PG_TABLE
+              value: "batplanes"
+            - name: PG_USERNAME
+              value: tester
+            - name: PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: testuser-password
+                  key: password
+            image: david62243/jmeter-test:v1.0.9
+            imagePullPolicy: Always
+            name: dj1028a-cqvg-planes10m-aws
+            resources:
+              limits:
+                cpu: '2'
+                memory: 4Gi
+              requests:
+                cpu: 500m
+                memory: 512Mi
+  schedule: 2,32 * * * *
+  successfulJobsHistoryLimit: 10
+  suspend: false

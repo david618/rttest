@@ -1,0 +1,59 @@
+# kubectl -n test create job --from=cronjob/mat-cronjob-dj1028a test-job
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: devus3d-batplanes
+  namespace: test
+spec:
+  concurrencyPolicy: Replace 
+  failedJobsHistoryLimit: 10
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - command:
+            - bash
+            - run.sh
+            envFrom:
+            - configMapRef:
+                name: devus3d-batplanes
+            env:
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: velocity-shared 
+                  key: password
+            - name: PROM_GATEWAY
+              value: "http://prometheus-prometheus-pushgateway.monitoring:9091"
+            - name: PROM_METRIC
+              value: "devus3d_batplanes_average_response_time"            
+            - name: PG_HOST
+              value: pg-postgresql.test
+            - name: PG_PORT
+              value: "5432"
+            - name: PG_DB
+              value: "testresults"
+            - name: PG_TABLE
+              value: "devus3d_batplanes"
+            - name: PG_USERNAME
+              value: tester
+            - name: PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: testuser-password
+                  key: password
+            image: david62243/jmeter-test:v1.0.10
+            imagePullPolicy: Always
+            name: devus3d-batplanes
+            resources:
+              limits:
+                cpu: '2'
+                memory: 4Gi
+              requests:
+                cpu: 500m
+                memory: 512Mi
+  schedule: 17,47 * * * *
+  successfulJobsHistoryLimit: 10
+  suspend: false

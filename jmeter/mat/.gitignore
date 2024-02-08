@@ -1,0 +1,8 @@
+jmeter.log
+bbox*.txt
+*.jtl
+*.csv
+veltest.env
+veltest-docker.env
+mat
+test.jmx
